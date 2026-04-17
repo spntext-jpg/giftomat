@@ -1,0 +1,71 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --brand: #7000FF;
+  --accent: #D4FF00;
+}
+
+body {
+  background-color: #121212;
+  color: #ffffff;
+}
+
+/* Custom slider track */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 8px;
+  border-radius: 99px;
+  background: #2D2A38;
+  outline: none;
+  cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #7000FF;
+  cursor: pointer;
+  border: 3px solid #D4FF00;
+  box-shadow: 0 0 0 4px rgba(112, 0, 255, 0.2);
+  transition: box-shadow 0.2s;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  box-shadow: 0 0 0 8px rgba(112, 0, 255, 0.25);
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #7000FF;
+  cursor: pointer;
+  border: 3px solid #D4FF00;
+}
+
+@keyframes pulse-ring {
+  0% { box-shadow: 0 0 0 0 rgba(112, 0, 255, 0.4); }
+  70% { box-shadow: 0 0 0 20px rgba(112, 0, 255, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(112, 0, 255, 0); }
+}
+
+.drop-active {
+  border-color: #7000FF !important;
+  background-color: rgba(112, 0, 255, 0.08) !important;
+}
+
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.spin-slow { animation: spin-slow 2s linear infinite; }
+
+.font-unbounded { font-family: 'Unbounded', sans-serif; }
+.font-inter { font-family: 'Inter', sans-serif; }
