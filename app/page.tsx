@@ -23,6 +23,38 @@ function detectIOS(): boolean {
   return /iPad|iPhone|iPod/.test(navigator.userAgent);
 }
 
+// Отдельный компонент — обходит баг Turbopack с JSX-переменными внутри тела компонента
+function DownloadButton({ gifUrl, ios, muted }: { gifUrl: string; ios: boolean; muted: string }) {
+  if (ios) {
+    return (
+      <div>
+        
+          href={gifUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center justify-center w-full py-3.5 rounded-full font-unbounded font-black text-sm mb-2"
+          style={{ background: "#FF6B00", color: "#fff" }}
+        >
+          Открыть GIF
+        </a>
+        <p className={`text-center text-xs font-inter ${muted}`}>
+          Удерживайте изображение и выберите «Сохранить»
+        </p>
+      </div>
+    );
+  }
+  return (
+    
+      href={gifUrl}
+      download="giftomat.gif"
+      className="flex items-center justify-center w-full py-3.5 rounded-full font-unbounded font-black text-sm"
+      style={{ background: "#FF6B00", color: "#fff" }}
+    >
+      Скачать GIF
+    </a>
+  );
+}
+
 export default function GiftomatPage() {
   const [images, setImages]               = useState<UploadedImage[]>([]);
   const [isDragging, setIsDragging]       = useState(false);
@@ -102,7 +134,6 @@ export default function GiftomatPage() {
       canvas.height = height;
       const ctx = canvas.getContext("2d")!;
 
-      // Один кадр на изображение — без кроссфейда
       const frames: ImageData[] = htmlImages.map((img) => {
         ctx.clearRect(0, 0, width, height);
         const imgRatio  = img.naturalWidth / img.naturalHeight;
@@ -150,33 +181,6 @@ export default function GiftomatPage() {
   const hint       = "text-[#121212]/30 dark:text-white/30";
   const border     = "border-[#121212]/10 dark:border-white/10";
 
-  // Кнопка скачивания вынесена из JSX — избегаем проблем с вложенностью тернарников
-  const downloadBtn = ios ? (
-    <div>
-      
-        href={gifUrl ?? ""}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="flex items-center justify-center w-full py-3.5 rounded-full font-unbounded font-black text-sm mb-2"
-        style={{ background: "#FF6B00", color: "#fff" }}
-      >
-        Открыть GIF
-      </a>
-      <p className={`text-center text-[11px] font-inter ${muted}`}>
-        Удерживайте изображение и выберите «Сохранить»
-      </p>
-    </div>
-  ) : (
-    
-      href={gifUrl ?? ""}
-      download="giftomat.gif"
-      className="flex items-center justify-center w-full py-3.5 rounded-full font-unbounded font-black text-sm"
-      style={{ background: "#FF6B00", color: "#fff" }}
-    >
-      Скачать GIF
-    </a>
-  );
-
   const ctaLabel =
     images.length === 0 ? "Загрузите фото" :
     images.length === 1 ? "Добавьте ещё 1 фото" :
@@ -189,7 +193,6 @@ export default function GiftomatPage() {
       <main className="min-h-screen flex flex-col items-center px-5 py-16 md:py-24">
         <div className="w-full max-w-sm">
 
-          {/* Шапка */}
           <header className="flex items-center justify-between mb-10">
             <div>
               <h1 className="text-3xl font-unbounded font-black tracking-tight text-[#7000FF]">
@@ -204,7 +207,6 @@ export default function GiftomatPage() {
             </div>
           </header>
 
-          {/* Зона загрузки */}
           <div
             onDrop={handleDrop}
             onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
@@ -241,7 +243,6 @@ export default function GiftomatPage() {
             </div>
           </div>
 
-          {/* Галерея */}
           {images.length > 0 && (
             <div className={`rounded-2xl p-4 mb-4 ${surface}`}>
               <div className="flex items-center justify-between mb-3">
@@ -305,29 +306,26 @@ export default function GiftomatPage() {
             </div>
           )}
 
-          {/* Настройки */}
           <div className={`rounded-2xl p-5 mb-4 ${surface}`}>
             <p className={`font-unbounded font-bold text-[10px] uppercase tracking-widest mb-4 ${muted}`}>
               Настройки
             </p>
-            <div>
-              <div className="flex justify-between items-center mb-2">
-                <label className={`font-inter text-sm ${labelCls}`}>Длительность кадра</label>
-                <span className="font-unbounded font-black text-sm text-[#7000FF]">
-                  {frameDuration.toFixed(1)} сек
-                </span>
-              </div>
-              <input
-                type="range"
-                min={0.1} max={10} step={0.1}
-                value={frameDuration}
-                onChange={(e) => setFrameDuration(Number(e.target.value))}
-                style={{ background: sliderBg(frameDuration, 0.1, 10) }}
-              />
-              <div className={`flex justify-between text-[10px] font-inter mt-1 ${hint}`}>
-                <span>0.1с — быстро</span>
-                <span>10с — медленно</span>
-              </div>
+            <div className="flex justify-between items-center mb-2">
+              <label className={`font-inter text-sm ${labelCls}`}>Длительность кадра</label>
+              <span className="font-unbounded font-black text-sm text-[#7000FF]">
+                {frameDuration.toFixed(1)} сек
+              </span>
+            </div>
+            <input
+              type="range"
+              min={0.1} max={10} step={0.1}
+              value={frameDuration}
+              onChange={(e) => setFrameDuration(Number(e.target.value))}
+              style={{ background: sliderBg(frameDuration, 0.1, 10) }}
+            />
+            <div className={`flex justify-between text-[10px] font-inter mt-1 ${hint}`}>
+              <span>0.1с — быстро</span>
+              <span>10с — медленно</span>
             </div>
             {images.length >= 2 && (
               <div className={`rounded-xl px-3.5 py-2.5 flex items-center gap-2 mt-4 ${surfaceSub}`}>
@@ -341,16 +339,12 @@ export default function GiftomatPage() {
             )}
           </div>
 
-          {/* Ошибка */}
           {stage === "error" && (
             <div className="rounded-2xl px-4 py-3 mb-4 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800/40">
-              <p className="font-inter text-red-600 dark:text-red-400 text-sm">
-                {errorMsg}
-              </p>
+              <p className="font-inter text-red-600 dark:text-red-400 text-sm">{errorMsg}</p>
             </div>
           )}
 
-          {/* Прогресс */}
           {stage === "encoding" && (
             <div className={`rounded-2xl px-5 py-5 mb-4 ${surface}`}>
               <div className="flex justify-between items-center mb-3">
@@ -370,7 +364,6 @@ export default function GiftomatPage() {
             </div>
           )}
 
-          {/* Результат */}
           {stage === "done" && gifUrl && (
             <div className={`rounded-2xl p-4 mb-4 ${surface}`}>
               <p className={`font-unbounded font-bold text-[10px] uppercase tracking-widest text-center mb-3 ${muted}`}>
@@ -385,7 +378,7 @@ export default function GiftomatPage() {
                 />
               </div>
               <div className="flex flex-col gap-2">
-                {downloadBtn}
+                <DownloadButton gifUrl={gifUrl} ios={ios} muted={muted} />
                 <button
                   onClick={resetToIdle}
                   className={`w-full py-3 rounded-full font-inter text-sm border transition-colors ${border} ${muted} hover:border-[#7000FF]/40 hover:text-[#7000FF]`}
@@ -396,7 +389,6 @@ export default function GiftomatPage() {
             </div>
           )}
 
-          {/* Кнопка — внизу потока, оранжевая */}
           {stage !== "encoding" && stage !== "done" && (
             <button
               onClick={generateGif}
