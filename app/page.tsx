@@ -18,10 +18,9 @@ function sliderBg(value: number, min: number, max: number) {
   return `linear-gradient(to right, #7000FF ${pct}%, var(--slider-track) ${pct}%)`;
 }
 
-function isIOS() {
+function detectIOS(): boolean {
   if (typeof navigator === "undefined") return false;
-  return /iPad|iPhone|iPod/.test(navigator.userAgent) &&
-    !(window as Window & { MSStream?: unknown }).MSStream;
+  return /iPad|iPhone|iPod/.test(navigator.userAgent);
 }
 
 export default function GiftomatPage() {
@@ -36,7 +35,7 @@ export default function GiftomatPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    setIos(isIOS());
+    setIos(detectIOS());
     return () => {
       images.forEach((img) => URL.revokeObjectURL(img.url));
       if (gifUrl) URL.revokeObjectURL(gifUrl);
@@ -103,6 +102,7 @@ export default function GiftomatPage() {
       canvas.height = height;
       const ctx = canvas.getContext("2d")!;
 
+      // Один кадр на изображение — без кроссфейда
       const frames: ImageData[] = htmlImages.map((img) => {
         ctx.clearRect(0, 0, width, height);
         const imgRatio  = img.naturalWidth / img.naturalHeight;
@@ -120,12 +120,10 @@ export default function GiftomatPage() {
       });
 
       setProgress(20);
-
       const delayMs = Math.round(frameDuration * 1000);
       const blob = await encodeGif(frames, delayMs, width, height, (pct) =>
         setProgress(20 + Math.round(pct * 0.8))
       );
-
       const url = URL.createObjectURL(blob);
       setGifUrl(url);
       setStage("done");
@@ -151,6 +149,38 @@ export default function GiftomatPage() {
   const labelCls   = "text-[#121212]/70 dark:text-white/70";
   const hint       = "text-[#121212]/30 dark:text-white/30";
   const border     = "border-[#121212]/10 dark:border-white/10";
+
+  // Кнопка скачивания вынесена из JSX — избегаем проблем с вложенностью тернарников
+  const downloadBtn = ios ? (
+    <div>
+      
+        href={gifUrl ?? ""}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center justify-center w-full py-3.5 rounded-full font-unbounded font-black text-sm mb-2"
+        style={{ background: "#FF6B00", color: "#fff" }}
+      >
+        Открыть GIF
+      </a>
+      <p className={`text-center text-[11px] font-inter ${muted}`}>
+        Удерживайте изображение и выберите «Сохранить»
+      </p>
+    </div>
+  ) : (
+    
+      href={gifUrl ?? ""}
+      download="giftomat.gif"
+      className="flex items-center justify-center w-full py-3.5 rounded-full font-unbounded font-black text-sm"
+      style={{ background: "#FF6B00", color: "#fff" }}
+    >
+      Скачать GIF
+    </a>
+  );
+
+  const ctaLabel =
+    images.length === 0 ? "Загрузите фото" :
+    images.length === 1 ? "Добавьте ещё 1 фото" :
+    "Создать GIF";
 
   return (
     <>
@@ -238,7 +268,7 @@ export default function GiftomatPage() {
                       onClick={(e) => { e.stopPropagation(); removeImage(img.id); }}
                       className="absolute top-1 right-1 z-10 w-4 h-4 rounded-full bg-black/50 text-white text-[10px] hidden group-hover:flex items-center justify-center hover:bg-red-500 transition-colors"
                     >
-                      {"\u00d7"}
+                      x
                     </button>
                     <div className="absolute bottom-1 left-0 right-0 z-10 hidden group-hover:flex justify-center gap-0.5">
                       {idx > 0 && (
@@ -246,7 +276,7 @@ export default function GiftomatPage() {
                           onClick={(e) => { e.stopPropagation(); moveImage(idx, idx - 1); }}
                           className="w-4 h-4 rounded bg-black/50 text-white text-[9px] flex items-center justify-center hover:bg-[#7000FF] transition-colors"
                         >
-                          {"\u2190"}
+                          &lt;
                         </button>
                       )}
                       {idx < images.length - 1 && (
@@ -254,7 +284,7 @@ export default function GiftomatPage() {
                           onClick={(e) => { e.stopPropagation(); moveImage(idx, idx + 1); }}
                           className="w-4 h-4 rounded bg-black/50 text-white text-[9px] flex items-center justify-center hover:bg-[#7000FF] transition-colors"
                         >
-                          {"\u2192"}
+                          &gt;
                         </button>
                       )}
                     </div>
@@ -267,9 +297,9 @@ export default function GiftomatPage() {
                 ))}
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className={`aspect-square rounded-xl border-2 border-dashed flex items-center justify-center text-xl transition-colors ${border} ${hint} hover:border-[#7000FF]/50 hover:text-[#7000FF]`}
+                  className={`aspect-square rounded-xl border-2 border-dashed flex items-center justify-center text-lg transition-colors ${border} ${hint} hover:border-[#7000FF]/50 hover:text-[#7000FF]`}
                 >
-                  {"+"}
+                  +
                 </button>
               </div>
             </div>
@@ -315,7 +345,7 @@ export default function GiftomatPage() {
           {stage === "error" && (
             <div className="rounded-2xl px-4 py-3 mb-4 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800/40">
               <p className="font-inter text-red-600 dark:text-red-400 text-sm">
-                {"\u26a0\ufe0f"} {errorMsg}
+                {errorMsg}
               </p>
             </div>
           )}
@@ -344,7 +374,7 @@ export default function GiftomatPage() {
           {stage === "done" && gifUrl && (
             <div className={`rounded-2xl p-4 mb-4 ${surface}`}>
               <p className={`font-unbounded font-bold text-[10px] uppercase tracking-widest text-center mb-3 ${muted}`}>
-                Готово 🎉
+                Готово
               </p>
               <div className={`rounded-xl overflow-hidden border mb-4 bg-white dark:bg-[#0E0C14] ${border}`}>
                 <img
@@ -355,31 +385,7 @@ export default function GiftomatPage() {
                 />
               </div>
               <div className="flex flex-col gap-2">
-                {ios ? (
-                  <>
-                    
-                      href={gifUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center justify-center gap-2 w-full py-3.5 rounded-full font-unbounded font-black text-sm"
-                      style={{ background: "#FF6B00", color: "#fff" }}
-                    >
-                      Открыть GIF
-                    </a>
-                    <p className={`text-center text-[11px] font-inter ${muted}`}>
-                      Удерживайте {"\u2192"} «Сохранить изображение»
-                    </p>
-                  </>
-                ) : (
-                  
-                    href={gifUrl}
-                    download="giftomat.gif"
-                    className="flex items-center justify-center gap-2 w-full py-3.5 rounded-full font-unbounded font-black text-sm"
-                    style={{ background: "#FF6B00", color: "#fff" }}
-                  >
-                    Скачать GIF
-                  </a>
-                )}
+                {downloadBtn}
                 <button
                   onClick={resetToIdle}
                   className={`w-full py-3 rounded-full font-inter text-sm border transition-colors ${border} ${muted} hover:border-[#7000FF]/40 hover:text-[#7000FF]`}
@@ -390,7 +396,7 @@ export default function GiftomatPage() {
             </div>
           )}
 
-          {/* Кнопка — внизу потока */}
+          {/* Кнопка — внизу потока, оранжевая */}
           {stage !== "encoding" && stage !== "done" && (
             <button
               onClick={generateGif}
@@ -404,11 +410,7 @@ export default function GiftomatPage() {
               ].join(" ")}
               style={{ background: "#FF6B00", color: "#fff" }}
             >
-              {images.length === 0
-                ? "Загрузите фото"
-                : images.length === 1
-                ? "Добавьте ещё 1 фото"
-                : "Создать GIF"}
+              {ctaLabel}
             </button>
           )}
 
