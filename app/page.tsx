@@ -9,8 +9,8 @@ type Stage = "idle" | "encoding" | "done" | "error";
 
 interface UploadedImage {
   id: string;
-  url: string;
   name: string;
+  url: string;
 }
 
 function sliderBg(value: number, min: number, max: number) {
@@ -28,26 +28,26 @@ function DownloadButton({ gifUrl, ios, muted }: { gifUrl: string; ios: boolean; 
   if (ios) {
     return (
       <div>
-        
+        <a
+          className="flex items-center justify-center w-full py-3.5 rounded-full font-unbounded font-black text-base"
           href={gifUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center justify-center w-full py-3.5 rounded-full font-unbounded font-black text-sm mb-2"
           style={{ background: "#FF6B00", color: "#fff" }}
         >
           Открыть GIF
         </a>
-        <p className={`text-center text-xs font-inter ${muted}`}>
+        <p className={`text-center text-xs font-inter mt-2 ${muted}`}>
           Удерживайте изображение и выберите «Сохранить»
         </p>
       </div>
     );
   }
   return (
-    
+    <a
+      className="flex items-center justify-center w-full py-3.5 rounded-full font-unbounded font-black text-base"
       href={gifUrl}
       download="giftomat.gif"
-      className="flex items-center justify-center w-full py-3.5 rounded-full font-unbounded font-black text-sm"
       style={{ background: "#FF6B00", color: "#fff" }}
     >
       Скачать GIF
@@ -56,14 +56,14 @@ function DownloadButton({ gifUrl, ios, muted }: { gifUrl: string; ios: boolean; 
 }
 
 export default function GiftomatPage() {
-  const [images, setImages]               = useState<UploadedImage[]>([]);
-  const [isDragging, setIsDragging]       = useState(false);
-  const [frameDuration, setFrameDuration] = useState(3);
-  const [stage, setStage]                 = useState<Stage>("idle");
-  const [progress, setProgress]           = useState(0);
-  const [gifUrl, setGifUrl]               = useState<string | null>(null);
-  const [errorMsg, setErrorMsg]           = useState("");
-  const [ios, setIos]                     = useState(false);
+  const [images, setImages] = useState<UploadedImage[]>([]);
+  const [isDragging, setIsDragging] = useState(false);
+  const [frameDuration, setFrameDuration] = useState(3.0);
+  const [stage, setStage] = useState<Stage>("idle");
+  const [progress, setProgress] = useState(0);
+  const [gifUrl, setGifUrl] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState("");
+  const [ios, setIos] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -78,11 +78,13 @@ export default function GiftomatPage() {
   const addFiles = useCallback((files: FileList | File[]) => {
     const valid = Array.from(files).filter((f) => f.type.startsWith("image/"));
     if (!valid.length) return;
+    
     const next: UploadedImage[] = valid.map((f) => ({
       id: `${f.name}-${Date.now()}-${Math.random()}`,
-      url: URL.createObjectURL(f),
       name: f.name,
+      url: URL.createObjectURL(f),
     }));
+    
     setImages((prev) => [...prev, ...next]);
     setGifUrl(null);
     setStage("idle");
@@ -91,7 +93,9 @@ export default function GiftomatPage() {
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
-    addFiles(e.dataTransfer.files);
+    if (e.dataTransfer.files) {
+      addFiles(e.dataTransfer.files);
+    }
   }, [addFiles]);
 
   const removeImage = (id: string) => {
@@ -125,20 +129,27 @@ export default function GiftomatPage() {
     setStage("encoding");
     setProgress(0);
     setErrorMsg("");
+    
     try {
       const htmlImages = await Promise.all(images.map((img) => loadImage(img.url)));
-      const { width, height } = computeDimensions(htmlImages);
+      const width = htmlImages[0].naturalWidth;
+      const height = htmlImages[0].naturalHeight;
 
       const canvas = document.createElement("canvas");
       canvas.width = width;
       canvas.height = height;
-      const ctx = canvas.getContext("2d")!;
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
+      if (!ctx) throw new Error("Не удалось создать Canvas");
 
-      const frames: ImageData[] = htmlImages.map((img) => {
+      let allFrames: ImageData[] = [];
+      const canvRatio = width / height;
+
+      for (const img of htmlImages) {
         ctx.clearRect(0, 0, width, height);
-        const imgRatio  = img.naturalWidth / img.naturalHeight;
-        const canvRatio = width / height;
+        const imgRatio = img.naturalWidth / img.naturalHeight;
+        
         let sw = img.naturalWidth, sh = img.naturalHeight, sx = 0, sy = 0;
+        
         if (imgRatio > canvRatio) {
           sw = img.naturalHeight * canvRatio;
           sx = (img.naturalWidth - sw) / 2;
@@ -146,15 +157,18 @@ export default function GiftomatPage() {
           sh = img.naturalWidth / canvRatio;
           sy = (img.naturalHeight - sh) / 2;
         }
+        
         ctx.drawImage(img, sx, sy, sw, sh, 0, 0, width, height);
-        return ctx.getImageData(0, 0, width, height);
-      });
+        allFrames.push(ctx.getImageData(0, 0, width, height));
+      }
 
       setProgress(20);
       const delayMs = Math.round(frameDuration * 1000);
-      const blob = await encodeGif(frames, delayMs, width, height, (pct) =>
+
+      const blob = await encodeGif(allFrames, delayMs, width, height, (pct) =>
         setProgress(20 + Math.round(pct * 0.8))
       );
+
       const url = URL.createObjectURL(blob);
       setGifUrl(url);
       setStage("done");
@@ -172,19 +186,19 @@ export default function GiftomatPage() {
     setProgress(0);
   };
 
-  const canGenerate = images.length >= 2 && stage !== "encoding";
-
-  const surface    = "bg-[#F0EAF8] dark:bg-[#1C1929]";
-  const surfaceSub = "bg-[#E5DCF5] dark:bg-[#252233]";
-  const muted      = "text-[#121212]/50 dark:text-white/50";
-  const labelCls   = "text-[#121212]/70 dark:text-white/70";
-  const hint       = "text-[#121212]/30 dark:text-white/30";
-  const border     = "border-[#121212]/10 dark:border-white/10";
-
+  const canGenerate = images.length >= 2;
   const ctaLabel =
     images.length === 0 ? "Загрузите фото" :
     images.length === 1 ? "Добавьте ещё 1 фото" :
     "Создать GIF";
+
+  // Стили
+  const surface = "bg-[#F3EDF7] dark:bg-[#1E1B24]";
+  const surfaceSub = "bg-[#121212]/5 dark:bg-white/5";
+  const muted = "text-[#121212]/50 dark:text-white/50";
+  const labelCls = "text-[#121212]/75 dark:text-white/75";
+  const hint = "text-[#121212]/30 dark:text-white/30";
+  const border = "border-[#121212]/10 dark:border-white/10";
 
   return (
     <>
@@ -217,7 +231,7 @@ export default function GiftomatPage() {
               "flex items-center gap-3 px-5 py-4",
               isDragging
                 ? "border-[#7000FF] bg-[#7000FF]/10"
-                : `${surface} border-[#121212]/12 dark:border-white/12 hover:border-[#7000FF]/50`,
+                : `${surface} ${border} hover:border-[#7000FF]/50`,
             ].join(" ")}
           >
             <input
@@ -231,12 +245,12 @@ export default function GiftomatPage() {
             <div className="w-9 h-9 rounded-xl flex items-center justify-center text-xl bg-[#7000FF]/10 flex-shrink-0">
               🖼
             </div>
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <p className="font-unbounded font-bold text-sm">Выберите фотографии</p>
               <p className={`font-inter text-xs mt-0.5 ${muted}`}>PNG, JPG, WEBP · минимум 2</p>
             </div>
             <div
-              className="ml-auto flex-shrink-0 px-2.5 py-1 rounded-full text-[10px] font-inter font-semibold"
+              className="px-3 py-1.5 rounded-lg text-xs font-bold"
               style={{ background: "rgba(112,0,255,0.1)", color: "#7000FF" }}
             >
               + фото
@@ -251,7 +265,7 @@ export default function GiftomatPage() {
                 </p>
                 <button
                   onClick={clearAll}
-                  className="text-[11px] font-inter text-red-400/50 hover:text-red-400 transition-colors"
+                  className="text-xs font-medium text-red-500 hover:text-red-600 transition-colors"
                 >
                   Очистить
                 </button>
@@ -260,14 +274,14 @@ export default function GiftomatPage() {
                 {images.map((img, idx) => (
                   <div key={img.id} className="relative group">
                     <div
-                      className="absolute top-1 left-1 z-10 w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-unbounded font-black pointer-events-none"
+                      className="absolute top-1 left-1 z-10 w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-bold pointer-events-none"
                       style={{ background: "#7000FF", color: "#fff" }}
                     >
                       {idx + 1}
                     </div>
                     <button
                       onClick={(e) => { e.stopPropagation(); removeImage(img.id); }}
-                      className="absolute top-1 right-1 z-10 w-4 h-4 rounded-full bg-black/50 text-white text-[10px] hidden group-hover:flex items-center justify-center hover:bg-red-500 transition-colors"
+                      className="absolute top-1 right-1 z-10 w-4 h-4 rounded-full bg-black/60 text-white text-[10px] hidden group-hover:flex items-center justify-center hover:bg-red-500 transition-colors"
                     >
                       x
                     </button>
@@ -275,7 +289,7 @@ export default function GiftomatPage() {
                       {idx > 0 && (
                         <button
                           onClick={(e) => { e.stopPropagation(); moveImage(idx, idx - 1); }}
-                          className="w-4 h-4 rounded bg-black/50 text-white text-[9px] flex items-center justify-center hover:bg-[#7000FF] transition-colors"
+                          className="w-5 h-5 rounded bg-black/70 text-white text-[10px] flex items-center justify-center hover:bg-[#7000FF]"
                         >
                           &lt;
                         </button>
@@ -283,7 +297,7 @@ export default function GiftomatPage() {
                       {idx < images.length - 1 && (
                         <button
                           onClick={(e) => { e.stopPropagation(); moveImage(idx, idx + 1); }}
-                          className="w-4 h-4 rounded bg-black/50 text-white text-[9px] flex items-center justify-center hover:bg-[#7000FF] transition-colors"
+                          className="w-5 h-5 rounded bg-black/70 text-white text-[10px] flex items-center justify-center hover:bg-[#7000FF]"
                         >
                           &gt;
                         </button>
@@ -292,13 +306,13 @@ export default function GiftomatPage() {
                     <img
                       src={img.url}
                       alt={img.name}
-                      className={`w-full aspect-square object-cover rounded-xl border ${border}`}
+                      className={`w-full aspect-square object-cover rounded-lg border ${border}`}
                     />
                   </div>
                 ))}
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className={`aspect-square rounded-xl border-2 border-dashed flex items-center justify-center text-lg transition-colors ${border} ${hint} hover:border-[#7000FF]/50 hover:text-[#7000FF]`}
+                  className={`aspect-square rounded-lg border-2 border-dashed flex items-center justify-center text-xl transition-colors ${border} ${hint} hover:border-[#7000FF]/50 hover:text-[#7000FF]`}
                 >
                   +
                 </button>
@@ -321,6 +335,7 @@ export default function GiftomatPage() {
               min={0.1} max={10} step={0.1}
               value={frameDuration}
               onChange={(e) => setFrameDuration(Number(e.target.value))}
+              className="w-full cursor-pointer"
               style={{ background: sliderBg(frameDuration, 0.1, 10) }}
             />
             <div className={`flex justify-between text-[10px] font-inter mt-1 ${hint}`}>
@@ -373,7 +388,7 @@ export default function GiftomatPage() {
                 <img
                   src={gifUrl}
                   alt="Результат GIF"
-                  className="w-full block"
+                  className="w-full"
                   style={{ maxHeight: "320px", objectFit: "contain" }}
                 />
               </div>
@@ -381,7 +396,7 @@ export default function GiftomatPage() {
                 <DownloadButton gifUrl={gifUrl} ios={ios} muted={muted} />
                 <button
                   onClick={resetToIdle}
-                  className={`w-full py-3 rounded-full font-inter text-sm border transition-colors ${border} ${muted} hover:border-[#7000FF]/40 hover:text-[#7000FF]`}
+                  className={`w-full py-3.5 rounded-full font-inter font-medium text-sm border transition-colors ${border} ${labelCls} hover:bg-[#121212]/5 dark:hover:bg-white/5`}
                 >
                   Создать новый
                 </button>
