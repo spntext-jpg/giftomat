@@ -23,13 +23,13 @@ function detectIOS(): boolean {
   return /iPad|iPhone|iPod/.test(navigator.userAgent);
 }
 
-// Отдельный компонент — обходит баг Turbopack с JSX-переменными внутри тела компонента
+// Отдельный компонент — обходит баг Turbopack
 function DownloadButton({ gifUrl, ios, muted }: { gifUrl: string; ios: boolean; muted: string }) {
   if (ios) {
     return (
-      <div>
+      <div className="flex flex-col items-center w-full mt-4">
         <a
-          className="flex items-center justify-center w-full py-3.5 rounded-full font-unbounded font-black text-base"
+          className="inline-flex items-center justify-center px-12 py-5 rounded-full font-unbounded font-black text-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-[#FF6B00]/30 active:scale-95"
           href={gifUrl}
           target="_blank"
           rel="noopener noreferrer"
@@ -37,21 +37,23 @@ function DownloadButton({ gifUrl, ios, muted }: { gifUrl: string; ios: boolean; 
         >
           Открыть GIF
         </a>
-        <p className={`text-center text-xs font-inter mt-2 ${muted}`}>
+        <p className={`text-center text-xs font-inter mt-3 ${muted}`}>
           Удерживайте изображение и выберите «Сохранить»
         </p>
       </div>
     );
   }
   return (
-    <a
-      className="flex items-center justify-center w-full py-3.5 rounded-full font-unbounded font-black text-base"
-      href={gifUrl}
-      download="giftomat.gif"
-      style={{ background: "#FF6B00", color: "#fff" }}
-    >
-      Скачать GIF
-    </a>
+    <div className="flex flex-col items-center w-full mt-4">
+      <a
+        className="inline-flex items-center justify-center px-12 py-5 rounded-full font-unbounded font-black text-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-[#FF6B00]/30 active:scale-95"
+        href={gifUrl}
+        download="giftomat.gif"
+        style={{ background: "#FF6B00", color: "#fff" }}
+      >
+        Скачать GIF
+      </a>
+    </div>
   );
 }
 
@@ -190,48 +192,49 @@ export default function GiftomatPage() {
   const ctaLabel =
     images.length === 0 ? "Загрузите фото" :
     images.length === 1 ? "Добавьте ещё 1 фото" :
-    "Создать GIF";
+    "Создать GIF ✨";
 
-  // Стили
-  const surface = "bg-[#F3EDF7] dark:bg-[#1E1B24]";
-  const surfaceSub = "bg-[#121212]/5 dark:bg-white/5";
-  const muted = "text-[#121212]/50 dark:text-white/50";
-  const labelCls = "text-[#121212]/75 dark:text-white/75";
-  const hint = "text-[#121212]/30 dark:text-white/30";
-  const border = "border-[#121212]/10 dark:border-white/10";
+  // Стили с учетом темной темы
+  const surface = "bg-[#F3EDF7] dark:bg-[#1C1A22]";
+  const surfaceSub = "bg-white/50 dark:bg-black/20";
+  const muted = "text-slate-500 dark:text-slate-400";
+  const labelCls = "text-slate-700 dark:text-slate-300";
+  const hint = "text-slate-400 dark:text-slate-500";
+  const border = "border-slate-200 dark:border-slate-800";
 
   return (
     <>
       <Script src="/gif.js" strategy="beforeInteractive" />
 
-      <main className="min-h-screen flex flex-col items-center px-5 py-16 md:py-24">
-        <div className="w-full max-w-sm">
+      {/* Обертка с принудительным цветом текста, чтобы ничего не сливалось на черном фоне */}
+      <main className="min-h-screen flex flex-col items-center justify-center px-6 py-20 text-slate-900 dark:text-white transition-colors duration-300 bg-slate-50 dark:bg-[#0A0A0B]">
+        <div className="w-full max-w-xl">
 
-          <header className="flex items-center justify-between mb-10">
-            <div>
-              <h1 className="text-3xl font-unbounded font-black tracking-tight text-[#7000FF]">
-                Гифтомат
-              </h1>
-              <p className={`text-xs font-inter mt-1 ${muted}`}>
-                Генератор GIF прямо в браузере
-              </p>
-            </div>
-            <div className="w-10 h-10 rounded-full flex items-center justify-center text-base bg-[#7000FF]/10 flex-shrink-0">
+          {/* Хедер с большим воздухом */}
+          <header className="flex flex-col items-center text-center mb-16">
+            <div className="w-16 h-16 mb-6 rounded-full flex items-center justify-center text-3xl bg-[#7000FF]/10 text-[#7000FF] shadow-sm">
               🎞
             </div>
+            <h1 className="text-4xl md:text-5xl font-unbounded font-black tracking-tight text-[#7000FF] mb-3">
+              Гифтомат
+            </h1>
+            <p className={`text-sm md:text-base font-inter ${muted}`}>
+              Генератор GIF прямо в браузере. Быстро и приватно.
+            </p>
           </header>
 
+          {/* Квадратная, центрированная Дропзона */}
           <div
             onDrop={handleDrop}
             onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
             onDragLeave={() => setIsDragging(false)}
             onClick={() => fileInputRef.current?.click()}
             className={[
-              "cursor-pointer rounded-2xl border-2 border-dashed transition-all duration-200 mb-4",
-              "flex items-center gap-3 px-5 py-4",
+              "cursor-pointer rounded-[2rem] border-2 border-dashed transition-all duration-300 mb-10",
+              "flex flex-col items-center justify-center max-w-xs mx-auto aspect-square p-8 text-center",
               isDragging
-                ? "border-[#7000FF] bg-[#7000FF]/10"
-                : `${surface} ${border} hover:border-[#7000FF]/50`,
+                ? "border-[#7000FF] bg-[#7000FF]/10 scale-105"
+                : `${surface} ${border} hover:border-[#7000FF]/50 hover:shadow-xl hover:-translate-y-1`,
             ].join(" ")}
           >
             <input
@@ -242,54 +245,47 @@ export default function GiftomatPage() {
               className="hidden"
               onChange={(e) => e.target.files && addFiles(e.target.files)}
             />
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center text-xl bg-[#7000FF]/10 flex-shrink-0">
+            <div className="w-14 h-14 mb-4 rounded-2xl flex items-center justify-center text-3xl bg-[#7000FF]/10 text-[#7000FF]">
               🖼
             </div>
-            <div className="min-w-0 flex-1">
-              <p className="font-unbounded font-bold text-sm">Выберите фотографии</p>
-              <p className={`font-inter text-xs mt-0.5 ${muted}`}>PNG, JPG, WEBP · минимум 2</p>
-            </div>
-            <div
-              className="px-3 py-1.5 rounded-lg text-xs font-bold"
-              style={{ background: "rgba(112,0,255,0.1)", color: "#7000FF" }}
-            >
-              + фото
-            </div>
+            <p className="font-unbounded font-bold text-base mb-2">Выберите фото</p>
+            <p className={`font-inter text-xs ${muted}`}>PNG, JPG, WEBP</p>
           </div>
 
+          {/* Галерея изображений */}
           {images.length > 0 && (
-            <div className={`rounded-2xl p-4 mb-4 ${surface}`}>
-              <div className="flex items-center justify-between mb-3">
-                <p className={`font-unbounded font-bold text-[10px] uppercase tracking-widest ${muted}`}>
+            <div className={`rounded-3xl p-6 mb-8 transition-all duration-300 ${surface}`}>
+              <div className="flex items-center justify-between mb-5">
+                <p className={`font-unbounded font-bold text-xs uppercase tracking-widest ${muted}`}>
                   Галерея · {images.length}
                 </p>
                 <button
                   onClick={clearAll}
-                  className="text-xs font-medium text-red-500 hover:text-red-600 transition-colors"
+                  className="text-xs font-inter font-medium text-red-500 hover:text-red-600 transition-colors"
                 >
-                  Очистить
+                  Очистить всё
                 </button>
               </div>
-              <div className="grid grid-cols-5 gap-1.5">
+              <div className="grid grid-cols-4 sm:grid-cols-5 gap-3">
                 {images.map((img, idx) => (
                   <div key={img.id} className="relative group">
                     <div
-                      className="absolute top-1 left-1 z-10 w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-bold pointer-events-none"
+                      className="absolute top-1.5 left-1.5 z-10 w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold pointer-events-none shadow-sm"
                       style={{ background: "#7000FF", color: "#fff" }}
                     >
                       {idx + 1}
                     </div>
                     <button
                       onClick={(e) => { e.stopPropagation(); removeImage(img.id); }}
-                      className="absolute top-1 right-1 z-10 w-4 h-4 rounded-full bg-black/60 text-white text-[10px] hidden group-hover:flex items-center justify-center hover:bg-red-500 transition-colors"
+                      className="absolute top-1.5 right-1.5 z-10 w-5 h-5 rounded-full bg-black/70 text-white text-[10px] opacity-0 group-hover:opacity-100 flex items-center justify-center hover:bg-red-500 transition-all duration-200"
                     >
-                      x
+                      ✕
                     </button>
-                    <div className="absolute bottom-1 left-0 right-0 z-10 hidden group-hover:flex justify-center gap-0.5">
+                    <div className="absolute bottom-1.5 left-0 right-0 z-10 hidden group-hover:flex justify-center gap-1">
                       {idx > 0 && (
                         <button
                           onClick={(e) => { e.stopPropagation(); moveImage(idx, idx - 1); }}
-                          className="w-5 h-5 rounded bg-black/70 text-white text-[10px] flex items-center justify-center hover:bg-[#7000FF]"
+                          className="w-6 h-6 rounded-md bg-black/70 text-white text-[10px] flex items-center justify-center hover:bg-[#7000FF] transition-colors"
                         >
                           &lt;
                         </button>
@@ -297,7 +293,7 @@ export default function GiftomatPage() {
                       {idx < images.length - 1 && (
                         <button
                           onClick={(e) => { e.stopPropagation(); moveImage(idx, idx + 1); }}
-                          className="w-5 h-5 rounded bg-black/70 text-white text-[10px] flex items-center justify-center hover:bg-[#7000FF]"
+                          className="w-6 h-6 rounded-md bg-black/70 text-white text-[10px] flex items-center justify-center hover:bg-[#7000FF] transition-colors"
                         >
                           &gt;
                         </button>
@@ -306,13 +302,13 @@ export default function GiftomatPage() {
                     <img
                       src={img.url}
                       alt={img.name}
-                      className={`w-full aspect-square object-cover rounded-lg border ${border}`}
+                      className={`w-full aspect-square object-cover rounded-xl border shadow-sm ${border}`}
                     />
                   </div>
                 ))}
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className={`aspect-square rounded-lg border-2 border-dashed flex items-center justify-center text-xl transition-colors ${border} ${hint} hover:border-[#7000FF]/50 hover:text-[#7000FF]`}
+                  className={`aspect-square rounded-xl border-2 border-dashed flex items-center justify-center text-2xl transition-all duration-200 ${border} ${hint} hover:border-[#7000FF]/50 hover:text-[#7000FF] hover:bg-white/5`}
                 >
                   +
                 </button>
@@ -320,13 +316,14 @@ export default function GiftomatPage() {
             </div>
           )}
 
-          <div className={`rounded-2xl p-5 mb-4 ${surface}`}>
-            <p className={`font-unbounded font-bold text-[10px] uppercase tracking-widest mb-4 ${muted}`}>
+          {/* Настройки */}
+          <div className={`rounded-3xl p-6 md:p-8 mb-10 transition-all duration-300 ${surface}`}>
+            <p className={`font-unbounded font-bold text-xs uppercase tracking-widest mb-6 ${muted}`}>
               Настройки
             </p>
-            <div className="flex justify-between items-center mb-2">
-              <label className={`font-inter text-sm ${labelCls}`}>Длительность кадра</label>
-              <span className="font-unbounded font-black text-sm text-[#7000FF]">
+            <div className="flex justify-between items-center mb-4">
+              <label className={`font-inter font-medium text-sm md:text-base ${labelCls}`}>Длительность кадра</label>
+              <span className="font-unbounded font-black text-base text-[#7000FF]">
                 {frameDuration.toFixed(1)} сек
               </span>
             </div>
@@ -335,90 +332,94 @@ export default function GiftomatPage() {
               min={0.1} max={10} step={0.1}
               value={frameDuration}
               onChange={(e) => setFrameDuration(Number(e.target.value))}
-              className="w-full cursor-pointer"
+              className="w-full cursor-pointer mt-2 mb-2"
               style={{ background: sliderBg(frameDuration, 0.1, 10) }}
             />
-            <div className={`flex justify-between text-[10px] font-inter mt-1 ${hint}`}>
+            <div className={`flex justify-between text-[11px] font-inter mt-2 ${hint}`}>
               <span>0.1с — быстро</span>
               <span>10с — медленно</span>
             </div>
+
             {images.length >= 2 && (
-              <div className={`rounded-xl px-3.5 py-2.5 flex items-center gap-2 mt-4 ${surfaceSub}`}>
-                <p className={`font-inter text-xs ${muted}`}>
-                  {images.length} кадров · итого{" "}
-                  <span className="font-semibold text-[#7000FF]">
-                    {(images.length * frameDuration).toFixed(1)} сек
-                  </span>
-                </p>
+              <div className={`rounded-2xl px-5 py-4 flex items-center justify-between mt-6 ${surfaceSub}`}>
+                <p className={`font-inter text-sm ${muted}`}>Итоговое время GIF:</p>
+                <span className="font-unbounded font-bold text-[#7000FF]">
+                  {(images.length * frameDuration).toFixed(1)} сек
+                </span>
               </div>
             )}
           </div>
 
+          {/* Ошибки */}
           {stage === "error" && (
-            <div className="rounded-2xl px-4 py-3 mb-4 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800/40">
-              <p className="font-inter text-red-600 dark:text-red-400 text-sm">{errorMsg}</p>
+            <div className="rounded-2xl px-5 py-4 mb-8 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 text-center">
+              <p className="font-inter text-red-600 dark:text-red-400 text-sm font-medium">{errorMsg}</p>
             </div>
           )}
 
+          {/* Загрузка */}
           {stage === "encoding" && (
-            <div className={`rounded-2xl px-5 py-5 mb-4 ${surface}`}>
-              <div className="flex justify-between items-center mb-3">
-                <p className={`font-inter text-sm font-medium ${labelCls}`}>Генерация GIF…</p>
-                <p className="font-unbounded font-black text-sm text-[#7000FF]">{progress}%</p>
-              </div>
-              <div className={`w-full h-2 rounded-full overflow-hidden ${surfaceSub}`}>
+            <div className={`rounded-3xl px-8 py-10 mb-8 text-center shadow-lg ${surface}`}>
+              <p className={`font-unbounded font-bold text-lg mb-6 ${labelCls}`}>Собираем магию воедино...</p>
+              <div className={`w-full h-3 rounded-full overflow-hidden ${surfaceSub}`}>
                 <div
                   className="h-full rounded-full"
                   style={{
                     width: `${progress}%`,
                     background: "linear-gradient(90deg, #7000FF, #FF6B00)",
-                    transition: "width 0.4s ease",
+                    transition: "width 0.3s ease",
                   }}
                 />
               </div>
+              <p className="font-unbounded font-black text-xl text-[#7000FF] mt-4">{progress}%</p>
             </div>
           )}
 
+          {/* Готовый результат */}
           {stage === "done" && gifUrl && (
-            <div className={`rounded-2xl p-4 mb-4 ${surface}`}>
-              <p className={`font-unbounded font-bold text-[10px] uppercase tracking-widest text-center mb-3 ${muted}`}>
-                Готово
+            <div className={`rounded-3xl p-6 md:p-8 mb-8 shadow-xl ${surface}`}>
+              <p className={`font-unbounded font-bold text-xs uppercase tracking-widest text-center mb-6 ${muted}`}>
+                Готово 🎉
               </p>
-              <div className={`rounded-xl overflow-hidden border mb-4 bg-white dark:bg-[#0E0C14] ${border}`}>
+              <div className={`rounded-2xl overflow-hidden border mb-6 bg-white dark:bg-[#0A0A0B] ${border} shadow-inner`}>
                 <img
                   src={gifUrl}
                   alt="Результат GIF"
                   className="w-full"
-                  style={{ maxHeight: "320px", objectFit: "contain" }}
+                  style={{ maxHeight: "360px", objectFit: "contain" }}
                 />
               </div>
-              <div className="flex flex-col gap-2">
-                <DownloadButton gifUrl={gifUrl} ios={ios} muted={muted} />
+              
+              <DownloadButton gifUrl={gifUrl} ios={ios} muted={muted} />
+              
+              <div className="text-center mt-6">
                 <button
                   onClick={resetToIdle}
-                  className={`w-full py-3.5 rounded-full font-inter font-medium text-sm border transition-colors ${border} ${labelCls} hover:bg-[#121212]/5 dark:hover:bg-white/5`}
+                  className={`font-inter font-medium text-sm transition-colors ${muted} hover:text-[#7000FF] underline underline-offset-4`}
                 >
-                  Создать новый
+                  Создать новый GIF
                 </button>
               </div>
             </div>
           )}
 
+          {/* Кнопка "Создать" (Отображается только в режиме ожидания) */}
           {stage !== "encoding" && stage !== "done" && (
-            <button
-              onClick={generateGif}
-              disabled={!canGenerate}
-              className={[
-                "w-full py-4 rounded-full font-unbounded font-black text-base mt-2",
-                "transition-opacity duration-150",
-                canGenerate
-                  ? "cursor-pointer hover:opacity-90 active:opacity-75"
-                  : "opacity-30 cursor-not-allowed",
-              ].join(" ")}
-              style={{ background: "#FF6B00", color: "#fff" }}
-            >
-              {ctaLabel}
-            </button>
+            <div className="text-center mt-4">
+              <button
+                onClick={generateGif}
+                disabled={!canGenerate}
+                className={[
+                  "inline-flex items-center justify-center px-12 py-5 rounded-full font-unbounded font-black text-lg",
+                  "transition-all duration-300",
+                  canGenerate
+                    ? "cursor-pointer bg-[#FF6B00] text-white hover:-translate-y-1 hover:shadow-xl hover:shadow-[#FF6B00]/30 active:scale-95"
+                    : "bg-gray-300 dark:bg-gray-800 text-gray-500 dark:text-gray-600 cursor-not-allowed",
+                ].join(" ")}
+              >
+                {ctaLabel}
+              </button>
+            </div>
           )}
 
         </div>
