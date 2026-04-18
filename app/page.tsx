@@ -94,7 +94,6 @@ export default function GiftomatPage() {
     setStage("encoding");
     setProgress(0);
     setErrorMsg("");
-
     try {
       const htmlImages = await Promise.all(images.map((img) => loadImage(img.url)));
       const { width, height } = computeDimensions(htmlImages);
@@ -238,19 +237,25 @@ export default function GiftomatPage() {
                     <button
                       onClick={(e) => { e.stopPropagation(); removeImage(img.id); }}
                       className="absolute top-1 right-1 z-10 w-4 h-4 rounded-full bg-black/50 text-white text-[10px] hidden group-hover:flex items-center justify-center hover:bg-red-500 transition-colors"
-                    >×</button>
+                    >
+                      {"\u00d7"}
+                    </button>
                     <div className="absolute bottom-1 left-0 right-0 z-10 hidden group-hover:flex justify-center gap-0.5">
                       {idx > 0 && (
                         <button
                           onClick={(e) => { e.stopPropagation(); moveImage(idx, idx - 1); }}
                           className="w-4 h-4 rounded bg-black/50 text-white text-[9px] flex items-center justify-center hover:bg-[#7000FF] transition-colors"
-                        >←</button>
+                        >
+                          {"\u2190"}
+                        </button>
                       )}
                       {idx < images.length - 1 && (
                         <button
                           onClick={(e) => { e.stopPropagation(); moveImage(idx, idx + 1); }}
                           className="w-4 h-4 rounded bg-black/50 text-white text-[9px] flex items-center justify-center hover:bg-[#7000FF] transition-colors"
-                        >→</button>
+                        >
+                          {"\u2192"}
+                        </button>
                       )}
                     </div>
                     <img
@@ -263,7 +268,9 @@ export default function GiftomatPage() {
                 <button
                   onClick={() => fileInputRef.current?.click()}
                   className={`aspect-square rounded-xl border-2 border-dashed flex items-center justify-center text-xl transition-colors ${border} ${hint} hover:border-[#7000FF]/50 hover:text-[#7000FF]`}
-                >+</button>
+                >
+                  {"+"}
+                </button>
               </div>
             </div>
           )}
@@ -307,7 +314,9 @@ export default function GiftomatPage() {
           {/* Ошибка */}
           {stage === "error" && (
             <div className="rounded-2xl px-4 py-3 mb-4 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800/40">
-              <p className="font-inter text-red-600 dark:text-red-400 text-sm">⚠️ {errorMsg}</p>
+              <p className="font-inter text-red-600 dark:text-red-400 text-sm">
+                {"\u26a0\ufe0f"} {errorMsg}
+              </p>
             </div>
           )}
 
@@ -355,10 +364,10 @@ export default function GiftomatPage() {
                       className="flex items-center justify-center gap-2 w-full py-3.5 rounded-full font-unbounded font-black text-sm"
                       style={{ background: "#FF6B00", color: "#fff" }}
                     >
-                      🔗 Открыть GIF
+                      Открыть GIF
                     </a>
                     <p className={`text-center text-[11px] font-inter ${muted}`}>
-                      Удерживайте → «Сохранить изображение»
+                      Удерживайте {"\u2192"} «Сохранить изображение»
                     </p>
                   </>
                 ) : (
@@ -368,7 +377,7 @@ export default function GiftomatPage() {
                     className="flex items-center justify-center gap-2 w-full py-3.5 rounded-full font-unbounded font-black text-sm"
                     style={{ background: "#FF6B00", color: "#fff" }}
                   >
-                    ⬇ Скачать GIF
+                    Скачать GIF
                   </a>
                 )}
                 <button
