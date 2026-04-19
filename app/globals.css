@@ -5,7 +5,7 @@
 :root {
   --slider-track: #E2D9F3;
   --brand: #7000FF;
-  --orange: #FF6B00;
+  --cta: #FF6163;
   color-scheme: light dark;
 }
 
@@ -37,7 +37,7 @@ input[type="range"]::-webkit-slider-thumb {
   cursor: pointer;
 }
 input[type="range"]::-webkit-slider-thumb:hover {
-  box-shadow: 0 0 0 7px rgba(112,0,255,0.14);
+  box-shadow: 0 0 0 7px rgba(112,0,255,0.13);
   transform: scale(1.1);
 }
 input[type="range"]::-moz-range-thumb {
@@ -52,25 +52,26 @@ input[type="range"]::-moz-range-thumb {
 .font-unbounded { font-family: 'Unbounded', sans-serif; }
 .font-inter     { font-family: 'Inter', sans-serif; }
 
-/* Dropzone hover — через CSS класс, без JS */
+/* Dropzone — !important на border-color перебивает Tailwind */
 .dropzone-idle {
-  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  transition: border-color 0.22s ease, box-shadow 0.22s ease, transform 0.22s ease;
 }
 .dropzone-idle:hover {
-  border-color: rgba(112,0,255,0.5);
-  box-shadow: 0 8px 32px -8px rgba(112,0,255,0.18);
-  transform: translateY(-2px);
+  border-color: rgba(112,0,255,0.55) !important;
+  box-shadow: 0 12px 40px -10px rgba(112,0,255,0.22);
+  transform: translateY(-3px);
 }
 
-/* CTA Glow — пружинящий hover */
+/* CTA — пружинящий подъём */
 .cta-btn {
-  transition: transform 0.22s cubic-bezier(.34,1.56,.64,1), box-shadow 0.22s ease;
+  transition: transform 0.22s cubic-bezier(0.34,1.56,0.64,1),
+              box-shadow 0.22s ease;
 }
 .cta-btn:not(:disabled):hover {
-  transform: translateY(-3px) scale(1.03);
-  box-shadow: 0 16px 40px -8px rgba(255,107,0,0.65);
+  transform: translateY(-4px) scale(1.04);
+  box-shadow: 0 18px 44px -8px rgba(255,97,99,0.6);
 }
 .cta-btn:not(:disabled):active {
   transform: scale(0.97);
-  box-shadow: 0 4px 16px -4px rgba(255,107,0,0.5);
+  box-shadow: 0 6px 18px -4px rgba(255,97,99,0.45);
 }
