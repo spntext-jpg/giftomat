@@ -52,7 +52,6 @@ input[type="range"]::-moz-range-thumb {
 .font-unbounded { font-family: 'Unbounded', sans-serif; }
 .font-inter     { font-family: 'Inter', sans-serif; }
 
-/* Dropzone — !important на border-color перебивает Tailwind */
 .dropzone-idle {
   transition: border-color 0.22s ease, box-shadow 0.22s ease, transform 0.22s ease;
 }
@@ -62,10 +61,8 @@ input[type="range"]::-moz-range-thumb {
   transform: translateY(-3px);
 }
 
-/* CTA — пружинящий подъём */
 .cta-btn {
-  transition: transform 0.22s cubic-bezier(0.34,1.56,0.64,1),
-              box-shadow 0.22s ease;
+  transition: transform 0.22s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.22s ease;
 }
 .cta-btn:not(:disabled):hover {
   transform: translateY(-4px) scale(1.04);
