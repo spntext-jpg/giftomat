@@ -18,36 +18,25 @@ function detectIOS(): boolean {
   return /iPad|iPhone|iPod/.test(navigator.userAgent);
 }
 
-function DownloadButton({ gifUrl, ios }: { gifUrl: string; ios: boolean }) {
-  const btnClass = "inline-block px-10 py-4 rounded-full font-semibold text-white bg-[#A169F7] hover:bg-[#8e52ec] transition-colors";
-
-  if (ios) {
-    return (
-      <div className="flex flex-col items-center gap-3">
-        <a href={gifUrl} target="_blank" rel="noopener noreferrer" className={btnClass}>
-          Открыть GIF
-        </a>
-        <p className="text-xs text-slate-500 text-center">
-          Удерживайте изображение и выберите «Сохранить»
-        </p>
-      </div>
-    );
-  }
-  return (
-    <div className="flex justify-center">
-      <a href={gifUrl} download="giftomat.gif" className={btnClass}>
-        Скачать GIF
-      </a>
-    </div>
-  );
-}
-
 export default function GiftomatPage() {
+  // --- UI Стили (Professional Theme) ---
+  const theme = {
+    bg: "bg-[#F8FAFC]", // Очень легкий серый фон страницы
+    card: "bg-white border border-slate-200 shadow-sm rounded-3xl",
+    cardSub: "bg-slate-50 border border-slate-100 rounded-2xl",
+    txt: "text-[#000000]", // African Turquoise (как основной текст)
+    muted: "text-slate-500",
+    accent: "#A169F7", // Violet Punk
+    azure: "#00AAFF", // Bright Azure
+    green: "#97CF26", // Atlantis Green
+    red: "#FF6163",   // Light Red
+  };
+
   const [images, setImages] = useState<UploadedImage[]>([]);
   const [stage, setStage] = useState<Stage>("idle");
   const [progress, setProgress] = useState(0);
   const [errorMsg, setErrorMsg] = useState("");
-  const [frameDuration, setFrameDuration] = useState(1.0);
+  const [frameDuration, setFrameDuration] = useState(0.5);
   const [gifUrl, setGifUrl] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [ios, setIos] = useState(false);
@@ -60,7 +49,6 @@ export default function GiftomatPage() {
       images.forEach((img) => URL.revokeObjectURL(img.url));
       if (gifUrl) URL.revokeObjectURL(gifUrl);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const addFiles = useCallback((fileList: FileList) => {
@@ -84,23 +72,6 @@ export default function GiftomatPage() {
     if (e.dataTransfer.files) addFiles(e.dataTransfer.files);
   }, [addFiles]);
 
-  const removeImage = (id: string) => {
-    setImages((prev) => {
-      const found = prev.find((i) => i.id === id);
-      if (found) URL.revokeObjectURL(found.url);
-      return prev.filter((i) => i.id !== id);
-    });
-    setGifUrl(null);
-    setStage("idle");
-  };
-
-  const clearAll = () => {
-    images.forEach((img) => URL.revokeObjectURL(img.url));
-    setImages([]);
-    setGifUrl(null);
-    setStage("idle");
-  };
-
   const generateGif = async () => {
     if (images.length < 2) return;
     setStage("encoding");
@@ -108,37 +79,30 @@ export default function GiftomatPage() {
     setErrorMsg("");
 
     try {
-      // 1. Load images
       const loaded = await Promise.all(images.map((img) => loadImage(img.url)));
-      const { width, height } = computeDimensions(loaded);
+      const { width, height } = computeDimensions(loaded, 1000); // 1000px max для четкости
 
-      // 2. Setup Canvas with high-quality rendering
       const canvas = document.createElement("canvas");
       canvas.width = width;
       canvas.height = height;
       const ctx = canvas.getContext("2d", { willReadFrequently: true });
-      if (!ctx) throw new Error("Canvas 2D context is not available");
+      if (!ctx) throw new Error("Canvas 2D context error");
 
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = "high";
 
-      // 3. Process each frame (Cover Crop Logic)
       const framesData: ImageData[] = loaded.map((img) => {
-        // Fill white background to prevent alpha artifacts
         ctx.fillStyle = "#ffffff";
         ctx.fillRect(0, 0, width, height);
 
         const imgRatio = img.naturalWidth / img.naturalHeight;
         const canvRatio = width / height;
-        
         let sw = img.naturalWidth, sh = img.naturalHeight, sx = 0, sy = 0;
-        
+
         if (imgRatio > canvRatio) {
-          // Image is wider than canvas
           sw = img.naturalHeight * canvRatio;
           sx = (img.naturalWidth - sw) / 2;
         } else {
-          // Image is taller than canvas
           sh = img.naturalWidth / canvRatio;
           sy = (img.naturalHeight - sh) / 2;
         }
@@ -147,11 +111,7 @@ export default function GiftomatPage() {
         return ctx.getImageData(0, 0, width, height);
       });
 
-      setProgress(15);
-
-      // 4. Encode directly (No crossfade)
-      const delayMs = frameDuration * 1000;
-      const blob = await encodeGif(framesData, delayMs, width, height, (pct) => {
+      const blob = await encodeGif(framesData, frameDuration * 1000, width, height, (pct) => {
         setProgress(15 + Math.round(pct * 0.85));
       });
 
@@ -160,45 +120,44 @@ export default function GiftomatPage() {
       setProgress(100);
     } catch (e) {
       setStage("error");
-      setErrorMsg(e instanceof Error ? e.message : "Неизвестная ошибка при создании GIF");
+      setErrorMsg(e instanceof Error ? e.message : "Ошибка генерации");
     }
   };
 
-  const resetToIdle = () => {
-    if (gifUrl) URL.revokeObjectURL(gifUrl);
-    setGifUrl(null);
-    setStage("idle");
-    setProgress(0);
-  };
-
-  const canGenerate = images.length >= 2 && stage === "idle";
-  const ctaLabel = images.length === 0 ? "Загрузите медиа" : images.length === 1 ? "Добавьте еще 1 файл" : "Создать анимацию";
+  const ctaLabel = images.length === 0 ? "Загрузите фото" : images.length === 1 ? "Нужно еще одно" : "Создать GIF";
 
   return (
     <>
       <Script src="/gif.js" strategy="beforeInteractive" />
 
-      <main className="min-h-screen bg-white text-[#000000] flex flex-col items-center justify-center px-6 py-20 font-sans">
-        <div className="w-full max-w-2xl">
-
-          <header className="flex flex-col items-center text-center mb-16">
-            <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-3">
-              GIF Generator
-            </h1>
-            <p className="text-base text-slate-500">
-              Профессиональный инструмент для создания плавных анимаций
-            </p>
+      <main className={`min-h-screen ${theme.bg} ${theme.txt} flex flex-col items-center px-6 py-12 md:py-20 font-sans transition-colors duration-500`}>
+        <div className="w-full max-w-xl">
+          
+          {/* Header */}
+          <header className="flex flex-col items-center text-center mb-12">
+            <div 
+              className="w-16 h-16 rounded-2xl flex items-center justify-center mb-6 shadow-sm"
+              style={{ background: theme.accent, color: 'white' }}
+            >
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <rect width="18" height="18" x="3" y="3" rx="2"/><path d="M7 3v18"/><path d="M17 3v18"/><path d="M3 7h4"/><path d="M3 12h4"/><path d="M3 17h4"/><path d="M17 7h4"/><path d="M17 12h4"/><path d="M17 17h4"/>
+              </svg>
+            </div>
+            <h1 className="text-4xl font-black tracking-tight mb-2">Генератор GIF</h1>
+            <p className={theme.muted}>Профессиональное создание анимаций без потери качества</p>
           </header>
 
+          {/* Dropzone */}
           <div
             onDrop={handleDrop}
             onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
             onDragLeave={() => setIsDragging(false)}
             onClick={() => fileInputRef.current?.click()}
             className={`
-              cursor-pointer rounded-2xl border-2 mb-10 transition-all duration-200
-              flex flex-col items-center justify-center gap-4 w-full h-48 px-8 text-center
-              ${isDragging ? "border-[#00AAFF] bg-[#00AAFF]/5 scale-[1.02]" : "border-slate-200 hover:border-slate-300 bg-slate-50"}
+              cursor-pointer transition-all duration-300
+              flex flex-col items-center justify-center gap-4 w-full h-56 px-8 text-center
+              ${theme.card} border-dashed border-2
+              ${isDragging ? "border-[#00AAFF] bg-[#00AAFF]/5 scale-[1.01]" : "border-slate-300 hover:border-slate-400"}
             `}
           >
             <input
@@ -209,121 +168,110 @@ export default function GiftomatPage() {
               className="hidden"
               onChange={(e) => e.target.files && addFiles(e.target.files)}
             />
-            <div className="pointer-events-none">
-              <p className="font-semibold text-lg mb-1">
-                Перетащите файлы сюда
-              </p>
-              <p className="text-sm text-slate-500">
-                или нажмите для выбора (PNG, JPG, WEBP)
-              </p>
+            <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center">
+               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/>
+               </svg>
+            </div>
+            <div>
+              <p className="font-bold text-lg">Нажмите или перетащите</p>
+              <p className={`text-sm ${theme.muted}`}>PNG, JPG, WEBP до 1000px</p>
             </div>
           </div>
 
+          {/* Gallery */}
           {images.length > 0 && (
-            <div className="mb-10">
-              <div className="flex items-center justify-between mb-4">
-                <p className="text-xs font-bold uppercase tracking-widest text-slate-400">
-                  Очередь кадров ({images.length})
-                </p>
-                <button onClick={clearAll} className="text-sm text-[#FF6163] hover:text-red-700 font-medium">
-                  Очистить
-                </button>
+            <div className={`mt-8 p-6 ${theme.card}`}>
+              <div className="flex items-center justify-between mb-5">
+                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">Галерея ({images.length})</span>
+                <button onClick={() => setImages([])} className="text-xs font-bold text-[#FF6163] hover:opacity-70 transition-opacity">Очистить</button>
               </div>
-              <div className="grid grid-cols-4 sm:grid-cols-5 gap-4">
+              <div className="grid grid-cols-4 sm:grid-cols-5 gap-3">
                 {images.map((img, idx) => (
-                  <div key={img.id} className="relative group aspect-square rounded-xl overflow-hidden bg-slate-100 border border-slate-200">
-                    <div className="absolute top-2 left-2 w-6 h-6 rounded-full bg-black/60 text-white text-xs flex items-center justify-center z-10 backdrop-blur-sm">
-                      {idx + 1}
-                    </div>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); removeImage(img.id); }}
-                      className="absolute top-2 right-2 w-6 h-6 rounded-full bg-white text-black opacity-0 group-hover:opacity-100 transition-opacity z-10 flex items-center justify-center shadow-sm hover:bg-slate-200"
-                    >
-                      ✕
-                    </button>
-                    <img src={img.url} alt={img.name} className="w-full h-full object-cover" />
+                  <div key={img.id} className="relative group aspect-square rounded-xl overflow-hidden border border-slate-100 bg-slate-50 shadow-sm">
+                    <img src={img.url} alt="" className="w-full h-full object-cover" />
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); setImages(prev => prev.filter(i => i.id !== img.id)); }}
+                      className="absolute top-1 right-1 w-5 h-5 bg-black/50 text-white rounded-full text-[10px] opacity-0 group-hover:opacity-100 transition-opacity"
+                    >✕</button>
+                    <div className="absolute bottom-1 left-1 px-1.5 py-0.5 bg-black/30 backdrop-blur-md rounded text-[9px] text-white font-bold">{idx + 1}</div>
                   </div>
                 ))}
               </div>
             </div>
           )}
 
+          {/* Settings */}
           {images.length > 0 && (
-            <div className="bg-slate-50 rounded-2xl p-8 mb-10 border border-slate-100">
+            <div className={`mt-6 p-8 ${theme.card}`}>
               <div className="flex justify-between items-center mb-6">
-                <label className="font-medium text-slate-700">Длительность кадра (сек)</label>
-                <span className="font-bold text-[#A169F7] text-lg">
-                  {frameDuration.toFixed(1)}s
-                </span>
+                <label className="font-bold text-sm uppercase tracking-wider">Скорость кадров</label>
+                <span className="font-black text-xl" style={{ color: theme.accent }}>{frameDuration.toFixed(1)}с</span>
               </div>
               <input
-                type="range"
-                min={0.1} max={5} step={0.1}
+                type="range" min={0.1} max={3} step={0.1}
                 value={frameDuration}
                 onChange={(e) => setFrameDuration(Number(e.target.value))}
-                className="w-full accent-[#A169F7] cursor-pointer"
+                className="w-full h-2 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-[#A169F7]"
               />
-            </div>
-          )}
-
-          {stage === "error" && (
-            <div className="rounded-xl p-5 mb-8 bg-red-50 border border-[#FF6163]/30 text-center text-[#FF6163]">
-              {errorMsg}
-            </div>
-          )}
-
-          {stage === "encoding" && (
-            <div className="rounded-2xl p-10 mb-8 text-center bg-slate-50 border border-slate-100">
-              <p className="font-semibold text-lg mb-6">Обработка изображений...</p>
-              <div className="w-full h-2 rounded-full overflow-hidden bg-slate-200">
-                <div
-                  className="h-full bg-[#00AAFF] transition-all duration-300 ease-out"
-                  style={{ width: `${progress}%` }}
-                />
+              <div className="flex justify-between mt-3 text-[10px] font-bold text-slate-400 uppercase">
+                <span>Быстро</span>
+                <span>Медленно</span>
               </div>
-              <p className="font-bold text-xl text-[#00AAFF] mt-4">{progress}%</p>
             </div>
           )}
 
-          {stage === "done" && gifUrl && (
-            <div className="rounded-2xl p-8 mb-8 text-center bg-slate-50 border border-slate-100">
-              <p className="text-xs font-bold uppercase tracking-widest text-[#97CF26] mb-6">
-                Рендер завершен
-              </p>
-              <div className="rounded-xl overflow-hidden border border-slate-200 mb-8 inline-block shadow-sm bg-white">
-                <img
-                  src={gifUrl}
-                  alt="Результат"
-                  style={{ maxHeight: "400px" }}
-                  className="w-auto object-contain block mx-auto"
-                />
+          {/* Stages (Encoding / Done / Error) */}
+          <div className="mt-8">
+            {stage === "encoding" && (
+              <div className={`p-10 text-center ${theme.card}`}>
+                <p className="font-bold mb-6">Создаем магию...</p>
+                <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden mb-4">
+                  <div className="h-full bg-[#00AAFF] transition-all duration-300" style={{ width: `${progress}%` }} />
+                </div>
+                <span className="text-2xl font-black text-[#00AAFF]">{progress}%</span>
               </div>
-              <DownloadButton gifUrl={gifUrl} ios={ios} />
-              <div className="mt-6">
-                <button onClick={resetToIdle} className="text-slate-500 hover:text-[#000000] text-sm font-medium transition-colors">
-                  Создать новый проект
+            )}
+
+            {stage === "done" && gifUrl && (
+              <div className={`p-8 text-center ${theme.card}`}>
+                <div className={`inline-block p-4 ${theme.cardSub} mb-8`}>
+                  <img src={gifUrl} alt="Result" className="max-h-[350px] rounded-lg shadow-lg" />
+                </div>
+                <div className="flex flex-col gap-4">
+                  <a href={gifUrl} download="result.gif" className="w-full py-4 rounded-2xl font-bold text-white shadow-xl transition-transform active:scale-95" style={{ background: theme.accent }}>
+                    Скачать GIF
+                  </a>
+                  <button onClick={() => setStage("idle")} className="text-sm font-bold text-slate-400 hover:text-black transition-colors">Создать заново</button>
+                </div>
+              </div>
+            )}
+
+            {stage === "error" && (
+              <div className="p-6 rounded-2xl bg-red-50 border border-red-100 text-[#FF6163] text-center font-bold">
+                {errorMsg}
+              </div>
+            )}
+
+            {/* CTA Button */}
+            {stage !== "encoding" && stage !== "done" && (
+              <div className="flex flex-col items-center gap-4 mt-8">
+                <button
+                  onClick={generateGif}
+                  disabled={images.length < 2}
+                  className={`
+                    w-full py-5 rounded-3xl font-black text-xl tracking-tight transition-all
+                    ${images.length >= 2 
+                      ? "bg-black text-white shadow-2xl shadow-black/20 hover:-translate-y-1 active:scale-95" 
+                      : "bg-slate-200 text-slate-400 cursor-not-allowed"}
+                  `}
+                >
+                  {ctaLabel}
                 </button>
+                {images.length < 2 && <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Минимум 2 фотографии</p>}
               </div>
-            </div>
-          )}
-
-          {stage !== "encoding" && stage !== "done" && (
-            <div className="flex justify-center pb-10">
-              <button
-                onClick={generateGif}
-                disabled={!canGenerate}
-                className={`
-                  px-12 py-4 rounded-full font-bold text-lg transition-all
-                  ${canGenerate 
-                    ? "bg-[#000000] text-white hover:bg-slate-800 shadow-lg shadow-black/10" 
-                    : "bg-slate-100 text-slate-400 cursor-not-allowed"
-                  }
-                `}
-              >
-                {ctaLabel}
-              </button>
-            </div>
-          )}
+            )}
+          </div>
 
         </div>
       </main>
