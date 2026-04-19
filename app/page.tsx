@@ -179,7 +179,7 @@ export default function GiftomatPage() {
               margin: 0,
             }}
           >
-            Giftomat Pro Engine
+            С привкусом Балтики и приветом от Павлика
           </p>
         </header>
 
