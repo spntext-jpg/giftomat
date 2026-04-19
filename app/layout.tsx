@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Гифтомат",
+  title: "Гифтомат · BitGroqs",
   description: "Профессиональный генератор GIF из изображений",
 };
 
@@ -17,8 +17,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           rel="stylesheet"
         />
       </head>
-      {/* african turquoise text on dark, white on dark. transition. */}
-      <body className="antialiased min-h-screen transition-colors duration-500 text-[#000000] dark:text-white bg-white dark:bg-[#0A0A0B] flex flex-col items-center">
+      <body className="antialiased min-h-screen flex flex-col items-center">
         {children}
       </body>
     </html>
