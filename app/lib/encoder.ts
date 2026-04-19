@@ -1,39 +1,47 @@
 /**
- * Encodes an array of ImageData frames into a GIF Blob using gif.js.
+ * Эффективное кодирование GIF.
+ * Используем HTMLCanvasElement для сохранения четкости и правильных задержек.
  */
 export function encodeGif(
-  frames: ImageData[],
+  canvases: HTMLCanvasElement[],
   delay: number,
-  width: number,
-  height: number,
   onProgress?: (pct: number) => void
 ): Promise<Blob> {
   return new Promise((resolve, reject) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const GIF = (window as any).GIF;
     if (!GIF) {
-      reject(new Error("Библиотека gif.js не загружена"));
+      reject(new Error("Библиотека gif.js не найдена. Проверьте подключение скрипта."));
       return;
     }
-    const gif = new GIF({
-      workers: 2,
-      quality: 1, // 1 = Best quality, slower. Default is 10.
-      width,
-      height,
-      workerScript: "/gif.worker.js",
-      background: '#ffffff'
-    });
-    const canvas = document.createElement("canvas");
-    canvas.width = width; canvas.height = height;
-    const ctx = canvas.getContext("2d", { willReadFrequently: true })!;
 
-    for (const frame of frames) {
-      ctx.putImageData(frame, 0, 0);
-      gif.addFrame(canvas, { delay, copy: true });
+    const gif = new GIF({
+      workers: 4, // Увеличиваем количество воркеров для скорости
+      quality: 1, // Максимальное качество (1 - лучшее, 10 - дефолт)
+      workerScript: "/gif.worker.js",
+      background: '#ffffff',
+      transparent: null // Убираем прозрачность, чтобы избежать "грязных" краев
+    });
+
+    // Важно: гарантируем, что задержка — целое число и не меньше 20мс (стандарт браузеров)
+    const safeDelay = Math.max(20, Math.round(delay));
+
+    for (const canvas of canvases) {
+      gif.addFrame(canvas, { 
+        delay: safeDelay, 
+        copy: true // Делаем копию кадра, чтобы избежать мерцания
+      });
     }
+
     gif.on("progress", (p: number) => onProgress?.(Math.round(p * 100)));
-    gif.on("finished", (blob: Blob) => resolve(blob));
-    gif.on("abort", () => reject(new Error("Кодирование прервано")));
+    
+    gif.on("finished", (blob: Blob) => {
+      if (blob.size === 0) reject(new Error("Ошибка: пустой файл"));
+      else resolve(blob);
+    });
+
+    gif.on("error", (err: any) => reject(err));
+    
     gif.render();
   });
 }
