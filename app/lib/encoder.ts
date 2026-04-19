@@ -1,5 +1,5 @@
 export function encodeGif(
-  canvases: HTMLCanvasElement[],
+  framesData: ImageData[],
   delay: number,
   onProgress?: (pct: number) => void
 ): Promise<Blob> {
@@ -7,33 +7,27 @@ export function encodeGif(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const GIF = (window as any).GIF;
     
-    if (!GIF) {
-      reject(new Error("Библиотека gif.js не загружена"));
-      return;
-    }
-    if (!canvases.length) {
-      reject(new Error("Нет кадров для склейки"));
-      return;
-    }
+    if (!GIF) { reject(new Error("Библиотека gif.js не загружена")); return; }
+    if (!framesData.length) { reject(new Error("Нет кадров для склейки")); return; }
 
     const gif = new GIF({
       workers: 2, 
       quality: 1,
-      repeat: 0, // 0 = бесконечный цикл воспроизведения
+      repeat: 0, 
       workerScript: "/gif.worker.js",
       background: "#ffffff",
-      transparent: null,
-      width: canvases[0].width, 
-      height: canvases[0].height,
+      width: framesData[0].width, 
+      height: framesData[0].height,
     });
 
     const safeDelay = Math.max(20, Math.round(delay));
 
-    for (const c of canvases) {
-      gif.addFrame(c, { 
-        delay: safeDelay, 
-        copy: true,
-        dispose: 2 // Очистка холста перед следующим кадром (чинит зависание)
+    // Передаем ImageData напрямую. copy: true не нужно.
+    // dispose: 1 (Do Not Dispose) - идеален для непрозрачных кадров, убирает моргание
+    for (const frame of framesData) {
+      gif.addFrame(frame, { 
+        delay: safeDelay,
+        dispose: 1 
       });
     }
 
