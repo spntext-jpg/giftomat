@@ -1,45 +1,47 @@
+// app/lib/encoder.ts
 declare const GIF: any;
 
-export function encodeGif(
+export async function encodeGif(
   frames: ImageData[],
-  delay: number,
+  delay: number, // в миллисекундах!
   width: number,
   height: number,
   onProgress?: (pct: number) => void
 ): Promise<Blob> {
   return new Promise((resolve, reject) => {
-    if (typeof GIF === "undefined" || !GIF) {
-      return reject(new Error("GIF.js not loaded"));
+    if (typeof GIF === "undefined") {
+      return reject(new Error("GIF.js не загружен"));
     }
 
     const gif = new GIF({
-      workers: 4,
+      workers: Math.min(navigator.hardwareConcurrency || 4, 6),
       quality: 10,
       width,
       height,
-      repeat: 0,
       workerScript: "/gif.worker.js",
       background: "#ffffff",
+      // repeat: 0 — бесконечно (по умолчанию)
     });
 
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d")!;
+    if (!ctx) throw new Error("Не удалось получить 2D контекст");
+
     for (const frame of frames) {
-      const canvas = document.createElement("canvas");
-      canvas.width = width;
-      canvas.height = height;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) throw new Error("Canvas context failed");
       ctx.putImageData(frame, 0, 0);
 
-      // dispose: 1 (Do Not Dispose) — для непрозрачных кадров
       gif.addFrame(canvas, {
-        delay: Math.round(delay),
-        dispose: 1,
+        delay: Math.round(delay), // важно: delay в миллисекундах
+        dispose: 1,   // ← КЛЮЧЕВАЯ СТРОКА — убирает залипание первого кадра при delay > 2 сек
+        copy: true,   // ← обязательно при dispose: 1
       });
     }
 
     gif.on("progress", (p: number) => onProgress?.(Math.round(p * 100)));
     gif.on("finished", (blob: Blob) => resolve(blob));
-    gif.on("abort", () => reject(new Error("Aborted")));
+    gif.on("abort", reject);
 
     gif.render();
   });
