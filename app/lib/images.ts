@@ -1,6 +1,3 @@
-/**
- * Загружает изображение по URL с поддержкой CORS.
- */
 export function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -11,9 +8,6 @@ export function loadImage(src: string): Promise<HTMLImageElement> {
   });
 }
 
-/**
- * Вычисляет итоговые размеры GIF на основе первого кадра.
- */
 export function computeDimensions(
   images: HTMLImageElement[],
   maxWidth: number = 1000
@@ -31,9 +25,6 @@ export function computeDimensions(
   return { width, height };
 }
 
-/**
- * Отрисовывает изображение на холсте методом Center Cover (без искажения пропорций).
- */
 export function drawCover(
   ctx: CanvasRenderingContext2D,
   img: HTMLImageElement,
@@ -56,28 +47,29 @@ export function drawCover(
 }
 
 /**
- * Превращает массив загруженных изображений в массив готовых HTMLCanvasElement.
+ * Возвращает массив сырых пикселей (ImageData).
+ * Это устраняет задержки при сериализации в воркерах gif.js.
  */
-export function imagesToCanvases(
+export function imagesToImageData(
   images: HTMLImageElement[],
   width: number,
   height: number
-): HTMLCanvasElement[] {
+): ImageData[] {
   return images.map((img) => {
     const canvas = document.createElement("canvas");
     canvas.width = width;
     canvas.height = height;
     
+    // willReadFrequently оптимизирует работу с getImageData
     const ctx = canvas.getContext("2d", { willReadFrequently: true })!;
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = "high";
 
-    // Белый фон для защиты от прозрачности
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, width, height);
 
     drawCover(ctx, img, width, height);
     
-    return canvas;
+    return ctx.getImageData(0, 0, width, height);
   });
 }
