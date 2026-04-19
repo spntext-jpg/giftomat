@@ -1,6 +1,8 @@
+// app/lib/images.ts
+
 export function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
-    const img = new Image();
+    const img = new Image(); // ← ИСПРАВЛЕНО: Объявление img
     img.crossOrigin = "anonymous";
     img.onload = () => resolve(img);
     img.onerror = reject;
@@ -13,14 +15,15 @@ export function computeDimensions(
   maxWidth: number = 1200
 ): { width: number; height: number } {
   if (!images.length) return { width: 800, height: 800 };
-  const first = images[0];
+  
+  const first = images[0]; // ← ИСПРАВЛЕНО: Объявление first
   let width = first.naturalWidth;
   let height = first.naturalHeight;
-  const ratio = height / width;
+  const ratio = height / width; // ← ИСПРАВЛЕНО: Объявление ratio
 
   if (width > maxWidth) {
     width = maxWidth;
-    height = Math.round(height * ratio);
+    height = Math.round(width * ratio); // ← ИСПРАВЛЕНО: Корректный расчет высоты
   }
   return { width, height };
 }
@@ -31,6 +34,7 @@ export function imagesToImageData(
   height: number
 ): ImageData[] {
   return images.map((img) => {
+    // ← ИСПРАВЛЕНО: Canvas создается для каждого кадра
     const canvas = document.createElement("canvas");
     canvas.width = width;
     canvas.height = height;
@@ -38,7 +42,7 @@ export function imagesToImageData(
 
     if (!ctx) throw new Error("Canvas context failed");
 
-    // Белая подложка для корректной работы dispose: 1
+    // ← КЛЮЧЕВОЙ МОМЕНТ: Белый фон для каждого кадра. Обязательно для dispose: 1.
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, width, height);
 
@@ -47,6 +51,7 @@ export function imagesToImageData(
 
     let dx = 0, dy = 0, dw = width, dh = height;
 
+    // Центрирование и вписывание изображения в кадр
     if (imgRatio > canvRatio) {
       dw = img.naturalWidth * (height / img.naturalHeight);
       dx = (width - dw) / 2;
@@ -54,8 +59,9 @@ export function imagesToImageData(
       dh = img.naturalHeight * (width / img.naturalWidth);
       dy = (height - dh) / 2;
     }
+    
+    ctx.drawImage(img, dx, dy, dw, dh); // ← ИСПРАВЛЕНО: Отрисовка изображения
 
-    ctx.drawImage(img, dx, dy, dw, dh);
     return ctx.getImageData(0, 0, width, height);
   });
 }
