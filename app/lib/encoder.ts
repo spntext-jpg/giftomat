@@ -8,21 +8,18 @@ export function encodeGif(
   return new Promise((resolve, reject) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const GIF = (window as any).GIF;
-    if (!GIF) {
-      reject(new Error("gif.js не загружен"));
-      return;
-    }
+    if (!GIF) return reject(new Error("GIF.js not loaded"));
 
     const gif = new GIF({
-      workers: 2,
-      quality: 5, // Баланс между скоростью и качеством
+      workers: 4, // Увеличиваем для скорости на десктопах
+      quality: 10,
       width,
       height,
-      repeat: 0, // Бесконечный цикл
+      repeat: 0,
       workerScript: "/gif.worker.js",
+      background: "#ffffff"
     });
 
-    // Создаем один буферный канвас для всех кадров
     const canvas = document.createElement("canvas");
     canvas.width = width;
     canvas.height = height;
@@ -30,13 +27,18 @@ export function encodeGif(
 
     for (const frame of frames) {
       ctx.putImageData(frame, 0, 0);
-      // Важно: copy: true создает снимок состояния канваса для воркера
-      gif.addFrame(canvas, { delay, copy: true });
+      // dispose: 1 (Do Not Dispose) предотвращает "залипание" первого кадра
+      // на больших задержках, так как браузеру не нужно восстанавливать фон.
+      gif.addFrame(canvas, { 
+        delay: Math.round(delay), 
+        copy: true,
+        dispose: 1 
+      });
     }
 
     gif.on("progress", (p: number) => onProgress?.(Math.round(p * 100)));
     gif.on("finished", (blob: Blob) => resolve(blob));
-    gif.on("abort", () => reject(new Error("Кодирование прервано")));
+    gif.on("abort", () => reject(new Error("Aborted")));
     
     gif.render();
   });
