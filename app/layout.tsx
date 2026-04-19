@@ -3,7 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Гифтомат",
-  description: "Профессиональный генератор GIF",
+  description: "Профессиональный генератор GIF из изображений",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -17,7 +17,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           rel="stylesheet"
         />
       </head>
-      <body className="antialiased">
+      {/* african turquoise text on dark, white on dark. transition. */}
+      <body className="antialiased min-h-screen transition-colors duration-500 text-[#000000] dark:text-white bg-white dark:bg-[#0A0A0B] flex flex-col items-center">
         {children}
       </body>
     </html>
