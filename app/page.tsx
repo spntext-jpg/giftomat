@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import Script from "next/script";
-import { loadImage, computeDimensions } from "./lib/crossfade";
+import { loadImage } from "./lib/crossfade"; // computeDimensions убран, если не используется
 import { encodeGif } from "./lib/encoder";
 
 type Stage = "idle" | "encoding" | "done" | "error";
@@ -23,13 +23,14 @@ function detectIOS(): boolean {
   return /iPad|iPhone|iPod/.test(navigator.userAgent);
 }
 
-// Отдельный компонент — обходит баг Turbopack
 function DownloadButton({ gifUrl, ios, muted }: { gifUrl: string; ios: boolean; muted: string }) {
+  const baseBtnClass = "inline-flex items-center justify-center px-10 py-4 mt-4 rounded-full font-unbounded font-black text-lg transition-all duration-300 hover:-translate-y-1 hover:scale-[1.02] hover:shadow-[0_12px_30px_-10px_rgba(255,107,0,0.8)] active:scale-95";
+  
   if (ios) {
     return (
       <div className="flex flex-col items-center w-full mt-4">
         <a
-          className="inline-flex items-center justify-center px-12 py-5 rounded-full font-unbounded font-black text-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-[#FF6B00]/30 active:scale-95"
+          className={baseBtnClass}
           href={gifUrl}
           target="_blank"
           rel="noopener noreferrer"
@@ -46,7 +47,7 @@ function DownloadButton({ gifUrl, ios, muted }: { gifUrl: string; ios: boolean; 
   return (
     <div className="flex flex-col items-center w-full mt-4">
       <a
-        className="inline-flex items-center justify-center px-12 py-5 rounded-full font-unbounded font-black text-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-[#FF6B00]/30 active:scale-95"
+        className={baseBtnClass}
         href={gifUrl}
         download="giftomat.gif"
         style={{ background: "#FF6B00", color: "#fff" }}
@@ -194,23 +195,23 @@ export default function GiftomatPage() {
     images.length === 1 ? "Добавьте ещё 1 фото" :
     "Создать GIF ✨";
 
-  // Стили с учетом темной темы
-  const surface = "bg-[#F3EDF7] dark:bg-[#1C1A22]";
-  const surfaceSub = "bg-white/50 dark:bg-black/20";
+  // Визуальные токены
+  const surface = "bg-white dark:bg-[#1C1A22] shadow-sm border border-slate-100 dark:border-slate-800";
+  const surfaceSub = "bg-slate-50 dark:bg-black/20";
   const muted = "text-slate-500 dark:text-slate-400";
   const labelCls = "text-slate-700 dark:text-slate-300";
   const hint = "text-slate-400 dark:text-slate-500";
-  const border = "border-slate-200 dark:border-slate-800";
+  const borderCol = "border-slate-200 dark:border-slate-800";
 
   return (
     <>
       <Script src="/gif.js" strategy="beforeInteractive" />
 
-      {/* Обертка с принудительным цветом текста, чтобы ничего не сливалось на черном фоне */}
-      <main className="min-h-screen flex flex-col items-center justify-center px-6 py-20 text-slate-900 dark:text-white transition-colors duration-300 bg-slate-50 dark:bg-[#0A0A0B]">
-        <div className="w-full max-w-xl">
+      {/* Обертка уже не нуждается в жестких цветах текста, так как они заданы в layout.tsx */}
+      <main className="min-h-screen flex flex-col items-center justify-center px-6 py-20">
+        <div className="w-full max-w-2xl">
 
-          {/* Хедер с большим воздухом */}
+          {/* Хедер */}
           <header className="flex flex-col items-center text-center mb-16">
             <div className="w-16 h-16 mb-6 rounded-full flex items-center justify-center text-3xl bg-[#7000FF]/10 text-[#7000FF] shadow-sm">
               🎞
@@ -223,18 +224,18 @@ export default function GiftomatPage() {
             </p>
           </header>
 
-          {/* Квадратная, центрированная Дропзона */}
+          {/* Аккуратная Dropzone */}
           <div
             onDrop={handleDrop}
             onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
             onDragLeave={() => setIsDragging(false)}
             onClick={() => fileInputRef.current?.click()}
             className={[
-              "cursor-pointer rounded-[2rem] border-2 border-dashed transition-all duration-300 mb-10",
-              "flex flex-col items-center justify-center max-w-xs mx-auto aspect-square p-8 text-center",
+              "cursor-pointer rounded-[2rem] border-2 border-dashed transition-all duration-300 mb-12",
+              "flex flex-col items-center justify-center w-full max-w-md mx-auto aspect-[4/3] p-8 text-center",
               isDragging
-                ? "border-[#7000FF] bg-[#7000FF]/10 scale-105"
-                : `${surface} ${border} hover:border-[#7000FF]/50 hover:shadow-xl hover:-translate-y-1`,
+                ? "border-[#7000FF] bg-[#7000FF]/10 scale-[1.02]"
+                : `${surfaceSub} ${borderCol} hover:border-[#7000FF]/50 hover:shadow-lg hover:-translate-y-1`,
             ].join(" ")}
           >
             <input
@@ -248,8 +249,8 @@ export default function GiftomatPage() {
             <div className="w-14 h-14 mb-4 rounded-2xl flex items-center justify-center text-3xl bg-[#7000FF]/10 text-[#7000FF]">
               🖼
             </div>
-            <p className="font-unbounded font-bold text-base mb-2">Выберите фото</p>
-            <p className={`font-inter text-xs ${muted}`}>PNG, JPG, WEBP</p>
+            <p className="font-unbounded font-bold text-lg mb-2">Выберите фото</p>
+            <p className={`font-inter text-sm ${muted}`}>Перетащите файлы сюда или нажмите</p>
           </div>
 
           {/* Галерея изображений */}
@@ -266,7 +267,7 @@ export default function GiftomatPage() {
                   Очистить всё
                 </button>
               </div>
-              <div className="grid grid-cols-4 sm:grid-cols-5 gap-3">
+              <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-3">
                 {images.map((img, idx) => (
                   <div key={img.id} className="relative group">
                     <div
@@ -302,13 +303,13 @@ export default function GiftomatPage() {
                     <img
                       src={img.url}
                       alt={img.name}
-                      className={`w-full aspect-square object-cover rounded-xl border shadow-sm ${border}`}
+                      className={`w-full aspect-square object-cover rounded-xl border shadow-sm ${borderCol}`}
                     />
                   </div>
                 ))}
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className={`aspect-square rounded-xl border-2 border-dashed flex items-center justify-center text-2xl transition-all duration-200 ${border} ${hint} hover:border-[#7000FF]/50 hover:text-[#7000FF] hover:bg-white/5`}
+                  className={`aspect-square rounded-xl border-2 border-dashed flex items-center justify-center text-2xl transition-all duration-200 ${borderCol} ${hint} hover:border-[#7000FF]/50 hover:text-[#7000FF] hover:bg-[#7000FF]/5`}
                 >
                   +
                 </button>
@@ -317,7 +318,7 @@ export default function GiftomatPage() {
           )}
 
           {/* Настройки */}
-          <div className={`rounded-3xl p-6 md:p-8 mb-10 transition-all duration-300 ${surface}`}>
+          <div className={`rounded-3xl p-6 md:p-8 mb-12 transition-all duration-300 ${surface}`}>
             <p className={`font-unbounded font-bold text-xs uppercase tracking-widest mb-6 ${muted}`}>
               Настройки
             </p>
@@ -381,12 +382,12 @@ export default function GiftomatPage() {
               <p className={`font-unbounded font-bold text-xs uppercase tracking-widest text-center mb-6 ${muted}`}>
                 Готово 🎉
               </p>
-              <div className={`rounded-2xl overflow-hidden border mb-6 bg-white dark:bg-[#0A0A0B] ${border} shadow-inner`}>
+              <div className={`rounded-2xl overflow-hidden border mb-6 bg-slate-50 dark:bg-[#0A0A0B] ${borderCol} shadow-inner`}>
                 <img
                   src={gifUrl}
                   alt="Результат GIF"
                   className="w-full"
-                  style={{ maxHeight: "360px", objectFit: "contain" }}
+                  style={{ maxHeight: "400px", objectFit: "contain" }}
                 />
               </div>
               
@@ -405,16 +406,16 @@ export default function GiftomatPage() {
 
           {/* Кнопка "Создать" (Отображается только в режиме ожидания) */}
           {stage !== "encoding" && stage !== "done" && (
-            <div className="text-center mt-4">
+            <div className="flex justify-center mt-4 pb-10">
               <button
                 onClick={generateGif}
                 disabled={!canGenerate}
                 className={[
-                  "inline-flex items-center justify-center px-12 py-5 rounded-full font-unbounded font-black text-lg",
+                  "relative inline-flex items-center justify-center px-12 py-5 rounded-full font-unbounded font-black text-lg w-full max-w-sm",
                   "transition-all duration-300",
                   canGenerate
-                    ? "cursor-pointer bg-[#FF6B00] text-white hover:-translate-y-1 hover:shadow-xl hover:shadow-[#FF6B00]/30 active:scale-95"
-                    : "bg-gray-300 dark:bg-gray-800 text-gray-500 dark:text-gray-600 cursor-not-allowed",
+                    ? "bg-[#FF6B00] text-white cursor-pointer hover:-translate-y-1 hover:scale-[1.02] hover:shadow-[0_12px_30px_-10px_rgba(255,107,0,0.8)] active:scale-95"
+                    : "bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-600 cursor-not-allowed",
                 ].join(" ")}
               >
                 {ctaLabel}
