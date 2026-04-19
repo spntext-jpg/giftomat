@@ -35,11 +35,10 @@ export function imagesToImageData(
     canvas.width = width;
     canvas.height = height;
     
-    // Явно указываем тип контекста, чтобы избежать ошибки "Property fillStyle does not exist"
     const ctx = canvas.getContext("2d", { willReadFrequently: true }) as CanvasRenderingContext2D;
+    if (!ctx) throw new Error("Canvas context failed");
 
-    if (!ctx) throw new Error("Could not get 2D context");
-
+    // Критически важно: заливаем фон, чтобы dispose: 1 работал корректно
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, width, height);
 
