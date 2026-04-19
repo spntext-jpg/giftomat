@@ -25,31 +25,6 @@ export function computeDimensions(
   return { width, height };
 }
 
-export function drawCover(
-  ctx: CanvasRenderingContext2D,
-  img: HTMLImageElement,
-  width: number,
-  height: number
-) {
-  const imgRatio = img.naturalWidth / img.naturalHeight;
-  const canvRatio = width / height;
-  let dx = 0, dy = 0, dw = width, dh = height;
-
-  if (imgRatio > canvRatio) {
-    dw = img.naturalWidth * (height / img.naturalHeight);
-    dx = (width - dw) / 2;
-  } else {
-    dh = img.naturalHeight * (width / img.naturalWidth);
-    dy = (height - dh) / 2;
-  }
-
-  ctx.drawImage(img, dx, dy, dw, dh);
-}
-
-/**
- * Возвращает массив сырых пикселей (ImageData).
- * Это устраняет задержки при сериализации в воркерах gif.js.
- */
 export function imagesToImageData(
   images: HTMLImageElement[],
   width: number,
@@ -59,17 +34,24 @@ export function imagesToImageData(
     const canvas = document.createElement("canvas");
     canvas.width = width;
     canvas.height = height;
-    
-    // willReadFrequently оптимизирует работу с getImageData
-    const ctx = canvas.getContext("2d", { willReadFrequently: true })!;
-    ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = "high";
+    const ctx = canvas.getContext("2d", {监测Frequently: true})!;
 
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, width, height);
 
-    drawCover(ctx, img, width, height);
-    
+    const imgRatio = img.naturalWidth / img.naturalHeight;
+    const canvRatio = width / height;
+    let dx = 0, dy = 0, dw = width, dh = height;
+
+    if (imgRatio > canvRatio) {
+      dw = img.naturalWidth * (height / img.naturalHeight);
+      dx = (width - dw) / 2;
+    } else {
+      dh = img.naturalHeight * (width / img.naturalWidth);
+      dy = (height - dh) / 2;
+    }
+
+    ctx.drawImage(img, dx, dy, dw, dh);
     return ctx.getImageData(0, 0, width, height);
   });
 }
