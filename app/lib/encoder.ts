@@ -1,47 +1,55 @@
-// app/lib/encoder.ts
 declare const GIF: any;
 
-export async function encodeGif(
+export function encodeGif(
   frames: ImageData[],
-  delay: number, // в миллисекундах!
+  delay: number,
   width: number,
   height: number,
   onProgress?: (pct: number) => void
 ): Promise<Blob> {
   return new Promise((resolve, reject) => {
-    if (typeof GIF === "undefined") {
-      return reject(new Error("GIF.js не загружен"));
+    // Проверяем загрузку gif.js
+    const GIFConstructor = (window as any).GIF || GIF;
+    if (!GIFConstructor) {
+      return reject(new Error("GIF.js not loaded"));
     }
 
-    const gif = new GIF({
-      workers: Math.min(navigator.hardwareConcurrency || 4, 6),
+    const gif = new GIFConstructor({
+      workers: 4,
       quality: 10,
       width,
       height,
+      repeat: 0,
       workerScript: "/gif.worker.js",
       background: "#ffffff",
-      // repeat: 0 — бесконечно (по умолчанию)
     });
 
+    // Создаём один canvas для рендеринга кадров
     const canvas = document.createElement("canvas");
     canvas.width = width;
     canvas.height = height;
-    const ctx = canvas.getContext("2d")!;
-    if (!ctx) throw new Error("Не удалось получить 2D контекст");
+    const ctx = canvas.getContext("2d");
+    
+    if (!ctx) {
+      return reject(new Error("Canvas context failed"));
+    }
 
     for (const frame of frames) {
       ctx.putImageData(frame, 0, 0);
-
+      
+      // copy: true — КРИТИЧНО! Без него gif.js переиспользует canvas,
+      // что вызывает "залипание" первого кадра на больших delay.
+      // dispose: 1 (Do Not Dispose) — предотвращает артефакты фона.
       gif.addFrame(canvas, {
-        delay: Math.round(delay), // важно: delay в миллисекундах
-        dispose: 1,   // ← КЛЮЧЕВАЯ СТРОКА — убирает залипание первого кадра при delay > 2 сек
-        copy: true,   // ← обязательно при dispose: 1
+        delay: Math.round(delay),
+        copy: true,
+        dispose: 1,
       });
     }
 
     gif.on("progress", (p: number) => onProgress?.(Math.round(p * 100)));
     gif.on("finished", (blob: Blob) => resolve(blob));
-    gif.on("abort", reject);
+    gif.on("abort", () => reject(new Error("Aborted")));
 
     gif.render();
   });
