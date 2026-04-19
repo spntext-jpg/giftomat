@@ -66,77 +66,130 @@ export default function GiftomatPage() {
         color: "#FFFFFF",
         display: "flex",
         justifyContent: "center",
-        fontFamily: "sans-serif",
+        fontFamily: "'Inter', sans-serif",
         overflowX: "hidden",
       }}
     >
       <Script src="/gif.js" strategy="beforeInteractive" />
 
-      {/* Стили для слайдера и адаптивной сетки */}
-      <style
-        dangerouslySetInnerHTML={{
-          __html: `
-          *, *::before, *::after { box-sizing: border-box; }
+      <style dangerouslySetInnerHTML={{ __html: `
+        *,
+        *::before,
+        *::after { box-sizing: border-box; }
 
-          .bit-range {
-            -webkit-appearance: none;
-            width: 100%;
-            height: 12px;
-            background: #1A1A1E !important;
-            border-radius: 6px;
-            outline: none;
-            margin: 20px 0;
-          }
-          .bit-range::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 34px;
-            height: 34px;
-            background: #A169F7 !important;
-            border-radius: 12px;
-            cursor: pointer;
-            border: 4px solid #0A0A0C !important;
-            box-shadow: 0 0 20px rgba(161,105,247,0.5);
-          }
-          .bit-range::-moz-range-thumb {
-            width: 34px;
-            height: 34px;
-            background: #A169F7;
-            border-radius: 12px;
-            cursor: pointer;
-            border: 4px solid #0A0A0C;
-            box-shadow: 0 0 20px rgba(161,105,247,0.5);
-          }
+        .bit-range {
+          -webkit-appearance: none;
+          appearance: none;
+          width: 100%;
+          height: 8px;
+          background: #1A1A1E;
+          border-radius: 99px;
+          outline: none;
+          margin: 20px 0;
+          cursor: pointer;
+        }
+        .bit-range::-webkit-slider-thumb {
+          -webkit-appearance: none;
+          appearance: none;
+          width: 28px;
+          height: 28px;
+          background: #A169F7;
+          border-radius: 50%;
+          cursor: pointer;
+          border: 3px solid #0A0A0C;
+          box-shadow: 0 0 16px rgba(161,105,247,0.5);
+          transition: transform 0.15s;
+        }
+        .bit-range::-webkit-slider-thumb:hover {
+          transform: scale(1.15);
+        }
+        .bit-range::-moz-range-thumb {
+          width: 28px;
+          height: 28px;
+          background: #A169F7;
+          border-radius: 50%;
+          cursor: pointer;
+          border: 3px solid #0A0A0C;
+          box-shadow: 0 0 16px rgba(161,105,247,0.5);
+        }
 
-          .gallery-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 12px;
-          }
-          @media (min-width: 640px) {
-            .gallery-grid { grid-template-columns: repeat(4, 1fr); }
-          }
-          @media (min-width: 1024px) {
-            .gallery-grid { grid-template-columns: repeat(6, 1fr); }
-          }
+        .gallery-grid {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 12px;
+        }
+        @media (min-width: 640px) {
+          .gallery-grid { grid-template-columns: repeat(4, 1fr); }
+        }
+        @media (min-width: 1024px) {
+          .gallery-grid { grid-template-columns: repeat(6, 1fr); }
+        }
 
+        .main-container {
+          width: 100%;
+          max-width: 900px;
+          padding: 60px 24px;
+          display: flex;
+          flex-direction: column;
+        }
+        @media (min-width: 900px) {
           .main-container {
-            width: 100%;
-            max-width: 900px;
-            padding: 60px 24px;
-            display: flex;
-            flex-direction: column;
+            padding: 60px 40px;
           }
-          @media (min-width: 900px) {
-            .main-container {
-              padding: 60px 40px;
-            }
-          }
-        `,
-        }}
-      />
+        }
+
+        .upload-btn {
+          padding: 1.4rem 4rem;
+          border-radius: 100px;
+          background-color: #FF6B00;
+          color: #fff;
+          border: none;
+          cursor: pointer;
+          font-size: 20px;
+          font-weight: 900;
+          box-shadow: 0 20px 40px rgba(255,107,0,0.3);
+          transition: transform 0.2s ease;
+        }
+        .upload-btn:hover { transform: translateY(-4px); }
+        .upload-btn:active { transform: translateY(0); }
+
+        .generate-btn {
+          width: 100%;
+          padding: 1.8rem;
+          border-radius: 100px;
+          border: none;
+          font-weight: 900;
+          font-size: 22px;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          cursor: pointer;
+        }
+        .generate-btn:hover { transform: scale(1.02); }
+        .generate-btn:active { transform: scale(0.98); }
+        .generate-btn:disabled { cursor: not-allowed; }
+        .generate-btn:disabled:hover { transform: none; }
+
+        .download-link {
+          display: block;
+          padding: 1.4rem;
+          border-radius: 100px;
+          background-color: #fff;
+          color: #000;
+          font-weight: 900;
+          font-size: 18px;
+          text-decoration: none;
+          text-align: center;
+          box-shadow: 0 15px 30px rgba(255,255,255,0.1);
+          transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .download-link:hover {
+          transform: translateY(-3px);
+          box-shadow: 0 20px 40px rgba(255,255,255,0.15);
+        }
+      ` }} />
 
       <main className="main-container">
-        {/* Header */}
+
+        {/* ── Header ── */}
         <header style={{ textAlign: "center", marginBottom: "48px" }}>
           <div
             style={{
@@ -152,30 +205,30 @@ export default function GiftomatPage() {
               boxShadow: "0 10px 40px rgba(161,105,247,0.2)",
             }}
           >
-            <span
-              style={{ color: "#A169F7", fontSize: "32px", fontWeight: 900 }}
-            >
+            <span style={{ color: "#A169F7", fontSize: "32px", fontWeight: 900 }}>
               G
             </span>
           </div>
+
           <h1
             style={{
               fontSize: "clamp(28px, 5vw, 40px)",
               fontWeight: 900,
               letterSpacing: "-0.04em",
-              marginBottom: "10px",
-              margin: "0 0 10px 0",
+              margin: "0 0 12px 0",
+              lineHeight: 1.1,
             }}
           >
             Генератор GIF
           </h1>
+
           <p
             style={{
               color: "#555",
-              fontSize: "14px",
+              fontSize: "13px",
               fontWeight: 600,
               textTransform: "uppercase",
-              letterSpacing: "0.2em",
+              letterSpacing: "0.15em",
               margin: 0,
             }}
           >
@@ -183,12 +236,9 @@ export default function GiftomatPage() {
           </p>
         </header>
 
-        {/* Dropzone */}
+        {/* ── Dropzone ── */}
         <div
-          onDragOver={(e) => {
-            e.preventDefault();
-            setIsDragging(true);
-          }}
+          onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
           onDragLeave={() => setIsDragging(false)}
           onDrop={(e) => {
             e.preventDefault();
@@ -209,33 +259,17 @@ export default function GiftomatPage() {
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
-            gap: "32px",
+            gap: "24px",
             transition: "all 0.4s ease",
           }}
         >
           <button
+            className="upload-btn"
             onClick={() => fileInputRef.current?.click()}
-            style={{
-              padding: "1.4rem 4rem",
-              borderRadius: "100px",
-              backgroundColor: "#FF6B00",
-              color: "#FFF",
-              border: "none",
-              cursor: "pointer",
-              fontSize: "20px",
-              fontWeight: 900,
-              boxShadow: "0 20px 40px rgba(255,107,0,0.3)",
-              transition: "transform 0.2s",
-            }}
-            onMouseEnter={(e) =>
-              (e.currentTarget.style.transform = "translateY(-4px)")
-            }
-            onMouseLeave={(e) =>
-              (e.currentTarget.style.transform = "translateY(0)")
-            }
           >
             Загрузить фото ✨
           </button>
+
           <input
             ref={fileInputRef}
             type="file"
@@ -244,25 +278,26 @@ export default function GiftomatPage() {
             style={{ display: "none" }}
             onChange={(e) => e.target.files && addFiles(e.target.files)}
           />
+
           <p
             style={{
-              fontSize: "13px",
-              fontWeight: 800,
+              fontSize: "12px",
+              fontWeight: 700,
               color: "#333",
               textTransform: "uppercase",
               letterSpacing: "0.15em",
               margin: 0,
             }}
           >
-            Перетащите файлы в эту область
+            или перетащите файлы сюда
           </p>
         </div>
 
-        {/* Gallery */}
+        {/* ── Gallery ── */}
         {images.length > 0 && (
           <div
             style={{
-              marginTop: "40px",
+              marginTop: "32px",
               padding: "32px",
               borderRadius: "40px",
               backgroundColor: "#111114",
@@ -273,8 +308,8 @@ export default function GiftomatPage() {
               style={{
                 display: "flex",
                 justifyContent: "space-between",
-                marginBottom: "24px",
                 alignItems: "center",
+                marginBottom: "24px",
               }}
             >
               <span
@@ -286,12 +321,12 @@ export default function GiftomatPage() {
                   letterSpacing: "0.1em",
                 }}
               >
-                Количество кадров: {images.length}
+                Кадров: {images.length}
               </span>
               <button
-                onClick={() => setImages([])}
+                onClick={() => { setImages([]); setStage("idle"); setGifUrl(null); }}
                 style={{
-                  background: "rgba(239, 68, 68, 0.1)",
+                  background: "rgba(239,68,68,0.1)",
                   border: "none",
                   color: "#EF4444",
                   padding: "8px 16px",
@@ -319,29 +354,26 @@ export default function GiftomatPage() {
                 >
                   <img
                     src={img.url}
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                      objectFit: "cover",
-                    }}
+                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
                     alt=""
                   />
                   <button
-                    onClick={() =>
-                      setImages((p) => p.filter((i) => i.id !== img.id))
-                    }
+                    onClick={() => setImages((p) => p.filter((i) => i.id !== img.id))}
                     style={{
                       position: "absolute",
                       top: "6px",
                       right: "6px",
                       width: "24px",
                       height: "24px",
-                      background: "rgba(0,0,0,0.8)",
+                      background: "rgba(0,0,0,0.75)",
                       color: "#fff",
                       border: "none",
                       borderRadius: "50%",
-                      fontSize: "12px",
+                      fontSize: "11px",
                       cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
                     }}
                   >
                     ✕
@@ -352,12 +384,12 @@ export default function GiftomatPage() {
           </div>
         )}
 
-        {/* Настройки (Слайдер) */}
+        {/* ── Слайдер задержки ── */}
         {images.length > 0 && (
           <div
             style={{
               marginTop: "24px",
-              padding: "40px",
+              padding: "32px 40px",
               borderRadius: "40px",
               backgroundColor: "#111114",
               border: "1px solid rgba(255,255,255,0.05)",
@@ -368,7 +400,7 @@ export default function GiftomatPage() {
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "center",
-                marginBottom: "10px",
+                marginBottom: "4px",
               }}
             >
               <span
@@ -377,17 +409,12 @@ export default function GiftomatPage() {
                   fontWeight: 800,
                   color: "#555",
                   textTransform: "uppercase",
+                  letterSpacing: "0.1em",
                 }}
               >
                 Задержка кадра
               </span>
-              <span
-                style={{
-                  fontSize: "24px",
-                  fontWeight: 900,
-                  color: "#A169F7",
-                }}
-              >
+              <span style={{ fontSize: "24px", fontWeight: 900, color: "#A169F7" }}>
                 {frameDuration.toFixed(1)}s
               </span>
             </div>
@@ -403,12 +430,14 @@ export default function GiftomatPage() {
           </div>
         )}
 
-        {/* Прогресс и результат */}
-        <div style={{ marginTop: "48px", marginBottom: "60px" }}>
+        {/* ── Прогресс / Результат / Кнопка ── */}
+        <div style={{ marginTop: "32px", marginBottom: "60px" }}>
+
+          {/* Encoding */}
           {stage === "encoding" && (
             <div
               style={{
-                padding: "50px",
+                padding: "48px",
                 borderRadius: "48px",
                 background: "#000",
                 textAlign: "center",
@@ -419,10 +448,11 @@ export default function GiftomatPage() {
               <p
                 style={{
                   fontWeight: 900,
-                  fontSize: "20px",
+                  fontSize: "18px",
                   marginBottom: "24px",
                   color: "#A169F7",
-                  letterSpacing: "0.05em",
+                  letterSpacing: "0.08em",
+                  margin: "0 0 24px 0",
                 }}
               >
                 РЕНДЕРИНГ {progress}%
@@ -430,7 +460,7 @@ export default function GiftomatPage() {
               <div
                 style={{
                   width: "100%",
-                  height: "12px",
+                  height: "10px",
                   background: "rgba(255,255,255,0.05)",
                   borderRadius: "100px",
                   overflow: "hidden",
@@ -439,8 +469,9 @@ export default function GiftomatPage() {
                 <div
                   style={{
                     height: "100%",
-                    background: "#A169F7",
+                    background: "linear-gradient(90deg, #7c3aed, #A169F7)",
                     width: `${progress}%`,
+                    borderRadius: "100px",
                     transition: "width 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
                   }}
                 />
@@ -448,19 +479,21 @@ export default function GiftomatPage() {
             </div>
           )}
 
+          {/* Error */}
           {stage === "error" && (
             <div
               style={{
                 padding: "32px",
                 borderRadius: "24px",
-                background: "rgba(239,68,68,0.1)",
-                border: "1px solid rgba(239,68,68,0.3)",
+                background: "rgba(239,68,68,0.08)",
+                border: "1px solid rgba(239,68,68,0.25)",
                 textAlign: "center",
                 color: "#EF4444",
-                fontWeight: 800,
+                fontWeight: 700,
+                fontSize: "15px",
               }}
             >
-              Ошибка генерации. Попробуйте ещё раз.
+              Ошибка генерации. Проверьте консоль и попробуйте ещё раз.
               <br />
               <button
                 onClick={() => setStage("idle")}
@@ -472,6 +505,7 @@ export default function GiftomatPage() {
                   cursor: "pointer",
                   textDecoration: "underline",
                   fontSize: "14px",
+                  fontWeight: 700,
                 }}
               >
                 Попробовать снова
@@ -479,15 +513,15 @@ export default function GiftomatPage() {
             </div>
           )}
 
+          {/* Done */}
           {stage === "done" && gifUrl && (
             <div
               style={{
                 padding: "40px",
                 borderRadius: "48px",
                 background: "#111114",
-                border: "1px solid rgba(255,255,255,0.1)",
+                border: "1px solid rgba(255,255,255,0.08)",
                 textAlign: "center",
-                boxShadow: "0 30px 60px rgba(0,0,0,0.4)",
               }}
             >
               <img
@@ -497,11 +531,11 @@ export default function GiftomatPage() {
                   maxHeight: "500px",
                   objectFit: "contain",
                   borderRadius: "24px",
-                  marginBottom: "40px",
+                  marginBottom: "32px",
                   backgroundColor: "#000",
                   border: "1px solid rgba(255,255,255,0.05)",
                 }}
-                alt="Result"
+                alt="Результат"
               />
               <div
                 style={{
@@ -512,30 +546,16 @@ export default function GiftomatPage() {
                   margin: "0 auto",
                 }}
               >
-                <a
-                  href={gifUrl}
-                  download="giftomat.gif"
-                  style={{
-                    display: "block",
-                    padding: "1.4rem",
-                    borderRadius: "100px",
-                    backgroundColor: "#FFF",
-                    color: "#000",
-                    fontWeight: 900,
-                    fontSize: "18px",
-                    textDecoration: "none",
-                    boxShadow: "0 15px 30px rgba(255,255,255,0.1)",
-                  }}
-                >
-                  СКАЧАТЬ GIF
+                <a href={gifUrl} download="giftomat.gif" className="download-link">
+                  СКАЧАТЬ GIF ↓
                 </a>
                 <button
-                  onClick={() => setStage("idle")}
+                  onClick={() => { setStage("idle"); setGifUrl(null); }}
                   style={{
                     background: "none",
                     border: "none",
                     color: "#444",
-                    fontWeight: 800,
+                    fontWeight: 700,
                     fontSize: "13px",
                     cursor: "pointer",
                     textTransform: "uppercase",
@@ -548,37 +568,28 @@ export default function GiftomatPage() {
             </div>
           )}
 
+          {/* Idle — кнопка генерации */}
           {stage === "idle" && (
             <button
+              className="generate-btn"
               onClick={generateGif}
               disabled={images.length < 2}
               style={{
-                width: "100%",
-                padding: "1.8rem",
-                borderRadius: "100px",
-                border: "none",
-                fontWeight: 900,
-                fontSize: "22px",
                 color: images.length >= 2 ? "#000" : "#555",
                 backgroundColor: images.length >= 2 ? "#FFF" : "#1A1A1E",
-                cursor: images.length >= 2 ? "pointer" : "not-allowed",
-                transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-                boxShadow:
-                  images.length >= 2
-                    ? "0 20px 40px rgba(255,255,255,0.1)"
-                    : "none",
+                boxShadow: images.length >= 2
+                  ? "0 20px 40px rgba(255,255,255,0.1)"
+                  : "none",
               }}
-              onMouseEnter={(e) => {
-                if (images.length >= 2)
-                  e.currentTarget.style.transform = "scale(1.02)";
-              }}
-              onMouseLeave={(e) =>
-                (e.currentTarget.style.transform = "scale(1)")
-              }
             >
-              {images.length < 2 ? "ДОБАВЬТЕ ФОТО" : "СГЕНЕРИРОВАТЬ GIF"}
+              {images.length === 0
+                ? "ЗАГРУЗИТЕ ФОТО"
+                : images.length === 1
+                ? "НУЖНО ЕЩЁ ФОТО"
+                : "СГЕНЕРИРОВАТЬ GIF →"}
             </button>
           )}
+
         </div>
       </main>
     </div>
