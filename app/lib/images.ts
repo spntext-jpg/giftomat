@@ -16,9 +16,9 @@ export function computeDimensions(
   const first = images[0];
   let width = first.naturalWidth;
   let height = first.naturalHeight;
-  
+  const ratio = height / width;
+
   if (width > maxWidth) {
-    const ratio = maxWidth / width;
     width = maxWidth;
     height = Math.round(height * ratio);
   }
@@ -34,15 +34,17 @@ export function imagesToImageData(
     const canvas = document.createElement("canvas");
     canvas.width = width;
     canvas.height = height;
-    
-    const ctx = canvas.getContext("2d", { willReadFrequently: true }) as CanvasRenderingContext2D;
+    const ctx = canvas.getContext("2d");
+
     if (!ctx) throw new Error("Canvas context failed");
 
+    // Белая подложка для корректной работы dispose: 1
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, width, height);
 
     const imgRatio = img.naturalWidth / img.naturalHeight;
     const canvRatio = width / height;
+
     let dx = 0, dy = 0, dw = width, dh = height;
 
     if (imgRatio > canvRatio) {
