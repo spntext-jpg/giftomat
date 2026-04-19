@@ -10,7 +10,7 @@ export function loadImage(src: string): Promise<HTMLImageElement> {
 
 export function computeDimensions(
   images: HTMLImageElement[],
-  maxWidth: number = 1000
+  maxWidth: number = 1200
 ): { width: number; height: number } {
   if (!images.length) return { width: 800, height: 800 };
   const first = images[0];
@@ -38,7 +38,7 @@ export function imagesToImageData(
     const ctx = canvas.getContext("2d", { willReadFrequently: true }) as CanvasRenderingContext2D;
     if (!ctx) throw new Error("Canvas context failed");
 
-    // Критически важно: заливаем фон, чтобы dispose: 1 работал корректно
+    // Белая подложка для корректной работы dispose: 1
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, width, height);
 
