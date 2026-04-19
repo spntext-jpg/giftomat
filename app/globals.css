@@ -4,7 +4,9 @@
 
 :root {
   --slider-track: #DDD6F5;
+  color-scheme: light dark;
 }
+
 @media (prefers-color-scheme: dark) {
   :root {
     --slider-track: #2D2A38;
@@ -21,7 +23,7 @@ input[type="range"] {
   height: 6px;
   border-radius: 99px;
   outline: none;
-  cursor: pointer;
+  background: var(--slider-track);
 }
 input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
@@ -30,13 +32,14 @@ input[type="range"]::-webkit-slider-thumb {
   height: 20px;
   border-radius: 50%;
   background: #7000FF;
-  cursor: pointer;
   border: 2px solid white;
   box-shadow: 0 0 0 2px rgba(112,0,255,0.2);
-  transition: box-shadow 0.15s;
+  transition: all 0.2s ease;
+  cursor: pointer;
 }
 input[type="range"]::-webkit-slider-thumb:hover {
   box-shadow: 0 0 0 6px rgba(112,0,255,0.15);
+  transform: scale(1.1);
 }
 input[type="range"]::-moz-range-thumb {
   width: 20px;
