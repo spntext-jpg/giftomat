@@ -22,12 +22,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body
-        className={[
-          "min-h-screen antialiased",
-          "bg-slate-50 dark:bg-[#0D0D10]",
-          "text-slate-900 dark:text-slate-100",
-          "transition-colors duration-300",
-        ].join(" ")}
+        className="min-h-screen antialiased bg-slate-50 dark:bg-[#0D0D10] text-slate-900 dark:text-slate-100 transition-colors duration-300"
         style={{ fontFamily: "'Inter', sans-serif" }}
       >
         {children}
