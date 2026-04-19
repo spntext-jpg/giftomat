@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import Script from "next/script";
-import { loadImage, computeDimensions } from "./lib/crossfade";
+import { loadImage, computeDimensions, imagesToCanvases } from "./lib/images";
 import { encodeGif } from "./lib/encoder";
 
 type Stage = "idle" | "encoding" | "done" | "error";
@@ -16,13 +16,12 @@ interface UploadedImage {
 export default function GiftomatPage() {
   // --- UI Tokens ---
   const surfaceCls = "bg-white dark:bg-[#111114] border border-slate-100 dark:border-white/5 shadow-sm";
-  const surfaceSubCls = "bg-slate-50 dark:bg-white/[0.03] border border-slate-100 dark:border-white/5";
   const mutedCls = "text-slate-400 dark:text-slate-500";
-  const borderCol = "border-slate-200 dark:border-white/10"; // ВОТ ОНА, ВЕРНУЛАСЬ
+  const borderCol = "border-slate-200 dark:border-white/10";
   const txtCls = "text-black dark:text-white";
   
   const accentP = "#A169F7"; // Punk Violet
-  const accentO = "#FF6B00"; // Vivid Orange (The "Puffy" Button)
+  const accentO = "#FF6B00"; // Vivid Orange
   const accentA = "#00AAFF"; // Progress Azure
 
   const [images, setImages] = useState<UploadedImage[]>([]);
@@ -31,11 +30,15 @@ export default function GiftomatPage() {
   const [errorMsg, setErrorMsg] = useState("");
   const [frameDuration, setFrameDuration] = useState(0.5);
   const [gifUrl, setGifUrl] = useState<string | null>(null);
+  const [ios, setIos] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Label для кнопки
   const ctaLabel = images.length === 0 ? "Загрузите фото" : images.length === 1 ? "Нужно еще одно" : "Создать GIF";
+
+  useEffect(() => {
+    setIos(/iPad|iPhone|iPod/.test(navigator.userAgent));
+  }, []);
 
   const addFiles = useCallback((fileList: FileList) => {
     const valid = Array.from(fileList).filter((f) => f.type.startsWith("image/"));
@@ -56,37 +59,14 @@ export default function GiftomatPage() {
     setErrorMsg("");
 
     try {
+      // 1. Загрузка
       const loaded = await Promise.all(images.map((img) => loadImage(img.url)));
+      // 2. Вычисление размеров
       const { width, height } = computeDimensions(loaded, 1000);
-      
-      const processedCanvases = loaded.map((img) => {
-        const canvas = document.createElement("canvas");
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext("2d")!;
-        
-        ctx.imageSmoothingEnabled = true;
-        ctx.imageSmoothingQuality = "high";
-        
-        ctx.fillStyle = "#ffffff";
-        ctx.fillRect(0, 0, width, height);
+      // 3. Создание холстов (теперь это одна строка!)
+      const processedCanvases = imagesToCanvases(loaded, width, height);
 
-        const imgRatio = img.naturalWidth / img.naturalHeight;
-        const canvRatio = width / height;
-        let dx = 0, dy = 0, dw = width, dh = height;
-
-        if (imgRatio > canvRatio) {
-          dw = img.naturalWidth * (height / img.naturalHeight);
-          dx = (width - dw) / 2;
-        } else {
-          dh = img.naturalHeight * (width / img.naturalWidth);
-          dy = (height - dh) / 2;
-        }
-
-        ctx.drawImage(img, dx, dy, dw, dh);
-        return canvas;
-      });
-
+      // 4. Кодирование
       const blob = await encodeGif(processedCanvases, frameDuration * 1000, (pct) => {
         setProgress(pct);
       });
@@ -111,7 +91,7 @@ export default function GiftomatPage() {
     <>
       <Script src="/gif.js" strategy="beforeInteractive" />
       
-      <main className="w-full max-w-xl px-6 py-16 md:py-24 font-inter">
+      <main className="w-full max-w-xl px-6 py-16 md:py-24 font-inter mx-auto">
         
         {/* Header Section */}
         <header className="flex flex-col items-center text-center mb-16">
@@ -126,21 +106,68 @@ export default function GiftomatPage() {
         <div 
           onDrop={(e) => { e.preventDefault(); addFiles(e.dataTransfer.files); }}
           onDragOver={(e) => e.preventDefault()}
-          className={`w-full py-14 px-8 rounded-[44px] ${surfaceSubCls} ${borderCol} border-2 border-dashed flex flex-col items-center gap-10 text-center transition-all`}
+          style={{
+            width: '100%',
+            padding: '3.5rem 2rem',
+            borderRadius: '44px',
+            border: `2px dashed ${ios ? '#333' : '#E2E8F0'}`,
+            backgroundColor: ios ? 'rgba(255,255,255,0.03)' : '#F8FAFC',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '2.5rem',
+            textAlign: 'center'
+          }}
         >
-          {/* Пухлая оранжевая кнопка (Puffy & Glowing) */}
+          {/* Пухлая оранжевая кнопка (100% Inline Styles) */}
           <button 
             onClick={() => fileInputRef.current?.click()}
-            className="group relative inline-flex items-center justify-center px-14 py-5 rounded-full font-unbounded font-black text-white text-lg transition-all duration-300 active:scale-95 hover:-translate-y-2"
+            style={{
+              position: 'relative',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '1.25rem 3.5rem',
+              borderRadius: '9999px',
+              backgroundColor: accentO,
+              color: '#FFFFFF',
+              cursor: 'pointer',
+              border: 'none',
+              outline: 'none',
+              fontSize: '1.125rem',
+              fontWeight: 900,
+              fontFamily: '"Unbounded", sans-serif',
+              transition: 'transform 0.3s ease',
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-6px) scale(1.03)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0) scale(1)'; }}
+            onMouseDown={(e) => { e.currentTarget.style.transform = 'scale(0.95)'; }}
+            onMouseUp={(e) => { e.currentTarget.style.transform = 'translateY(-6px) scale(1.03)'; }}
           >
+            {/* Glow Layer */}
             <div 
-              className="absolute inset-0 rounded-full blur-2xl opacity-40 group-hover:opacity-80 transition-opacity duration-300"
-              style={{ background: accentO }}
+              style={{
+                position: 'absolute',
+                inset: 0,
+                background: accentO,
+                borderRadius: '9999px',
+                filter: 'blur(24px)',
+                opacity: 0.6,
+                zIndex: -1,
+                transition: 'opacity 0.3s ease'
+              }}
             />
-            <span className="relative z-10">Загрузить фото ✨</span>
+            <span style={{ position: 'relative', zIndex: 10 }}>Загрузить фото ✨</span>
+            {/* Shadow Layer */}
             <div 
-              className="absolute inset-0 rounded-full shadow-[0_12px_44px_-8px_rgba(255,107,0,0.6)]" 
-              style={{ background: accentO }} 
+              style={{
+                position: 'absolute',
+                inset: 0,
+                background: accentO,
+                borderRadius: '9999px',
+                boxShadow: '0 12px 44px -8px rgba(255,107,0,0.6)',
+                zIndex: 1
+              }}
             />
           </button>
 
@@ -206,10 +233,28 @@ export default function GiftomatPage() {
                 <img src={gifUrl} alt="Result" className="w-full max-h-[420px] object-contain mx-auto" />
               </div>
               <div className="flex flex-col gap-4">
-                <a href={gifUrl} download="giftomat.gif" className="flex items-center justify-center py-5 rounded-full bg-black text-white font-unbounded font-black text-lg hover:bg-slate-800 transition-all active:scale-95 shadow-xl">
+                <a href={gifUrl} download="giftomat.gif" 
+                  style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    padding: '1.25rem', borderRadius: '9999px',
+                    backgroundColor: '#000', color: '#fff',
+                    fontFamily: '"Unbounded", sans-serif', fontWeight: 900, fontSize: '1.125rem',
+                    textDecoration: 'none',
+                    boxShadow: '0 10px 25px -5px rgba(0,0,0,0.2)'
+                  }}
+                >
                   Скачать GIF
                 </a>
-                <button onClick={() => setStage("idle")} className={`text-[10px] font-bold uppercase tracking-[0.2em] ${mutedCls} hover:text-black transition-colors`}>Создать новый</button>
+                <button 
+                  onClick={() => setStage("idle")} 
+                  style={{
+                    fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase',
+                    letterSpacing: '0.2em', color: '#94A3B8', cursor: 'pointer',
+                    background: 'none', border: 'none', padding: '0.5rem'
+                  }}
+                >
+                  Создать новый
+                </button>
               </div>
             </div>
           )}
@@ -218,12 +263,25 @@ export default function GiftomatPage() {
             <button
               onClick={generateGif} 
               disabled={images.length < 2}
-              className={`
-                w-full py-6 rounded-full font-unbounded font-black text-xl transition-all duration-500
-                ${images.length >= 2 
-                  ? "bg-black text-white shadow-2xl hover:-translate-y-1 active:scale-95" 
-                  : "bg-slate-100 dark:bg-white/5 text-slate-300 cursor-not-allowed"}
-              `}
+              style={{
+                width: '100%',
+                padding: '1.5rem',
+                borderRadius: '9999px',
+                fontFamily: '"Unbounded", sans-serif',
+                fontWeight: 900,
+                fontSize: '1.25rem',
+                border: 'none',
+                outline: 'none',
+                cursor: images.length >= 2 ? 'pointer' : 'not-allowed',
+                backgroundColor: images.length >= 2 ? '#000000' : (ios ? 'rgba(255,255,255,0.05)' : '#F1F5F9'),
+                color: images.length >= 2 ? '#FFFFFF' : '#94A3B8',
+                boxShadow: images.length >= 2 ? '0 25px 50px -12px rgba(0,0,0,0.25)' : 'none',
+                transition: 'all 0.3s ease'
+              }}
+              onMouseEnter={(e) => { if (images.length >= 2) e.currentTarget.style.transform = 'translateY(-4px)'; }}
+              onMouseLeave={(e) => { if (images.length >= 2) e.currentTarget.style.transform = 'translateY(0)'; }}
+              onMouseDown={(e) => { if (images.length >= 2) e.currentTarget.style.transform = 'scale(0.98)'; }}
+              onMouseUp={(e) => { if (images.length >= 2) e.currentTarget.style.transform = 'translateY(-4px)'; }}
             >
               {ctaLabel}
             </button>
