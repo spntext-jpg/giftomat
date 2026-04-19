@@ -1,17 +1,15 @@
-// app/lib/encoder.ts
-
 declare const GIF: any;
 
 export function encodeGif(
   frames: ImageData[],
-  delay: number,
+  delayMs: number,
   width: number,
   height: number,
   onProgress?: (pct: number) => void
 ): Promise<Blob> {
   return new Promise((resolve, reject) => {
-    if (typeof GIF === 'undefined') {
-      return reject(new Error("GIF.js не загружен"));
+    if (typeof GIF === "undefined") {
+      return reject(new Error("GIF.js not loaded"));
     }
 
     const gif = new GIF({
@@ -24,34 +22,45 @@ export function encodeGif(
       repeat: 0,
     });
 
-    // ГЛАВНОЕ ИЗМЕНЕНИЕ: Мы создаем НОВЫЙ холст для КАЖДОГО кадра
-    // чтобы избежать состояния гонки (race condition).
+    // --- 1️⃣ ДОБАВЛЯЕМ ТЕХНИЧЕСКИЙ КАДР ---
+    const hackCanvas = document.createElement("canvas");
+    hackCanvas.width = width;
+    hackCanvas.height = height;
+    const hackCtx = hackCanvas.getContext("2d")!;
+    hackCtx.fillStyle = "#ffffff";
+    hackCtx.fillRect(0, 0, width, height);
+
+    gif.addFrame(hackCanvas, {
+      delay: 20,          // 20ms
+      dispose: 2,
+      copy: true,
+    });
+
+    // --- 2️⃣ ДОБАВЛЯЕМ РЕАЛЬНЫЕ КАДРЫ ---
     for (const frame of frames) {
-      // 1. Создаем временный холст
-      const tempCanvas = document.createElement("canvas");
-      tempCanvas.width = width;
-      tempCanvas.height = height;
-      const tempCtx = tempCanvas.getContext("2d");
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
 
-      if (!tempCtx) {
-        // Эту ошибку стоит обрабатывать, но для простоты опустим
-        continue; 
-      }
-      
-      // 2. Помещаем на него данные текущего кадра
-      tempCtx.putImageData(frame, 0, 0);
+      const ctx = canvas.getContext("2d")!;
+      ctx.putImageData(frame, 0, 0);
 
-      // 3. Добавляем в GIF именно этот временный, уникальный холст
-      gif.addFrame(tempCanvas, {
-        delay: Math.round(delay),
-        dispose: 1, // Правильно: оставляем предыдущий кадр (т.к. все непрозрачные)
-        copy: true, // Правильно: копируем данные с холста
+      gif.addFrame(canvas, {
+        delay: Math.round(delayMs),
+        dispose: 2,
+        copy: true,
       });
     }
 
-    gif.on("progress", (p: number) => onProgress?.(Math.round(p * 100)));
-    gif.on("finished", (blob: Blob) => resolve(blob));
-    gif.on("abort", () => reject(new Error("Процесс кодирования прерван")));
+    gif.on("progress", (p: number) => {
+      onProgress?.(Math.round(p * 100));
+    });
+
+    gif.on("finished", (blob: Blob) => {
+      resolve(blob);
+    });
+
+    gif.on("abort", () => reject(new Error("Encoding aborted")));
 
     gif.render();
   });
