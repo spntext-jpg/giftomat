@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import Script from "next/script";
 import { loadImage, computeDimensions, imagesToImageData } from "./lib/images";
 import { encodeGif } from "./lib/encoder";
@@ -9,7 +9,7 @@ export default function GiftomatPage() {
   const [images, setImages] = useState<{id: string, url: string}[]>([]);
   const [stage, setStage] = useState<"idle" | "encoding" | "done" | "error">("idle");
   const [progress, setProgress] = useState(0);
-  const [frameDuration, setFrameDuration] = useState(0.5);
+  const [frameDuration, setFrameDuration] = useState(1.0);
   const [gifUrl, setGifUrl] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   
@@ -23,156 +23,130 @@ export default function GiftomatPage() {
       const loaded = await Promise.all(images.map(img => loadImage(img.url)));
       const { width, height } = computeDimensions(loaded, 1000);
       const framesData = imagesToImageData(loaded, width, height);
-      
       const blob = await encodeGif(framesData, frameDuration * 1000, width, height, (pct) => setProgress(pct));
       setGifUrl(URL.createObjectURL(blob));
       setStage("done");
-    } catch (e) {
-      console.error(e);
-      setStage("error");
-    }
+    } catch (e) { setStage("error"); }
   };
 
   const addFiles = (fileList: FileList) => {
-    const newImgs = Array.from(fileList)
-      .filter(f => f.type.startsWith("image/"))
-      .map(f => ({ id: Math.random().toString(), url: URL.createObjectURL(f) }));
+    const newImgs = Array.from(fileList).filter(f => f.type.startsWith("image/")).map(f => ({ id: Math.random().toString(), url: URL.createObjectURL(f) }));
     setImages(prev => [...prev, ...newImgs]);
     setGifUrl(null);
     setStage("idle");
   };
 
   return (
-    <div className="min-h-screen bg-white dark:bg-[#0A0A0C] text-black dark:text-white flex justify-center items-start overflow-x-hidden">
+    <div style={{ minHeight: '100vh', backgroundColor: '#0A0A0C', color: '#FFFFFF', display: 'flex', justifyContent: 'center', fontFamily: 'sans-serif' }}>
       <Script src="/gif.js" strategy="beforeInteractive" />
       
+      {/* Принудительная стилизация тумблера BitGroqs */}
       <style dangerouslySetInnerHTML={{__html: `
-        .bit-slider { -webkit-appearance: none; width: 100%; height: 12px; background: #eee; border-radius: 6px; outline: none; }
-        .dark .bit-slider { background: #1A1A1E; }
-        .bit-slider::-webkit-slider-thumb { 
-          -webkit-appearance: none; width: 32px; height: 32px; background: #A169F7; 
-          border-radius: 10px; cursor: pointer; border: 4px solid #fff; box-shadow: 0 4px 15px rgba(161,105,247,0.4);
+        .bit-range { -webkit-appearance: none; width: 100%; height: 12px; background: #1A1A1E !important; border-radius: 6px; outline: none; margin: 20px 0; }
+        .bit-range::-webkit-slider-thumb { 
+          -webkit-appearance: none; width: 34px; height: 34px; background: #A169F7 !important; 
+          border-radius: 12px; cursor: pointer; border: 4px solid #0A0A0C !important; 
+          box-shadow: 0 0 20px rgba(161,105,247,0.5); transition: transform 0.2s;
         }
-        .dark .bit-slider::-webkit-slider-thumb { border-color: #0A0A0C; }
+        .bit-range::-webkit-slider-thumb:hover { transform: scale(1.1); }
       `}} />
 
-      {/* Контейнер с фиксированной шириной для десктопа */}
-      <main className="w-full max-w-xl px-6 py-12 md:py-20 flex flex-col min-h-screen">
+      {/* Фиксированный Layout для Desktop */}
+      <main style={{ width: '100%', maxWidth: '560px', padding: '60px 24px', display: 'flex', flexDirection: 'column' }}>
         
-        <header className="flex flex-col items-center text-center mb-12">
-          <div className="w-16 h-16 rounded-[22px] bg-black flex items-center justify-center mb-6 shadow-2xl border border-white/5 shadow-purple-500/10">
-            <span className="font-unbounded font-black text-2xl" style={{ color: "#A169F7" }}>G</span>
+        <header style={{ textAlign: 'center', marginBottom: '48px' }}>
+          <div style={{ width: '64px', height: '64px', backgroundColor: '#000', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 10px 30px rgba(161,105,247,0.2)' }}>
+            <span style={{ color: '#A169F7', fontSize: '28px', fontWeight: 900 }}>G</span>
           </div>
-          <h1 className="text-4xl font-black tracking-tight mb-2 font-unbounded">Генератор GIF</h1>
-          <p className="text-slate-400 text-sm font-medium">Production Suite by BitGroqs</p>
+          <h1 style={{ fontSize: '32px', fontWeight: 900, letterSpacing: '-0.02em', marginBottom: '8px' }}>Генератор GIF</h1>
+          <p style={{ color: '#666', fontSize: '14px', fontWeight: 500 }}>BitGroqs Production Standards</p>
         </header>
 
-        {/* Dropzone Area */}
+        {/* Dropzone */}
         <div 
           onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
           onDragLeave={() => setIsDragging(false)}
           onDrop={(e) => { e.preventDefault(); setIsDragging(false); addFiles(e.dataTransfer.files); }}
-          className={`
-            relative w-full min-h-[300px] rounded-[48px] border-2 border-dashed transition-all duration-500 flex flex-col items-center justify-center gap-8
-            ${isDragging ? "border-[#FF6B00] bg-[#FF6B00]/5 scale-[1.01]" : "border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.02]"}
-          `}
+          style={{
+            position: 'relative', width: '100%', minHeight: '280px', borderRadius: '40px', border: '2px dashed',
+            borderColor: isDragging ? '#FF6B00' : 'rgba(255,255,255,0.1)',
+            backgroundColor: isDragging ? 'rgba(255,107,0,0.05)' : 'rgba(255,255,255,0.02)',
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '24px', transition: 'all 0.4s ease'
+          }}
         >
           <button 
             onClick={() => fileInputRef.current?.click()}
             style={{
-              position: 'relative', display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-              padding: '1.25rem 3.5rem', borderRadius: '9999px', backgroundColor: '#FF6B00', color: '#FFFFFF',
-              cursor: 'pointer', border: 'none', outline: 'none', fontSize: '1.125rem', fontWeight: 900,
-              fontFamily: '"Unbounded", sans-serif', transition: 'all 0.3s ease', zIndex: 10
+              padding: '1.2rem 3rem', borderRadius: '100px', backgroundColor: '#FF6B00', color: '#FFF',
+              border: 'none', cursor: 'pointer', fontSize: '18px', fontWeight: 900, boxShadow: '0 15px 30px rgba(255,107,0,0.3)', transition: 'transform 0.2s'
             }}
-            onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-4px)'}
+            onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-3px)'}
             onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
           >
             Загрузить фото ✨
-            <div style={{ position: 'absolute', inset: 0, borderRadius: '9999px', boxShadow: '0 15px 35px rgba(255,107,0,0.4)', zIndex: -1 }} />
           </button>
-
-          <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={(e) => e.target.files && addFiles(e.target.files)} />
-          
-          <div className="flex flex-col items-center">
-            <p className="font-unbounded font-bold text-sm mb-1">Или перетащите файлы сюда</p>
-            <p className="text-[10px] uppercase tracking-[0.2em] text-slate-400 font-bold">RAW · JPG · PNG · WEBP</p>
-          </div>
+          <input ref={fileInputRef} type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={(e) => e.target.files && addFiles(e.target.files)} />
+          <p style={{ fontSize: '12px', fontWeight: 700, color: '#444', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Или перетащите файлы</p>
         </div>
 
         {/* Gallery */}
         {images.length > 0 && (
-          <div className="mt-8 p-6 rounded-[32px] bg-slate-50 dark:bg-[#111114] border border-slate-100 dark:border-white/5">
-            <div className="flex items-center justify-between mb-6">
-              <span className="text-[10px] font-unbounded font-bold uppercase tracking-widest text-slate-400">Кадры: {images.length}</span>
-              <button 
-                onClick={() => setImages([])} 
-                className="px-4 py-2 rounded-full bg-red-500/10 text-red-500 text-[10px] font-black uppercase hover:bg-red-500 hover:text-white transition-all"
-              >
-                Удалить всё
-              </button>
+          <div style={{ marginTop: '32px', padding: '24px', borderRadius: '32px', backgroundColor: '#111114', border: '1px solid rgba(255,255,255,0.05)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', alignItems: 'center' }}>
+              <span style={{ fontSize: '10px', fontWeight: 800, color: '#666', textTransform: 'uppercase' }}>Кадры: {images.length}</span>
+              <button onClick={() => setImages([])} style={{ background: 'rgba(239, 68, 68, 0.1)', border: 'none', color: '#EF4444', padding: '6px 12px', borderRadius: '8px', fontSize: '10px', fontWeight: 900, cursor: 'pointer' }}>УДАЛИТЬ ВСЁ</button>
             </div>
-            <div className="grid grid-cols-4 gap-3">
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
               {images.map((img) => (
-                <div key={img.id} className="relative aspect-square rounded-2xl overflow-hidden border border-slate-200 dark:border-white/10 group">
-                  <img src={img.url} className="w-full h-full object-cover" alt="" />
-                  <button onClick={() => setImages(p => p.filter(i => i.id !== img.id))} className="absolute top-1 right-1 w-6 h-6 bg-black/70 text-white rounded-full text-[10px] opacity-0 group-hover:opacity-100 transition-opacity">✕</button>
+                <div key={img.id} style={{ position: 'relative', aspectRatio: '1/1', borderRadius: '12px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)' }}>
+                  <img src={img.url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" />
+                  <button onClick={() => setImages(p => p.filter(i => i.id !== img.id))} style={{ position: 'absolute', top: '4px', right: '4px', width: '20px', height: '20px', background: 'rgba(0,0,0,0.7)', color: '#fff', border: 'none', borderRadius: '50%', fontSize: '10px', cursor: 'pointer' }}>✕</button>
                 </div>
               ))}
-              <button onClick={() => fileInputRef.current?.click()} className="aspect-square rounded-2xl border-2 border-dashed border-slate-200 dark:border-white/10 text-slate-300 text-xl hover:bg-slate-100 dark:hover:bg-white/5 transition-colors">+</button>
             </div>
           </div>
         )}
 
-        {/* Speed Slider */}
+        {/* Слайдер в стиле BitGroqs */}
         {images.length > 0 && (
-          <div className="mt-6 p-8 rounded-[32px] bg-white dark:bg-[#111114] border border-slate-100 dark:border-white/5 shadow-xl">
-            <div className="flex justify-between items-center mb-6">
-              <label className="font-unbounded font-bold text-[10px] uppercase tracking-[0.2em] text-slate-400">Скорость задержки</label>
-              <div className="px-4 py-1 bg-[#A169F7]/10 rounded-lg">
-                <span className="font-unbounded font-black text-lg text-[#A169F7]">{frameDuration.toFixed(1)}с</span>
-              </div>
+          <div style={{ marginTop: '24px', padding: '32px', borderRadius: '32px', backgroundColor: '#111114', border: '1px solid rgba(255,255,255,0.05)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '11px', fontWeight: 800, color: '#666', textTransform: 'uppercase' }}>Скорость задержки</span>
+              <span style={{ fontSize: '20px', fontWeight: 900, color: '#A169F7' }}>{frameDuration.toFixed(1)}s</span>
             </div>
             <input
-              type="range" min={0.1} max={3} step={0.1}
+              type="range" min={0.1} max={4} step={0.1}
               value={frameDuration} onChange={(e) => setFrameDuration(Number(e.target.value))}
-              className="bit-slider"
-              style={{
-                background: `linear-gradient(to right, #A169F7 0%, #A169F7 ${(frameDuration/3)*100}%, #eee ${(frameDuration/3)*100}%, #eee 100%)`
-              }}
+              className="bit-range"
             />
           </div>
         )}
 
-        {/* Actions */}
-        <div className="mt-10 mb-20">
+        {/* Actions & Result */}
+        <div style={{ marginTop: '40px', marginBottom: '80px' }}>
           {stage === "encoding" && (
-            <div className="p-10 rounded-[40px] bg-black text-white text-center shadow-2xl">
-              <p className="font-unbounded font-black mb-6">Кодирование...</p>
-              <div className="w-full h-4 bg-white/10 rounded-full overflow-hidden">
-                <div className="h-full bg-[#A169F7] transition-all duration-300" style={{ width: `${progress}%` }} />
+            <div style={{ padding: '40px', borderRadius: '40px', background: '#000', textAlign: 'center', boxShadow: '0 20px 40px rgba(0,0,0,0.4)' }}>
+              <p style={{ fontWeight: 900, marginBottom: '20px', color: '#A169F7' }}>РЕНДЕРИНГ...</p>
+              <div style={{ width: '100%', height: '8px', background: 'rgba(255,255,255,0.1)', borderRadius: '100px', overflow: 'hidden' }}>
+                <div style={{ height: '100%', background: '#A169F7', width: `${progress}%`, transition: 'width 0.3s ease' }} />
               </div>
-              <p className="mt-4 font-unbounded text-2xl font-black text-[#A169F7]">{progress}%</p>
             </div>
           )}
 
           {stage === "done" && gifUrl && (
-            <div className="p-8 rounded-[40px] bg-white dark:bg-[#111114] border border-slate-100 dark:border-white/5 shadow-2xl text-center">
-              <img src={gifUrl} className="w-full rounded-2xl mb-8 border border-slate-200 dark:border-white/10 shadow-lg" alt="Result" />
-              <div className="flex flex-col gap-4">
-                <a 
-                  href={gifUrl} download="giftomat.gif"
-                  style={{
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.25rem',
-                    borderRadius: '9999px', backgroundColor: '#000', color: '#fff',
-                    fontFamily: '"Unbounded", sans-serif', fontWeight: 900, textDecoration: 'none',
-                    boxShadow: '0 20px 40px rgba(0,0,0,0.2)'
-                  }}
-                >
-                  Скачать готовую GIF
-                </a>
-                <button onClick={() => setStage("idle")} className="text-[10px] font-unbounded font-bold text-slate-400 uppercase tracking-widest">Создать новую</button>
-              </div>
+            <div style={{ padding: '32px', borderRadius: '40px', background: '#111114', border: '1px solid rgba(255,255,255,0.1)', textAlign: 'center' }}>
+              <img 
+                src={gifUrl} 
+                style={{ width: '100%', maxHeight: '400px', objectFit: 'contain', borderRadius: '20px', marginBottom: '32px', backgroundColor: '#000' }} 
+                alt="Result" 
+              />
+              <a 
+                href={gifUrl} download="bitgroqs.gif"
+                style={{ display: 'block', padding: '1.2rem', borderRadius: '100px', backgroundColor: '#FFF', color: '#000', fontWeight: 900, textDecoration: 'none', marginBottom: '16px' }}
+              >
+                СКАЧАТЬ GIF
+              </a>
+              <button onClick={() => setStage("idle")} style={{ background: 'none', border: 'none', color: '#444', fontWeight: 800, fontSize: '12px', cursor: 'pointer', textTransform: 'uppercase' }}>Создать новую</button>
             </div>
           )}
 
@@ -181,27 +155,17 @@ export default function GiftomatPage() {
               onClick={generateGif}
               disabled={images.length < 2}
               style={{
-                width: '100%', padding: '1.5rem', borderRadius: '9999px',
-                fontFamily: '"Unbounded", sans-serif', fontWeight: 900, fontSize: '1.25rem',
-                border: 'none', cursor: images.length >= 2 ? 'pointer' : 'not-allowed',
-                backgroundColor: images.length >= 2 ? '#000' : '#F1F5F9',
-                color: images.length >= 2 ? '#fff' : '#CBD5E1',
+                width: '100%', padding: '1.5rem', borderRadius: '100px', border: 'none', fontWeight: 900, fontSize: '20px',
+                cursor: images.length >= 2 ? 'pointer' : 'not-allowed',
+                backgroundColor: images.length >= 2 ? '#FFF' : '#1A1A1E',
+                color: images.length >= 2 ? '#000' : '#444',
                 transition: 'all 0.3s ease'
               }}
-              onMouseEnter={(e) => { if(images.length >= 2) e.currentTarget.style.transform = 'translateY(-4px)'; }}
-              onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
             >
-              {images.length < 2 ? "Нужно минимум 2 фото" : "Сгенерировать GIF"}
+              СГЕНЕРИРОВАТЬ GIF
             </button>
           )}
-
-          {stage === "error" && (
-            <div className="p-6 rounded-3xl bg-red-50 text-red-600 text-center font-bold">
-              Произошла ошибка при сборке.
-            </div>
-          )}
         </div>
-
       </main>
     </div>
   );
