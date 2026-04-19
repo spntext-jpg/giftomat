@@ -3,7 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Гифтомат",
-  description: "Создавайте GIF с плавными переходами прямо в браузере",
+  description: "Создавайте GIF прямо в браузере",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -21,9 +21,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎞</text></svg>"
         />
       </head>
-      {/* Глобальная фиксация контраста: фон и цвет текста жестко заданы для обеих тем */}
-      <body 
-        className="min-h-screen bg-slate-50 dark:bg-[#0A0A0B] text-slate-900 dark:text-slate-50 transition-colors duration-300 antialiased"
+      <body
+        className={[
+          "min-h-screen antialiased",
+          "bg-slate-50 dark:bg-[#0D0D10]",
+          "text-slate-900 dark:text-slate-100",
+          "transition-colors duration-300",
+        ].join(" ")}
         style={{ fontFamily: "'Inter', sans-serif" }}
       >
         {children}
