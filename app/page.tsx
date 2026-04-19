@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import Script from "next/script";
 import { loadImage, computeDimensions, imagesToImageData } from "./lib/images";
 import { encodeGif } from "./lib/encoder";
@@ -28,6 +28,7 @@ export default function GiftomatPage() {
       setGifUrl(URL.createObjectURL(blob));
       setStage("done");
     } catch (e) {
+      console.error(e);
       setStage("error");
     }
   };
@@ -42,29 +43,28 @@ export default function GiftomatPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white dark:bg-[#0A0A0C] text-black dark:text-white flex justify-center">
+    <div className="min-h-screen bg-white dark:bg-[#0A0A0C] text-black dark:text-white flex justify-center items-start overflow-x-hidden">
       <Script src="/gif.js" strategy="beforeInteractive" />
       
-      {/* Custom Slider CSS (BitGroqs Standard) */}
       <style dangerouslySetInnerHTML={{__html: `
         .bit-slider { -webkit-appearance: none; width: 100%; height: 12px; background: #eee; border-radius: 6px; outline: none; }
         .dark .bit-slider { background: #1A1A1E; }
         .bit-slider::-webkit-slider-thumb { 
-          -webkit-appearance: none; width: 28px; height: 28px; background: #A169F7; 
-          border-radius: 8px; cursor: pointer; border: 4px solid #fff; box-shadow: 0 4px 15px rgba(161,105,247,0.4);
+          -webkit-appearance: none; width: 32px; height: 32px; background: #A169F7; 
+          border-radius: 10px; cursor: pointer; border: 4px solid #fff; box-shadow: 0 4px 15px rgba(161,105,247,0.4);
         }
         .dark .bit-slider::-webkit-slider-thumb { border-color: #0A0A0C; }
       `}} />
 
-      <main className="w-full max-w-xl px-6 py-16 flex flex-col">
+      {/* Контейнер с фиксированной шириной для десктопа */}
+      <main className="w-full max-w-xl px-6 py-12 md:py-20 flex flex-col min-h-screen">
         
-        {/* Header */}
         <header className="flex flex-col items-center text-center mb-12">
           <div className="w-16 h-16 rounded-[22px] bg-black flex items-center justify-center mb-6 shadow-2xl border border-white/5 shadow-purple-500/10">
             <span className="font-unbounded font-black text-2xl" style={{ color: "#A169F7" }}>G</span>
           </div>
           <h1 className="text-4xl font-black tracking-tight mb-2 font-unbounded">Генератор GIF</h1>
-          <p className="text-slate-400 text-sm font-medium">Professional Production Suite</p>
+          <p className="text-slate-400 text-sm font-medium">Production Suite by BitGroqs</p>
         </header>
 
         {/* Dropzone Area */}
@@ -73,8 +73,8 @@ export default function GiftomatPage() {
           onDragLeave={() => setIsDragging(false)}
           onDrop={(e) => { e.preventDefault(); setIsDragging(false); addFiles(e.dataTransfer.files); }}
           className={`
-            relative w-full min-h-[320px] rounded-[48px] border-2 border-dashed transition-all duration-500 flex flex-col items-center justify-center gap-8
-            ${isDragging ? "border-[#FF6B00] bg-[#FF6B00]/5" : "border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.02]"}
+            relative w-full min-h-[300px] rounded-[48px] border-2 border-dashed transition-all duration-500 flex flex-col items-center justify-center gap-8
+            ${isDragging ? "border-[#FF6B00] bg-[#FF6B00]/5 scale-[1.01]" : "border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.02]"}
           `}
         >
           <button 
@@ -95,7 +95,7 @@ export default function GiftomatPage() {
           <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={(e) => e.target.files && addFiles(e.target.files)} />
           
           <div className="flex flex-col items-center">
-            <p className="font-unbounded font-bold text-sm mb-1">Или просто перетащите сюда</p>
+            <p className="font-unbounded font-bold text-sm mb-1">Или перетащите файлы сюда</p>
             <p className="text-[10px] uppercase tracking-[0.2em] text-slate-400 font-bold">RAW · JPG · PNG · WEBP</p>
           </div>
         </div>
@@ -116,15 +116,15 @@ export default function GiftomatPage() {
               {images.map((img) => (
                 <div key={img.id} className="relative aspect-square rounded-2xl overflow-hidden border border-slate-200 dark:border-white/10 group">
                   <img src={img.url} className="w-full h-full object-cover" alt="" />
-                  <button onClick={() => setImages(p => p.filter(i => i.id !== img.id))} className="absolute top-1 right-1 w-6 h-6 bg-black text-white rounded-full text-[10px] opacity-0 group-hover:opacity-100 transition-opacity">✕</button>
+                  <button onClick={() => setImages(p => p.filter(i => i.id !== img.id))} className="absolute top-1 right-1 w-6 h-6 bg-black/70 text-white rounded-full text-[10px] opacity-0 group-hover:opacity-100 transition-opacity">✕</button>
                 </div>
               ))}
-              <button onClick={() => fileInputRef.current?.click()} className="aspect-square rounded-2xl border-2 border-dashed border-slate-200 dark:border-white/10 text-slate-300 text-xl">+</button>
+              <button onClick={() => fileInputRef.current?.click()} className="aspect-square rounded-2xl border-2 border-dashed border-slate-200 dark:border-white/10 text-slate-300 text-xl hover:bg-slate-100 dark:hover:bg-white/5 transition-colors">+</button>
             </div>
           </div>
         )}
 
-        {/* Speed Slider (The Core Request) */}
+        {/* Speed Slider */}
         {images.length > 0 && (
           <div className="mt-6 p-8 rounded-[32px] bg-white dark:bg-[#111114] border border-slate-100 dark:border-white/5 shadow-xl">
             <div className="flex justify-between items-center mb-6">
@@ -144,11 +144,11 @@ export default function GiftomatPage() {
           </div>
         )}
 
-        {/* Final Action / Progress / Result */}
-        <div className="mt-10">
+        {/* Actions */}
+        <div className="mt-10 mb-20">
           {stage === "encoding" && (
             <div className="p-10 rounded-[40px] bg-black text-white text-center shadow-2xl">
-              <p className="font-unbounded font-black mb-6">Рендеринг потока данных...</p>
+              <p className="font-unbounded font-black mb-6">Кодирование...</p>
               <div className="w-full h-4 bg-white/10 rounded-full overflow-hidden">
                 <div className="h-full bg-[#A169F7] transition-all duration-300" style={{ width: `${progress}%` }} />
               </div>
@@ -188,11 +188,17 @@ export default function GiftomatPage() {
                 color: images.length >= 2 ? '#fff' : '#CBD5E1',
                 transition: 'all 0.3s ease'
               }}
-              onMouseEnter={(e) => { if(images.length >= 2) e.currentTarget.style.transform = 'scale(1.02)'; }}
-              onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+              onMouseEnter={(e) => { if(images.length >= 2) e.currentTarget.style.transform = 'translateY(-4px)'; }}
+              onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
             >
               {images.length < 2 ? "Нужно минимум 2 фото" : "Сгенерировать GIF"}
             </button>
+          )}
+
+          {stage === "error" && (
+            <div className="p-6 rounded-3xl bg-red-50 text-red-600 text-center font-bold">
+              Произошла ошибка при сборке.
+            </div>
           )}
         </div>
 
