@@ -18,6 +18,7 @@ export default function GiftomatPage() {
   const surfaceCls = "bg-white dark:bg-[#111114] border border-slate-100 dark:border-white/5 shadow-sm";
   const surfaceSubCls = "bg-slate-50 dark:bg-white/[0.03] border border-slate-100 dark:border-white/5";
   const mutedCls = "text-slate-400 dark:text-slate-500";
+  const borderCol = "border-slate-200 dark:border-white/10"; // ВОТ ОНА, ВЕРНУЛАСЬ
   const txtCls = "text-black dark:text-white";
   
   const accentP = "#A169F7"; // Punk Violet
@@ -55,29 +56,21 @@ export default function GiftomatPage() {
     setErrorMsg("");
 
     try {
-      // 1. Загружаем все изображения
       const loaded = await Promise.all(images.map((img) => loadImage(img.url)));
-      
-      // 2. Вычисляем общие размеры (Center Cover)
       const { width, height } = computeDimensions(loaded, 1000);
       
-      // 3. Создаем массив временных холстов (Canvas) для энкодера
-      // Это решает проблему качества и зависания первого кадра
       const processedCanvases = loaded.map((img) => {
         const canvas = document.createElement("canvas");
         canvas.width = width;
         canvas.height = height;
         const ctx = canvas.getContext("2d")!;
         
-        // Настройки качества
         ctx.imageSmoothingEnabled = true;
         ctx.imageSmoothingQuality = "high";
         
-        // Фон
         ctx.fillStyle = "#ffffff";
         ctx.fillRect(0, 0, width, height);
 
-        // Расчет Center Cover
         const imgRatio = img.naturalWidth / img.naturalHeight;
         const canvRatio = width / height;
         let dx = 0, dy = 0, dw = width, dh = height;
@@ -94,7 +87,6 @@ export default function GiftomatPage() {
         return canvas;
       });
 
-      // 4. Склеиваем
       const blob = await encodeGif(processedCanvases, frameDuration * 1000, (pct) => {
         setProgress(pct);
       });
@@ -141,12 +133,10 @@ export default function GiftomatPage() {
             onClick={() => fileInputRef.current?.click()}
             className="group relative inline-flex items-center justify-center px-14 py-5 rounded-full font-unbounded font-black text-white text-lg transition-all duration-300 active:scale-95 hover:-translate-y-2"
           >
-            {/* Слой Glow */}
             <div 
               className="absolute inset-0 rounded-full blur-2xl opacity-40 group-hover:opacity-80 transition-opacity duration-300"
               style={{ background: accentO }}
             />
-            {/* Тело кнопки */}
             <span className="relative z-10">Загрузить фото ✨</span>
             <div 
               className="absolute inset-0 rounded-full shadow-[0_12px_44px_-8px_rgba(255,107,0,0.6)]" 
@@ -171,8 +161,9 @@ export default function GiftomatPage() {
             </div>
             <div className="grid grid-cols-4 sm:grid-cols-5 gap-3">
               {images.map((img, idx) => (
-                <div key={img.id} className="relative aspect-square rounded-2xl overflow-hidden border border-black/5 bg-slate-50 shadow-sm">
+                <div key={img.id} className={`relative aspect-square rounded-2xl overflow-hidden border ${borderCol} bg-slate-50 shadow-sm`}>
                   <img src={img.url} className="w-full h-full object-cover" alt="" />
+                  <button onClick={() => setImages(p=>p.filter(i=>i.id!==img.id))} className="absolute top-1 right-1 w-5 h-5 bg-black/50 backdrop-blur-md text-white rounded-full text-[10px] flex items-center justify-center">✕</button>
                   <div className="absolute bottom-1 left-1 px-1.5 py-0.5 bg-black/40 backdrop-blur-md rounded text-[9px] text-white font-bold">{idx + 1}</div>
                 </div>
               ))}
