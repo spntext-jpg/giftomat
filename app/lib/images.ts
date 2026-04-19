@@ -38,7 +38,6 @@ export function imagesToImageData(
     const ctx = canvas.getContext("2d", { willReadFrequently: true }) as CanvasRenderingContext2D;
     if (!ctx) throw new Error("Canvas context failed");
 
-    // Белая подложка для корректной работы dispose: 1
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, width, height);
 
