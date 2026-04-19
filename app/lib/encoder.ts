@@ -27,11 +27,10 @@ export function encodeGif(
 
     for (const frame of frames) {
       ctx.putImageData(frame, 0, 0);
-      // dispose: 1 (Do Not Dispose) — идеальный вариант для непрозрачных кадров
       gif.addFrame(canvas, { 
         delay: Math.round(delay), 
         copy: true,
-        dispose: 1 
+        dispose: 1 // Не удалять кадр — защита от зависания первого кадра
       });
     }
 
