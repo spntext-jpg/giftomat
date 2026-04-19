@@ -4,108 +4,36 @@
 
 /* ── BitGroqs Design Tokens ── */
 :root {
-  --bg-page:       #f0f4ff;
-  --bg-surface:    #ffffff;
-  --bg-surface-sub:#f5f7ff;
-  --text-primary:  #0f172a;
-  --text-muted:    #64748b;
-  --border:        rgba(15,23,42,0.1);
-  --azure:   #19aef9;
-  --orange:  #ff9839;
-  --violet:  #4b1d8c;
-  --violet-light: #7c3aed;
-  --slider-track: #c7d2fe;
+  --bg-page:       #0A0A0C;
+  --bg-surface:    #111114;
+  --bg-surface-sub:#1A1A1E;
+  --text-primary:  #ffffff;
+  --text-muted:    #555555;
+  --border:        rgba(255,255,255,0.08);
+  --azure:         #19aef9;
+  --orange:        #FF6B00;
+  --violet:        #A169F7;
+  --slider-track:  #1A1A1E;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg-page:       #0a0f1e;
-    --bg-surface:    #111827;
-    --bg-surface-sub:#0f172a;
-    --text-primary:  #f1f5f9;
-    --text-muted:    #64748b;
-    --border:        rgba(255,255,255,0.08);
-    --slider-track:  #1e1b4b;
-  }
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
-*,*::before,*::after { box-sizing: border-box; }
+html,
 body {
   margin: 0;
+  padding: 0;
+  width: 100%;
+  min-height: 100vh;
   background-color: var(--bg-page);
   color: var(--text-primary);
   font-family: 'Inter', sans-serif;
   -webkit-font-smoothing: antialiased;
-}
-
-input[type="range"] {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 100%;
-  height: 5px;
-  border-radius: 99px;
-  outline: none;
-  cursor: pointer;
-}
-input[type="range"]::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: var(--azure);
-  border: 2px solid #fff;
-  box-shadow: 0 0 0 3px rgba(25,174,249,0.2);
-  cursor: pointer;
-  transition: box-shadow 0.15s, transform 0.15s;
-}
-input[type="range"]::-webkit-slider-thumb:hover {
-  box-shadow: 0 0 0 6px rgba(25,174,249,0.15);
-  transform: scale(1.12);
-}
-input[type="range"]::-moz-range-thumb {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: var(--azure);
-  border: 2px solid #fff;
-  cursor: pointer;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .font-unbounded { font-family: 'Unbounded', sans-serif; }
 .font-inter     { font-family: 'Inter', sans-serif; }
-
-.cta-primary {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 18px 40px;
-  border-radius: 999px;
-  font-family: 'Unbounded', sans-serif;
-  font-weight: 900;
-  font-size: 1.05rem;
-  color: #fff;
-  background: linear-gradient(135deg, var(--orange) 0%, #ff6b35 100%);
-  box-shadow: 0 8px 32px -6px rgba(255,152,57,0.5);
-  border: none;
-  cursor: pointer;
-  transition: transform 0.22s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.22s ease;
-  text-decoration: none;
-  white-space: nowrap;
-}
-.cta-primary:hover {
-  transform: translateY(-4px) scale(1.03);
-  box-shadow: 0 20px 48px -8px rgba(255,152,57,0.6);
-}
-.cta-primary:active { transform: scale(0.97); }
-
-.dropzone {
-  border: 2px dashed var(--border);
-  background: var(--bg-surface-sub);
-  transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
-}
-.dropzone:hover, .dropzone.drag-over {
-  border-color: var(--azure);
-  box-shadow: 0 0 0 4px rgba(25,174,249,0.1);
-  transform: translateY(-2px);
-}
