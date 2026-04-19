@@ -10,8 +10,8 @@ export default function Icon() {
       <div
         style={{
           fontSize: 320,
-          background: '#000000', // African Turquoise
-          color: '#A169F7', // Violet Punk
+          background: '#000000', // African Turquoise (as background)
+          color: '#A169F7', // Violet Punk (as foreground)
           width: '100%',
           height: '100%',
           display: 'flex',
