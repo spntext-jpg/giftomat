@@ -14,13 +14,17 @@ interface UploadedImage {
 }
 
 export default function GiftomatPage() {
-  // --- Переменные дизайна (ВОССТАНОВЛЕНО) ---
-  const card = "bg-white dark:bg-[#111114] border border-slate-200/60 dark:border-white/5 shadow-sm";
-  const cardSub = "bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5";
-  const txt = "text-slate-900 dark:text-white";
-  const muted = "text-slate-500 dark:text-slate-400";
-  const borderC = "border-slate-200 dark:border-white/10";
-  const hint = "text-slate-400 dark:text-slate-500";
+  // --- Дизайн Токены (Strict B2B Modern) ---
+  const surfaceCls = "bg-white dark:bg-[#1C1A22] border border-slate-100 dark:border-white/5 shadow-sm";
+  const surfaceSubCls = "bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5";
+  const mutedCls = "text-slate-500 dark:text-slate-400";
+  const borderCol = "border-slate-200 dark:border-white/10";
+  const txtCls = "text-[#000000] dark:text-white";
+  const hintCls = "text-slate-400 dark:text-slate-500";
+  
+  const accentA = "#00AAFF"; // azure
+  const accentP = "#A169F7"; // punk
+  const accentO = "#FF6B00"; // vivid orange
 
   const [images, setImages] = useState<UploadedImage[]>([]);
   const [stage, setStage] = useState<Stage>("idle");
@@ -28,9 +32,7 @@ export default function GiftomatPage() {
   const [errorMsg, setErrorMsg] = useState("");
   const [frameDuration, setFrameDuration] = useState(0.5);
   const [gifUrl, setGifUrl] = useState<string | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
   const [ios, setIos] = useState(false);
-  
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -40,11 +42,6 @@ export default function GiftomatPage() {
       if (gifUrl) URL.revokeObjectURL(gifUrl);
     };
   }, []);
-
-  const sliderBg = (val: number) => {
-    const pct = ((val - 0.1) / (10 - 0.1)) * 100;
-    return `linear-gradient(to right, #7000FF ${pct}%, var(--slider-track) ${pct}%)`;
-  };
 
   const addFiles = useCallback((fileList: FileList) => {
     const valid = Array.from(fileList).filter((f) => f.type.startsWith("image/"));
@@ -56,14 +53,9 @@ export default function GiftomatPage() {
         url: URL.createObjectURL(f),
       })),
     ]);
+    setGifUrl(null);
     setStage("idle");
   }, []);
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    if (e.dataTransfer.files) addFiles(e.dataTransfer.files);
-  };
 
   const generateGif = async () => {
     if (images.length < 2) return;
@@ -76,143 +68,178 @@ export default function GiftomatPage() {
       canvas.width = width; canvas.height = height;
       const ctx = canvas.getContext("2d", { willReadFrequently: true })!;
 
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = "high";
+
       const framesData = loaded.map((img) => {
         ctx.fillStyle = "#ffffff";
         ctx.fillRect(0, 0, width, height);
-        ctx.drawImage(img, 0, 0, width, height);
+
+        const imgRatio = img.naturalWidth / img.naturalHeight;
+        const canvRatio = width / height;
+        let dx = 0, dy = 0, dw = width, dh = height;
+        
+        if (imgRatio > canvRatio) {
+          dw = img.naturalWidth * (height / img.naturalHeight);
+          dx = (width - dw) / 2;
+        } else {
+          dh = img.naturalHeight * (width / img.naturalWidth);
+          dy = (height - dh) / 2;
+        }
+
+        ctx.drawImage(img, dx, dy, dw, dh);
         return ctx.getImageData(0, 0, width, height);
       });
 
+      setProgress(15);
       const blob = await encodeGif(framesData, frameDuration * 1000, width, height, (pct) => {
-        setProgress(Math.round(pct));
+        setProgress(15 + Math.round(pct * 0.85));
       });
 
       setGifUrl(URL.createObjectURL(blob));
       setStage("done");
+      setProgress(100);
     } catch (e) {
       setStage("error");
-      setErrorMsg("Ошибка при сборке GIF");
+      setErrorMsg("Ошибка при генерации GIF");
     }
   };
 
-  const canGenerate = images.length >= 2;
-  const ctaLabel = images.length === 0 ? "Загрузите фото" : images.length === 1 ? "Нужно еще одно" : "Создать GIF";
+  const sliderBg = (val: number) => {
+    const pct = ((val - 0.1) / (10 - 0.1)) * 100;
+    const trackColor = ios ? '#2D2A38' : '#DDD6F5';
+    return `linear-gradient(to right, ${accentP} ${pct}%, ${trackColor} ${pct}%)`;
+  };
 
   return (
     <>
       <Script src="/gif.js" strategy="beforeInteractive" />
-      <main className="min-h-screen flex flex-col items-center px-5 py-16 md:py-24 font-inter transition-colors duration-300">
-        <div className="w-full max-w-lg">
-          
-          {/* Header */}
-          <header className="flex flex-col items-center text-center mb-12">
-            <div className="w-14 h-14 mb-6 rounded-2xl flex items-center justify-center text-2xl bg-[#7000FF]/10 text-[#7000FF]">
-              🎞
-            </div>
-            <h1 className={`text-4xl md:text-5xl font-unbounded font-black tracking-tight text-[#7000FF] mb-3`}>
-              Гифтомат
-            </h1>
-            <p className={`text-sm ${muted}`}>Профессиональный инструмент для ваших анимаций</p>
-          </header>
+      <div className="w-full max-w-xl font-inter mt-16 md:mt-24 px-6 pb-20">
+        
+        {/* Header */}
+        <header className="flex flex-col items-center text-center mb-16">
+          <div 
+            className="w-16 h-16 rounded-[40px] flex items-center justify-center mb-6 shadow-sm"
+            style={{ background: '#000000' }}
+          >
+            <span className="font-unbounded font-black text-white text-3xl" style={{color: accentP}}>G</span>
+          </div>
+          <h1 className="text-4xl font-blacktracking-tight mb-2">Генератор GIF</h1>
+          <p className={`${mutedCls}`}>Профессиональный инструмент для четких анимаций</p>
+        </header>
 
-          {/* Dropzone */}
-          <div
-            onDrop={handleDrop}
-            onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
-            onDragLeave={() => setIsDragging(false)}
+        {/* Upload Container (Minimal Dropzone) */}
+        <div 
+          onDrop={(e) => { e.preventDefault(); addFiles(e.dataTransfer.files); }}
+          onDragOver={(e) => e.preventDefault()}
+          className={`
+            w-full py-16 px-10 rounded-[2.5rem] ${surfaceSubCls} ${borderCol} border-2 border-dashed
+            flex flex-col items-center gap-6 text-center shadow-inner
+          `}
+        >
+          {/* Пухлая, оранжевая, парящая кнопка. Vivid Orange #FF6B00. */}
+          <button 
             onClick={() => fileInputRef.current?.click()}
             className={`
-              cursor-pointer rounded-[32px] border-2 border-dashed mb-8
-              flex flex-col items-center justify-center gap-4 w-full h-56 px-8 text-center
-              ${isDragging ? "border-[#7000FF] bg-[#7000FF]/5 scale-[1.01]" : `dropzone-idle ${borderC} ${card}`}
+              inline-block px-12 py-5 rounded-full 
+              font-unbounded font-black text-white text-lg 
+              transition-all duration-300 active:scale-95
+              hover:-translate-y-1 hover:scale-[1.03]
+              shadow-[0_8px_32px_-6px_rgba(255,107,0,0.5)]
+              hover:shadow-[0_12px_48px_-10px_rgba(255,107,0,0.85)]
             `}
+            style={{ background: accentO }}
           >
-            <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={(e) => e.target.files && addFiles(e.target.files)} />
-            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-2xl bg-[#7000FF]/10`}>🖼</div>
-            <div>
-              <p className={`font-unbounded font-bold text-base mb-1 ${txt}`}>Выберите фотографии</p>
-              <p className={`text-xs ${muted}`}>Перетащите файлы сюда (PNG, JPG, WEBP)</p>
+            Загрузить фото ✨
+          </button>
+          <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={(e) => e.target.files && addFiles(e.target.files)} />
+          <div>
+            <p className={`font-unbounded font-bold text-base mb-1 ${txtCls}`}>Или перетащите сюда</p>
+            <p className={`text-xs ${mutedCls}`}>PNG, JPG, WEBP до 1000px · минимум 2</p>
+          </div>
+        </div>
+
+        {/* Gallery */}
+        {images.length > 0 && (
+          <div className={`mt-8 p-6 rounded-3xl ${surfaceCls}`}>
+            <div className="flex items-center justify-between mb-5">
+              <span className={`text-[10px] font-bold uppercase tracking-[0.2em] ${mutedCls}`}>Галерея · {images.length}</span>
+              <button onClick={() => setImages([])} className="text-xs font-bold text-[#FF6163] hover:opacity-70">Очистить</button>
+            </div>
+            <div className="grid grid-cols-4 sm:grid-cols-5 gap-3">
+              {images.map((img, idx) => (
+                <div key={img.id} className={`relative aspect-square rounded-xl overflow-hidden shadow-sm ${surfaceSubCls}`}>
+                  <img src={img.url} className="w-full h-full object-cover" alt="" />
+                  <button onClick={() => setImages(p=>p.filter(i=>i.id!==img.id))} className="absolute top-1 right-1 w-5 h-5 bg-black/50 text-white rounded-full text-[10px] flex items-center justify-center">✕</button>
+                  <div className="absolute bottom-1 left-1 px-1.5 py-0.5 bg-black/40 rounded text-[9px] text-white font-bold">{idx + 1}</div>
+                </div>
+              ))}
             </div>
           </div>
+        )}
 
-          {/* Gallery */}
-          {images.length > 0 && (
-            <div className={`rounded-[32px] p-6 mb-6 ${card}`}>
-              <div className="flex items-center justify-between mb-5">
-                <p className={`font-unbounded font-bold text-[10px] uppercase tracking-widest ${muted}`}>Галерея · {images.length}</p>
-                <button onClick={() => setImages([])} className="text-[10px] font-bold text-red-500 uppercase">Очистить</button>
-              </div>
-              <div className="grid grid-cols-4 sm:grid-cols-5 gap-3">
-                {images.map((img, idx) => (
-                  <div key={img.id} className="relative aspect-square rounded-xl overflow-hidden border border-black/5">
-                    <img src={img.url} className="w-full h-full object-cover" alt="" />
-                    <div className="absolute bottom-1 left-1 px-1.5 py-0.5 bg-black/40 backdrop-blur-md rounded text-[9px] text-white font-bold">{idx + 1}</div>
-                  </div>
-                ))}
-                <button onClick={() => fileInputRef.current?.click()} className={`aspect-square rounded-xl flex items-center justify-center border-2 border-dashed ${borderC} ${muted} hover:bg-slate-50`}>+</button>
-              </div>
+        {/* Settings */}
+        {images.length > 0 && (
+          <div className={`mt-6 p-8 rounded-3xl ${surfaceCls}`}>
+            <div className="flex justify-between items-center mb-6">
+              <label className="font-bold text-sm tracking-wider uppercase">Скорость</label>
+              <span className="font-black text-lg" style={{ color: accentP }}>{frameDuration.toFixed(1)}с</span>
             </div>
-          )}
+            <input
+              type="range" min={0.1} max={5} step={0.1}
+              value={frameDuration} onChange={(e)=>setFrameDuration(Number(e.target.value))}
+              className="w-full accent-[#A169F7] cursor-pointer"
+              style={{ background: sliderBg(frameDuration) }}
+            />
+          </div>
+        )}
 
-          {/* Settings */}
-          {images.length > 0 && (
-            <div className={`rounded-[32px] p-7 mb-8 ${card}`}>
-               <p className={`font-unbounded font-bold text-[10px] uppercase tracking-widest mb-6 ${muted}`}>Настройки</p>
-               <div className="flex justify-between items-center mb-4">
-                 <label className={`font-bold text-sm ${txt}`}>Длительность кадра</label>
-                 <span className="font-unbounded font-black text-[#7000FF]">{frameDuration.toFixed(1)}с</span>
-               </div>
-               <input 
-                 type="range" min={0.1} max={10} step={0.1} value={frameDuration} 
-                 onChange={(e) => setFrameDuration(Number(e.target.value))}
-                 style={{ background: sliderBg(frameDuration) }}
-               />
-               <div className={`flex justify-between text-[10px] mt-3 font-bold uppercase tracking-tighter ${hint}`}>
-                 <span>Быстро</span>
-                 <span>Медленно</span>
-               </div>
-            </div>
-          )}
-
-          {/* Rendering Stage */}
+        {/* Processing Stages */}
+        <div className="mt-8 flex flex-col gap-6">
           {stage === "encoding" && (
-            <div className={`rounded-[32px] p-10 text-center ${card}`}>
-              <p className={`font-unbounded font-bold mb-6 ${txt}`}>Склеиваем кадры...</p>
-              <div className="w-full h-2 bg-slate-100 dark:bg-white/10 rounded-full overflow-hidden">
-                <div className="h-full bg-gradient-to-right from-[#7000FF] to-[#FF6163] transition-all duration-300" style={{ width: `${progress}%`, background: '#7000FF' }} />
+            <div className={`p-10 text-center rounded-3xl ${surfaceCls} shadow-lg`}>
+              <p className="font-bold mb-6">Обработка изображений...</p>
+              <div className={`w-full h-3 rounded-full overflow-hidden ${surfaceSubCls}`}>
+                <div className="h-full transition-all duration-300" style={{ width: `${progress}%`, background: accentA }} />
               </div>
-              <p className="mt-4 font-unbounded font-black text-2xl text-[#7000FF]">{progress}%</p>
+              <p className="font-unbounded font-black text-2xl mt-4" style={{ color: accentA }}>{progress}%</p>
             </div>
           )}
 
           {stage === "done" && gifUrl && (
-            <div className={`rounded-[32px] p-6 text-center ${card}`}>
-              <div className={`rounded-2xl overflow-hidden mb-6 border ${borderC}`}>
-                <img src={gifUrl} alt="Result" className="w-full max-h-80 object-contain bg-slate-50" />
+            <div className={`p-8 text-center rounded-3xl ${surfaceCls} shadow-xl`}>
+              <p className="font-bold text-xs uppercase tracking-widest text-slate-400 mb-6">Результат 🎉</p>
+              <img src={gifUrl} alt="Result" className={`max-h-[360px] rounded-lg shadow-lg border ${borderCol} mb-8`} />
+              <div className="flex flex-col gap-3">
+                <a href={gifUrl} download="giftomat.gif" className="flex items-center justify-center py-5 rounded-full bg-[#000000] text-white font-unbounded font-black text-lg hover:bg-slate-800 active:scale-95 shadow-lg">
+                  Скачать GIF
+                </a>
+                <button onClick={() => setStage("idle")} className={`text-sm font-bold ${mutedCls} hover:${txtCls} underline`}>Создать еще</button>
               </div>
-              <a href={gifUrl} download="giftomat.gif" className="block w-full py-5 rounded-full bg-[#FF6163] text-white font-unbounded font-black text-lg shadow-lg shadow-[#FF6163]/30 active:scale-95 transition-transform">
-                СКАЧАТЬ GIF
-              </a>
-              <button onClick={() => setStage("idle")} className={`mt-5 text-sm font-bold ${muted}`}>Создать еще один</button>
+            </div>
+          )}
+
+          {stage === "error" && (
+            <div className="p-6 rounded-xl bg-red-50 border border-red-100 text-[#FF6163] text-center font-bold">
+              {errorMsg}
             </div>
           )}
 
           {/* CTA */}
-          {stage === "idle" && (
+          {stage !== "encoding" && stage !== "done" && (
             <button
-              onClick={generateGif}
-              disabled={!canGenerate}
+              onClick={generateGif} disabled={images.length < 2}
               className={`
-                cta-btn w-full py-5 rounded-full font-unbounded font-black text-xl tracking-tight
-                ${canGenerate ? "bg-[#FF6163] text-white shadow-xl shadow-[#FF6163]/25" : "bg-slate-200 dark:bg-white/5 text-slate-400 cursor-not-allowed"}
+                flex items-center justify-center w-full py-5 rounded-full font-unbounded font-black text-xl tracking-tight
+                ${images.length>=2 ? "bg-black text-white hover:bg-slate-800 shadow-xl shadow-black/10 active:scale-95 transition-transform" : "bg-slate-100 dark:bg-white/5 text-slate-400 cursor-not-allowed"}
               `}
             >
               {ctaLabel}
             </button>
           )}
-
         </div>
-      </main>
+
+      </div>
     </>
   );
 }
