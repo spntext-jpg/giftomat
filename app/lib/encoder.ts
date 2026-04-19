@@ -11,7 +11,7 @@ export function encodeGif(
     if (!GIF) return reject(new Error("GIF.js not loaded"));
 
     const gif = new GIF({
-      workers: 4, // Увеличиваем для скорости на десктопах
+      workers: 4, 
       quality: 10,
       width,
       height,
@@ -27,8 +27,7 @@ export function encodeGif(
 
     for (const frame of frames) {
       ctx.putImageData(frame, 0, 0);
-      // dispose: 1 (Do Not Dispose) предотвращает "залипание" первого кадра
-      // на больших задержках, так как браузеру не нужно восстанавливать фон.
+      // dispose: 1 (Do Not Dispose) — идеальный вариант для непрозрачных кадров
       gif.addFrame(canvas, { 
         delay: Math.round(delay), 
         copy: true,
