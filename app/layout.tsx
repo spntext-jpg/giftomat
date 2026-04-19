@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Гифтомат",
+  title: "Гифтомат · BitGroqs",
   description: "Профессиональный генератор GIF из изображений",
 };
 
@@ -10,9 +10,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="ru">
       <head>
-        {/* Критично: без этого браузер рендерит страницу как мобильную */}
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
@@ -20,9 +18,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           rel="stylesheet"
         />
       </head>
-      <body className="antialiased min-h-screen flex flex-col items-center">
-        {children}
-      </body>
+      <body>{children}</body>
     </html>
   );
 }
