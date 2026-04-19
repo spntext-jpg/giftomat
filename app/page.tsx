@@ -14,17 +14,16 @@ interface UploadedImage {
 }
 
 export default function GiftomatPage() {
-  // --- Дизайн Токены (Strict B2B Modern) ---
+  // --- Константы стилей ---
   const surfaceCls = "bg-white dark:bg-[#1C1A22] border border-slate-100 dark:border-white/5 shadow-sm";
   const surfaceSubCls = "bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5";
   const mutedCls = "text-slate-500 dark:text-slate-400";
   const borderCol = "border-slate-200 dark:border-white/10";
   const txtCls = "text-[#000000] dark:text-white";
-  const hintCls = "text-slate-400 dark:text-slate-500";
   
-  const accentA = "#00AAFF"; // azure
-  const accentP = "#A169F7"; // punk
-  const accentO = "#FF6B00"; // vivid orange
+  const accentA = "#00AAFF"; // Azure
+  const accentP = "#A169F7"; // Violet Punk
+  const accentO = "#FF6B00"; // Vivid Orange
 
   const [images, setImages] = useState<UploadedImage[]>([]);
   const [stage, setStage] = useState<Stage>("idle");
@@ -42,6 +41,13 @@ export default function GiftomatPage() {
       if (gifUrl) URL.revokeObjectURL(gifUrl);
     };
   }, []);
+
+  // Тот самый ctaLabel, который вызывал ошибку
+  const ctaLabel = images.length === 0 
+    ? "Загрузите фото" 
+    : images.length === 1 
+      ? "Нужно еще одно" 
+      : "Создать GIF";
 
   const addFiles = useCallback((fileList: FileList) => {
     const valid = Array.from(fileList).filter((f) => f.type.startsWith("image/"));
@@ -91,9 +97,8 @@ export default function GiftomatPage() {
         return ctx.getImageData(0, 0, width, height);
       });
 
-      setProgress(15);
       const blob = await encodeGif(framesData, frameDuration * 1000, width, height, (pct) => {
-        setProgress(15 + Math.round(pct * 0.85));
+        setProgress(Math.round(pct));
       });
 
       setGifUrl(URL.createObjectURL(blob));
@@ -106,9 +111,8 @@ export default function GiftomatPage() {
   };
 
   const sliderBg = (val: number) => {
-    const pct = ((val - 0.1) / (10 - 0.1)) * 100;
-    const trackColor = ios ? '#2D2A38' : '#DDD6F5';
-    return `linear-gradient(to right, ${accentP} ${pct}%, ${trackColor} ${pct}%)`;
+    const pct = ((val - 0.1) / (5 - 0.1)) * 100;
+    return `linear-gradient(to right, ${accentP} ${pct}%, #E2D9F3 ${pct}%)`;
   };
 
   return (
@@ -118,124 +122,123 @@ export default function GiftomatPage() {
         
         {/* Header */}
         <header className="flex flex-col items-center text-center mb-16">
-          <div 
-            className="w-16 h-16 rounded-[40px] flex items-center justify-center mb-6 shadow-sm"
-            style={{ background: '#000000' }}
-          >
-            <span className="font-unbounded font-black text-white text-3xl" style={{color: accentP}}>G</span>
+          <div className="w-16 h-16 rounded-[22px] bg-black flex items-center justify-center mb-6 shadow-xl shadow-purple-500/10 border border-white/5">
+            <span className="font-unbounded font-black text-2xl" style={{ color: accentP }}>G</span>
           </div>
-          <h1 className="text-4xl font-blacktracking-tight mb-2">Генератор GIF</h1>
-          <p className={`${mutedCls}`}>Профессиональный инструмент для четких анимаций</p>
+          <h1 className="text-4xl font-black tracking-tight mb-2">Генератор GIF</h1>
+          <p className={`${mutedCls} text-sm`}>Профессиональный инструмент для ваших анимаций</p>
         </header>
 
-        {/* Upload Container (Minimal Dropzone) */}
+        {/* Upload Area */}
         <div 
           onDrop={(e) => { e.preventDefault(); addFiles(e.dataTransfer.files); }}
           onDragOver={(e) => e.preventDefault()}
-          className={`
-            w-full py-16 px-10 rounded-[2.5rem] ${surfaceSubCls} ${borderCol} border-2 border-dashed
-            flex flex-col items-center gap-6 text-center shadow-inner
-          `}
+          className={`w-full py-14 px-10 rounded-[40px] ${surfaceSubCls} ${borderCol} border-2 border-dashed flex flex-col items-center gap-8 text-center`}
         >
-          {/* Пухлая, оранжевая, парящая кнопка. Vivid Orange #FF6B00. */}
+          {/* Пухлая оранжевая кнопка с Glow-эффектом */}
           <button 
             onClick={() => fileInputRef.current?.click()}
-            className={`
-              inline-block px-12 py-5 rounded-full 
-              font-unbounded font-black text-white text-lg 
-              transition-all duration-300 active:scale-95
-              hover:-translate-y-1 hover:scale-[1.03]
-              shadow-[0_8px_32px_-6px_rgba(255,107,0,0.5)]
-              hover:shadow-[0_12px_48px_-10px_rgba(255,107,0,0.85)]
-            `}
-            style={{ background: accentO }}
+            className="group relative inline-flex items-center justify-center px-12 py-5 rounded-full font-unbounded font-black text-white text-lg transition-all duration-300 active:scale-95 hover:-translate-y-1.5"
           >
-            Загрузить фото ✨
+            {/* Слой свечения (Glow) */}
+            <div 
+              className="absolute inset-0 rounded-full blur-2xl opacity-40 group-hover:opacity-70 transition-opacity"
+              style={{ background: accentO }}
+            />
+            {/* Сама кнопка */}
+            <span className="relative z-10">Загрузить фото ✨</span>
+            <div className="absolute inset-0 rounded-full shadow-[0_10px_40px_-6px_rgba(255,107,0,0.5)]" style={{ background: accentO }} />
           </button>
+
           <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={(e) => e.target.files && addFiles(e.target.files)} />
-          <div>
-            <p className={`font-unbounded font-bold text-base mb-1 ${txtCls}`}>Или перетащите сюда</p>
-            <p className={`text-xs ${mutedCls}`}>PNG, JPG, WEBP до 1000px · минимум 2</p>
+          
+          <div className="flex flex-col gap-1">
+            <p className={`font-unbounded font-bold text-base ${txtCls}`}>Или перетащите сюда</p>
+            <p className={`text-[11px] uppercase tracking-wider font-bold ${mutedCls}`}>PNG, JPG, WEBP · от 2 штук</p>
           </div>
         </div>
 
         {/* Gallery */}
         {images.length > 0 && (
-          <div className={`mt-8 p-6 rounded-3xl ${surfaceCls}`}>
-            <div className="flex items-center justify-between mb-5">
+          <div className={`mt-10 p-7 rounded-[32px] ${surfaceCls}`}>
+            <div className="flex items-center justify-between mb-6">
               <span className={`text-[10px] font-bold uppercase tracking-[0.2em] ${mutedCls}`}>Галерея · {images.length}</span>
-              <button onClick={() => setImages([])} className="text-xs font-bold text-[#FF6163] hover:opacity-70">Очистить</button>
+              <button onClick={() => setImages([])} className="text-[10px] font-bold text-red-500 uppercase tracking-wider">Очистить всё</button>
             </div>
             <div className="grid grid-cols-4 sm:grid-cols-5 gap-3">
               {images.map((img, idx) => (
-                <div key={img.id} className={`relative aspect-square rounded-xl overflow-hidden shadow-sm ${surfaceSubCls}`}>
+                <div key={img.id} className={`relative aspect-square rounded-2xl overflow-hidden shadow-sm border ${borderCol}`}>
                   <img src={img.url} className="w-full h-full object-cover" alt="" />
-                  <button onClick={() => setImages(p=>p.filter(i=>i.id!==img.id))} className="absolute top-1 right-1 w-5 h-5 bg-black/50 text-white rounded-full text-[10px] flex items-center justify-center">✕</button>
-                  <div className="absolute bottom-1 left-1 px-1.5 py-0.5 bg-black/40 rounded text-[9px] text-white font-bold">{idx + 1}</div>
+                  <button onClick={() => setImages(p=>p.filter(i=>i.id!==img.id))} className="absolute top-1 right-1 w-5 h-5 bg-black/50 backdrop-blur-md text-white rounded-full text-[10px] flex items-center justify-center hover:bg-black/80 transition-colors">✕</button>
+                  <div className="absolute bottom-1 left-1 px-1.5 py-0.5 bg-black/40 backdrop-blur-md rounded text-[9px] text-white font-bold">{idx + 1}</div>
                 </div>
               ))}
+              <button onClick={() => fileInputRef.current?.click()} className={`aspect-square rounded-2xl flex items-center justify-center border-2 border-dashed ${borderCol} text-xl ${mutedCls} hover:bg-slate-50 transition-colors`}>+</button>
             </div>
           </div>
         )}
 
         {/* Settings */}
         {images.length > 0 && (
-          <div className={`mt-6 p-8 rounded-3xl ${surfaceCls}`}>
+          <div className={`mt-6 p-8 rounded-[32px] ${surfaceCls}`}>
             <div className="flex justify-between items-center mb-6">
-              <label className="font-bold text-sm tracking-wider uppercase">Скорость</label>
-              <span className="font-black text-lg" style={{ color: accentP }}>{frameDuration.toFixed(1)}с</span>
+              <label className={`font-unbounded font-bold text-[10px] uppercase tracking-widest ${mutedCls}`}>Скорость</label>
+              <span className="font-unbounded font-black text-lg" style={{ color: accentP }}>{frameDuration.toFixed(1)}с</span>
             </div>
             <input
               type="range" min={0.1} max={5} step={0.1}
               value={frameDuration} onChange={(e)=>setFrameDuration(Number(e.target.value))}
-              className="w-full accent-[#A169F7] cursor-pointer"
+              className="w-full cursor-pointer"
               style={{ background: sliderBg(frameDuration) }}
             />
           </div>
         )}
 
-        {/* Processing Stages */}
-        <div className="mt-8 flex flex-col gap-6">
+        {/* Action / Result */}
+        <div className="mt-8">
           {stage === "encoding" && (
-            <div className={`p-10 text-center rounded-3xl ${surfaceCls} shadow-lg`}>
-              <p className="font-bold mb-6">Обработка изображений...</p>
-              <div className={`w-full h-3 rounded-full overflow-hidden ${surfaceSubCls}`}>
+            <div className={`p-10 text-center rounded-[32px] ${surfaceCls}`}>
+              <p className="font-unbounded font-bold mb-6">Создаем анимацию...</p>
+              <div className="w-full h-2 rounded-full overflow-hidden bg-slate-100 dark:bg-white/5">
                 <div className="h-full transition-all duration-300" style={{ width: `${progress}%`, background: accentA }} />
               </div>
-              <p className="font-unbounded font-black text-2xl mt-4" style={{ color: accentA }}>{progress}%</p>
+              <p className="font-unbounded font-black text-2xl mt-5" style={{ color: accentA }}>{progress}%</p>
             </div>
           )}
 
           {stage === "done" && gifUrl && (
-            <div className={`p-8 text-center rounded-3xl ${surfaceCls} shadow-xl`}>
-              <p className="font-bold text-xs uppercase tracking-widest text-slate-400 mb-6">Результат 🎉</p>
-              <img src={gifUrl} alt="Result" className={`max-h-[360px] rounded-lg shadow-lg border ${borderCol} mb-8`} />
-              <div className="flex flex-col gap-3">
-                <a href={gifUrl} download="giftomat.gif" className="flex items-center justify-center py-5 rounded-full bg-[#000000] text-white font-unbounded font-black text-lg hover:bg-slate-800 active:scale-95 shadow-lg">
+            <div className={`p-8 text-center rounded-[32px] ${surfaceCls}`}>
+              <div className={`rounded-2xl overflow-hidden mb-8 border ${borderCol} bg-slate-50 dark:bg-black/20`}>
+                <img src={gifUrl} alt="Result" className="w-full max-h-[400px] object-contain" />
+              </div>
+              <div className="flex flex-col gap-4">
+                <a href={gifUrl} download="giftomat.gif" className="flex items-center justify-center py-5 rounded-full bg-black text-white font-unbounded font-black text-lg hover:bg-slate-800 transition-all active:scale-95 shadow-xl shadow-black/10">
                   Скачать GIF
                 </a>
-                <button onClick={() => setStage("idle")} className={`text-sm font-bold ${mutedCls} hover:${txtCls} underline`}>Создать еще</button>
+                <button onClick={() => setStage("idle")} className={`text-xs font-bold uppercase tracking-widest ${mutedCls} hover:${txtCls} transition-colors`}>Создать новый</button>
               </div>
             </div>
           )}
 
-          {stage === "error" && (
-            <div className="p-6 rounded-xl bg-red-50 border border-red-100 text-[#FF6163] text-center font-bold">
-              {errorMsg}
-            </div>
-          )}
-
-          {/* CTA */}
-          {stage !== "encoding" && stage !== "done" && (
+          {stage === "idle" && (
             <button
-              onClick={generateGif} disabled={images.length < 2}
+              onClick={generateGif} 
+              disabled={images.length < 2}
               className={`
-                flex items-center justify-center w-full py-5 rounded-full font-unbounded font-black text-xl tracking-tight
-                ${images.length>=2 ? "bg-black text-white hover:bg-slate-800 shadow-xl shadow-black/10 active:scale-95 transition-transform" : "bg-slate-100 dark:bg-white/5 text-slate-400 cursor-not-allowed"}
+                w-full py-6 rounded-full font-unbounded font-black text-xl transition-all duration-300
+                ${images.length >= 2 
+                  ? "bg-black text-white shadow-2xl shadow-black/20 hover:-translate-y-1 active:scale-95" 
+                  : "bg-slate-100 dark:bg-white/5 text-slate-400 cursor-not-allowed"}
               `}
             >
               {ctaLabel}
             </button>
+          )}
+
+          {stage === "error" && (
+            <div className="p-6 rounded-2xl bg-red-50 text-red-500 text-center font-bold border border-red-100">
+              {errorMsg}
+            </div>
           )}
         </div>
 
