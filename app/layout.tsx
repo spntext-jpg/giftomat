@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Гифтомат · BitGroqs",
+  title: "Гифтомат от Павлика",
   description: "Профессиональный генератор GIF из изображений",
 };
 
