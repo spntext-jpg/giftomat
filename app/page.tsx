@@ -18,7 +18,7 @@ export default function GiftomatPage() {
   const [stage, setStage] = useState<Stage>("idle");
   const [progress, setProgress] = useState(0);
   const [gifUrl, setGifUrl] = useState<string | null>(null);
-  const [frameDuration, setFrameDuration] = useState(0.5);
+  const [frameDuration, setFrameDuration] = useState(2.5);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -421,8 +421,8 @@ export default function GiftomatPage() {
             <input
               className="bit-range"
               type="range"
-              min={0.1}
-              max={4}
+              min={0.5}
+              max={5}
               step={0.1}
               value={frameDuration}
               onChange={(e) => setFrameDuration(Number(e.target.value))}
