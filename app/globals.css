@@ -3,19 +3,18 @@
 @tailwind utilities;
 
 :root {
-  --slider-track: #DDD6F5;
+  --slider-track: #E2D9F3;
+  --brand: #7000FF;
+  --orange: #FF6B00;
   color-scheme: light dark;
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
-    --slider-track: #2D2A38;
-  }
+  :root { --slider-track: #2D2A38; }
 }
 
 body { margin: 0; }
 
-/* Слайдер */
 input[type="range"] {
   -webkit-appearance: none;
   appearance: none;
@@ -23,33 +22,55 @@ input[type="range"] {
   height: 6px;
   border-radius: 99px;
   outline: none;
-  background: var(--slider-track);
+  cursor: pointer;
 }
 input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 20px;
-  height: 20px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
-  background: #7000FF;
-  border: 2px solid white;
-  box-shadow: 0 0 0 2px rgba(112,0,255,0.2);
-  transition: all 0.2s ease;
+  background: var(--brand);
+  border: 2.5px solid white;
+  box-shadow: 0 0 0 3px rgba(112,0,255,0.18);
+  transition: box-shadow 0.18s, transform 0.18s;
   cursor: pointer;
 }
 input[type="range"]::-webkit-slider-thumb:hover {
-  box-shadow: 0 0 0 6px rgba(112,0,255,0.15);
+  box-shadow: 0 0 0 7px rgba(112,0,255,0.14);
   transform: scale(1.1);
 }
 input[type="range"]::-moz-range-thumb {
-  width: 20px;
-  height: 20px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
-  background: #7000FF;
-  border: 2px solid white;
+  background: var(--brand);
+  border: 2.5px solid white;
   cursor: pointer;
 }
 
-/* Шрифты */
 .font-unbounded { font-family: 'Unbounded', sans-serif; }
 .font-inter     { font-family: 'Inter', sans-serif; }
+
+/* Dropzone hover — через CSS класс, без JS */
+.dropzone-idle {
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+.dropzone-idle:hover {
+  border-color: rgba(112,0,255,0.5);
+  box-shadow: 0 8px 32px -8px rgba(112,0,255,0.18);
+  transform: translateY(-2px);
+}
+
+/* CTA Glow — пружинящий hover */
+.cta-btn {
+  transition: transform 0.22s cubic-bezier(.34,1.56,.64,1), box-shadow 0.22s ease;
+}
+.cta-btn:not(:disabled):hover {
+  transform: translateY(-3px) scale(1.03);
+  box-shadow: 0 16px 40px -8px rgba(255,107,0,0.65);
+}
+.cta-btn:not(:disabled):active {
+  transform: scale(0.97);
+  box-shadow: 0 4px 16px -4px rgba(255,107,0,0.5);
+}
