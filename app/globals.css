@@ -2,18 +2,38 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ── BitGroqs Design Tokens ── */
+/* =========================
+   THEME TOKENS
+========================= */
+
+/* --- Dark (по умолчанию) --- */
 :root {
-  --bg-page:       #0A0A0C;
-  --bg-surface:    #111114;
-  --bg-surface-sub:#1A1A1E;
-  --text-primary:  #ffffff;
-  --text-muted:    #555555;
-  --border:        rgba(255,255,255,0.08);
-  --azure:         #19aef9;
-  --orange:        #FF6B00;
-  --violet:        #A169F7;
-  --slider-track:  #1A1A1E;
+  --bg-page: #0A0A0C;
+  --bg-surface: #111114;
+  --bg-surface-sub: #1A1A1E;
+
+  --text-primary: #ffffff;
+  --text-muted: #555;
+
+  --accent-blue: #19aef9;
+  --accent-orange: #ff9839;
+  --accent-violet: #a169f7;
+  --accent-green: #22c55e;
+}
+
+/* --- Light theme --- */
+[data-theme="light"] {
+  --bg-page: linear-gradient(135deg, #0a1428 0%, #4b1d8c 100%);
+  --bg-surface: rgba(255,255,255,0.95);
+  --bg-surface-sub: rgba(255,255,255,0.85);
+
+  --text-primary: #0f172a;
+  --text-muted: #475569;
+
+  --accent-blue: #19aef9;
+  --accent-orange: #ff9839;
+  --accent-violet: #7c3aed;
+  --accent-green: #16a34a;
 }
 
 *,
@@ -22,18 +42,15 @@
   box-sizing: border-box;
 }
 
-html,
-body {
+html, body {
   margin: 0;
   padding: 0;
-  width: 100%;
   min-height: 100vh;
-  background-color: var(--bg-page);
-  color: var(--text-primary);
   font-family: 'Inter', sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
 }
 
-.font-unbounded { font-family: 'Unbounded', sans-serif; }
-.font-inter     { font-family: 'Inter', sans-serif; }
+body {
+  background: var(--bg-page);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+}
