@@ -6,34 +6,44 @@
    THEME TOKENS
 ========================= */
 
-/* --- Dark (по умолчанию) --- */
+/* --- Dark theme (по умолчанию) --- */
 :root {
   --bg-page: #0A0A0C;
   --bg-surface: #111114;
   --bg-surface-sub: #1A1A1E;
 
   --text-primary: #ffffff;
-  --text-muted: #555;
+  --text-muted: #555555;
+  --text-secondary: #333333;
 
   --accent-blue: #19aef9;
-  --accent-orange: #ff9839;
-  --accent-violet: #a169f7;
+  --accent-orange: #FF6B00;
+  --accent-violet: #A169F7;
   --accent-green: #22c55e;
+
+  --border-color: rgba(255,255,255,0.08);
+  --card-bg: #111114;
+  --dropzone-bg: rgba(255,255,255,0.01);
 }
 
 /* --- Light theme --- */
 [data-theme="light"] {
-  --bg-page: linear-gradient(135deg, #0a1428 0%, #4b1d8c 100%);
-  --bg-surface: rgba(255,255,255,0.95);
-  --bg-surface-sub: rgba(255,255,255,0.85);
+  --bg-page: #f0f4ff;
+  --bg-surface: #ffffff;
+  --bg-surface-sub: #f8faff;
 
   --text-primary: #0f172a;
-  --text-muted: #475569;
+  --text-muted: #64748b;
+  --text-secondary: #334155;
 
   --accent-blue: #19aef9;
   --accent-orange: #ff9839;
   --accent-violet: #7c3aed;
   --accent-green: #16a34a;
+
+  --border-color: rgba(15,23,42,0.1);
+  --card-bg: #ffffff;
+  --dropzone-bg: rgba(25,174,249,0.05);
 }
 
 *,
@@ -53,4 +63,8 @@ body {
   background: var(--bg-page);
   color: var(--text-primary);
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
+
+.font-unbounded { font-family: 'Unbounded', sans-serif; }
+.font-inter { font-family: 'Inter', sans-serif; }
