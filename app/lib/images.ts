@@ -1,8 +1,6 @@
-// app/lib/images.ts
-
 export function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
-    const img = new Image(); // ← ИСПРАВЛЕНО: Объявление img
+    const img = new Image();
     img.crossOrigin = "anonymous";
     img.onload = () => resolve(img);
     img.onerror = reject;
@@ -12,18 +10,18 @@ export function loadImage(src: string): Promise<HTMLImageElement> {
 
 export function computeDimensions(
   images: HTMLImageElement[],
-  maxWidth: number = 1200
+  maxWidth: number = 800  // уменьшили с 1200 до 800 — файл меньше, скорость выше
 ): { width: number; height: number } {
   if (!images.length) return { width: 800, height: 800 };
-  
-  const first = images[0]; // ← ИСПРАВЛЕНО: Объявление first
+
+  const first = images[0];
   let width = first.naturalWidth;
   let height = first.naturalHeight;
-  const ratio = height / width; // ← ИСПРАВЛЕНО: Объявление ratio
+  const ratio = height / width;
 
   if (width > maxWidth) {
     width = maxWidth;
-    height = Math.round(width * ratio); // ← ИСПРАВЛЕНО: Корректный расчет высоты
+    height = Math.round(width * ratio);
   }
   return { width, height };
 }
@@ -33,16 +31,14 @@ export function imagesToImageData(
   width: number,
   height: number
 ): ImageData[] {
+  // Один canvas для всех кадров — быстрее чем создавать N canvas
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d")!;
+
   return images.map((img) => {
-    // ← ИСПРАВЛЕНО: Canvas создается для каждого кадра
-    const canvas = document.createElement("canvas");
-    canvas.width = width;
-    canvas.height = height;
-    const ctx = canvas.getContext("2d");
-
-    if (!ctx) throw new Error("Canvas context failed");
-
-    // ← КЛЮЧЕВОЙ МОМЕНТ: Белый фон для каждого кадра. Обязательно для dispose: 1.
+    // Белый фон для каждого кадра
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, width, height);
 
@@ -51,7 +47,6 @@ export function imagesToImageData(
 
     let dx = 0, dy = 0, dw = width, dh = height;
 
-    // Центрирование и вписывание изображения в кадр
     if (imgRatio > canvRatio) {
       dw = img.naturalWidth * (height / img.naturalHeight);
       dx = (width - dw) / 2;
@@ -59,9 +54,10 @@ export function imagesToImageData(
       dh = img.naturalHeight * (width / img.naturalWidth);
       dy = (height - dh) / 2;
     }
-    
-    ctx.drawImage(img, dx, dy, dw, dh); // ← ИСПРАВЛЕНО: Отрисовка изображения
 
+    ctx.drawImage(img, dx, dy, dw, dh);
+
+    // getImageData создаёт копию данных — это важно
     return ctx.getImageData(0, 0, width, height);
   });
 }
