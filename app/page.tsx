@@ -27,23 +27,21 @@ export default function GiftomatPage() {
   // ── Автоопределение темы по системным настройкам ──
   useEffect(() => {
     const mediaQuery = window.matchMedia("(prefers-color-scheme: light)");
-    
-    const handleChange = (e: MediaQueryListEvent) => {
+
+    const apply = (isLight: boolean) => {
       document.documentElement.setAttribute(
         "data-theme",
-        e.matches ? "light" : "dark"
+        isLight ? "light" : "dark"
       );
     };
 
     // Установить при загрузке
-    document.documentElement.setAttribute(
-      "data-theme",
-      mediaQuery.matches ? "light" : "dark"
-    );
+    apply(mediaQuery.matches);
 
-    // Слушать изменения
-    mediaQuery.addEventListener("change", handleChange);
-    return () => mediaQuery.removeEventListener("change", handleChange);
+    // Слушать изменения системной темы
+    const handler = (e: MediaQueryListEvent) => apply(e.matches);
+    mediaQuery.addEventListener("change", handler);
+    return () => mediaQuery.removeEventListener("change", handler);
   }, []);
 
   const addFiles = (files: FileList) => {
@@ -84,11 +82,14 @@ export default function GiftomatPage() {
     }
   };
 
-  // ── Открытие GIF в новой вкладке для копирования ──
-  // Браузеры блокируют прямое копирование GIF через JS (Clipboard API)
-  const openGifInNewTab = () => {
+  // ── Скачать и сразу открыть папку невозможно в браузере ──
+  // Поэтому даём две кнопки: скачать + честная инструкция
+  const handleDownload = () => {
     if (!gifUrl) return;
-    window.open(gifUrl, "_blank");
+    const a = document.createElement("a");
+    a.href = gifUrl;
+    a.download = "giftomat.gif";
+    a.click();
   };
 
   return (
@@ -191,9 +192,12 @@ export default function GiftomatPage() {
           border: none;
           font-weight: 900;
           font-size: 20px;
+          color: #fff;
           transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
           cursor: pointer;
-          color: #fff;
+        }
+        .generate-btn:not(:disabled):hover {
+          transform: scale(1.02);
         }
         .generate-btn:disabled {
           opacity: 0.6;
@@ -206,16 +210,32 @@ export default function GiftomatPage() {
           border: none;
           font-weight: 700;
           font-size: 16px;
-          transition: transform 0.2s ease;
+          transition: transform 0.2s ease, box-shadow 0.2s ease;
           text-decoration: none;
           display: inline-flex;
           align-items: center;
           justify-content: center;
+          gap: 8px;
           color: #fff;
           cursor: pointer;
         }
         .action-btn:hover {
           transform: translateY(-2px);
+        }
+
+        .hint-box {
+          margin-top: 20px;
+          padding: 16px 20px;
+          border-radius: 16px;
+          background: var(--bg-surface-sub);
+          border: 1px solid var(--border-color);
+          font-size: 13px;
+          line-height: 1.6;
+          color: var(--text-muted);
+          text-align: left;
+        }
+        .hint-box strong {
+          color: var(--text-primary);
         }
       ` }} />
 
@@ -291,7 +311,10 @@ export default function GiftomatPage() {
             transition: "all 0.3s ease",
           }}
         >
-          <button className="upload-btn" onClick={() => fileInputRef.current?.click()}>
+          <button
+            className="upload-btn"
+            onClick={() => fileInputRef.current?.click()}
+          >
             Загрузить фото ✨
           </button>
 
@@ -304,7 +327,14 @@ export default function GiftomatPage() {
             onChange={(e) => e.target.files && addFiles(e.target.files)}
           />
 
-          <p style={{ fontSize: 12, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.1em", margin: 0 }}>
+          <p style={{
+            fontSize: 12,
+            fontWeight: 700,
+            color: "var(--text-muted)",
+            textTransform: "uppercase",
+            letterSpacing: "0.1em",
+            margin: 0,
+          }}>
             или перетащите сюда
           </p>
         </div>
@@ -320,12 +350,27 @@ export default function GiftomatPage() {
               border: "1px solid var(--border-color)",
             }}
           >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-              <span style={{ fontSize: 12, fontWeight: 800, color: "var(--text-muted)", textTransform: "uppercase" }}>
+            <div style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: 20,
+            }}>
+              <span style={{
+                fontSize: 12,
+                fontWeight: 800,
+                color: "var(--text-muted)",
+                textTransform: "uppercase",
+              }}>
                 Кадров: {images.length}
               </span>
               <button
-                onClick={() => { setImages([]); setStage("idle"); setGifUrl(null); setGifBlob(null); }}
+                onClick={() => {
+                  setImages([]);
+                  setStage("idle");
+                  setGifUrl(null);
+                  setGifBlob(null);
+                }}
                 style={{
                   background: "rgba(239,68,68,0.1)",
                   border: "none",
@@ -353,7 +398,11 @@ export default function GiftomatPage() {
                     border: "1px solid var(--border-color)",
                   }}
                 >
-                  <img src={img.url} style={{ width: "100%", height: "100%", objectFit: "cover" }} alt="" />
+                  <img
+                    src={img.url}
+                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                    alt=""
+                  />
                   <button
                     onClick={() => setImages((p) => p.filter((i) => i.id !== img.id))}
                     style={{
@@ -392,8 +441,17 @@ export default function GiftomatPage() {
               border: "1px solid var(--border-color)",
             }}
           >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase" }}>
+            <div style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}>
+              <span style={{
+                fontSize: 12,
+                fontWeight: 700,
+                color: "var(--text-muted)",
+                textTransform: "uppercase",
+              }}>
                 Задержка кадра
               </span>
               <span style={{ fontSize: 24, fontWeight: 900, color: "var(--accent-violet)" }}>
@@ -415,6 +473,7 @@ export default function GiftomatPage() {
         {/* ── Progress / Result / Generate ── */}
         <div style={{ marginTop: 32, marginBottom: 60 }}>
 
+          {/* Encoding */}
           {stage === "encoding" && (
             <div
               style={{
@@ -425,10 +484,21 @@ export default function GiftomatPage() {
                 border: "1px solid var(--border-color)",
               }}
             >
-              <p style={{ fontWeight: 800, fontSize: 18, marginBottom: 20, color: "var(--accent-violet)" }}>
+              <p style={{
+                fontWeight: 800,
+                fontSize: 18,
+                marginBottom: 20,
+                color: "var(--accent-violet)",
+              }}>
                 РЕНДЕРИНГ {progress}%
               </p>
-              <div style={{ width: "100%", height: 10, background: "var(--bg-surface-sub)", borderRadius: 100, overflow: "hidden" }}>
+              <div style={{
+                width: "100%",
+                height: 10,
+                background: "var(--bg-surface-sub)",
+                borderRadius: 100,
+                overflow: "hidden",
+              }}>
                 <div
                   style={{
                     height: "100%",
@@ -442,6 +512,7 @@ export default function GiftomatPage() {
             </div>
           )}
 
+          {/* Error */}
           {stage === "error" && (
             <div
               style={{
@@ -457,13 +528,21 @@ export default function GiftomatPage() {
               Ошибка генерации.
               <button
                 onClick={() => setStage("idle")}
-                style={{ marginLeft: 12, background: "none", border: "none", color: "#EF4444", cursor: "pointer", textDecoration: "underline" }}
+                style={{
+                  marginLeft: 12,
+                  background: "none",
+                  border: "none",
+                  color: "#EF4444",
+                  cursor: "pointer",
+                  textDecoration: "underline",
+                }}
               >
                 Попробовать снова
               </button>
             </div>
           )}
 
+          {/* Done */}
           {stage === "done" && gifUrl && (
             <div
               style={{
@@ -474,6 +553,7 @@ export default function GiftomatPage() {
                 textAlign: "center",
               }}
             >
+              {/* Превью GIF */}
               <img
                 src={gifUrl}
                 style={{
@@ -487,51 +567,70 @@ export default function GiftomatPage() {
                 alt="Result"
               />
 
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 12, justifyContent: "center" }}>
-                <a
-                  href={gifUrl}
-                  download="giftomat.gif"
+              {/* Кнопки */}
+              <div style={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: 12,
+                justifyContent: "center",
+              }}>
+                {/* Скачать — основной способ получить GIF */}
+                <button
+                  onClick={handleDownload}
                   className="action-btn"
                   style={{ background: "var(--accent-green)" }}
                 >
-                  Скачать GIF ↓
-                </a>
-
-                <button
-                  onClick={openGifInNewTab}
-                  className="action-btn"
-                  style={{ background: "var(--accent-blue)" }}
-                >
-                  🔗 Открыть для копирования
+                  ⬇ Скачать GIF
                 </button>
 
+                {/* Создать ещё */}
                 <button
-                  onClick={() => { setStage("idle"); setGifUrl(null); setGifBlob(null); }}
+                  onClick={() => {
+                    setStage("idle");
+                    setGifUrl(null);
+                    setGifBlob(null);
+                  }}
                   className="action-btn"
-                  style={{ background: "var(--bg-surface-sub)", color: "var(--text-primary)" }}
+                  style={{
+                    background: "var(--bg-surface-sub)",
+                    color: "var(--text-primary)",
+                  }}
                 >
-                  Создать ещё
+                  ↩ Создать ещё
                 </button>
               </div>
 
-              <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 16, lineHeight: 1.5 }}>
-                Нажмите «Открыть» → в новой вкладке<br />
-                ПКМ → «Копировать изображение»
-              </p>
+              {/* Честная инструкция по копированию */}
+              <div className="hint-box">
+                <strong>Как скопировать GIF?</strong><br />
+                Браузеры не позволяют копировать GIF-анимацию напрямую в буфер обмена —
+                это техническое ограничение.<br /><br />
+                <strong>Способ 1 (рекомендуем):</strong> Скачайте GIF → вставьте файл куда нужно.<br />
+                <strong>Способ 2:</strong> Скачайте GIF → откройте файл → ПКМ → «Копировать».
+              </div>
             </div>
           )}
 
+          {/* Idle */}
           {stage === "idle" && (
             <button
               onClick={generateGif}
               disabled={images.length < 2}
               className="generate-btn"
               style={{
-                backgroundColor: images.length >= 2 ? "var(--accent-violet)" : "var(--bg-surface-sub)",
-                boxShadow: images.length >= 2 ? "0 20px 40px rgba(161,105,247,0.3)" : "none",
+                backgroundColor: images.length >= 2
+                  ? "var(--accent-violet)"
+                  : "var(--bg-surface-sub)",
+                boxShadow: images.length >= 2
+                  ? "0 20px 40px rgba(161,105,247,0.3)"
+                  : "none",
               }}
             >
-              {images.length === 0 ? "Загрузите фото" : images.length === 1 ? "Нужно ещё фото" : "Сгенерировать GIF →"}
+              {images.length === 0
+                ? "Загрузите фото"
+                : images.length === 1
+                ? "Нужно ещё фото"
+                : "Сгенерировать GIF →"}
             </button>
           )}
 
