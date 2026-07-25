@@ -1,70 +1,59 @@
 declare const GIF: any;
 
+export interface GifEncodeOptions {
+  quality?: number;
+  onProgress?: (pct: number) => void;
+}
+
 export function encodeGif(
   frames: ImageData[],
   delayMs: number,
   width: number,
   height: number,
-  onProgress?: (pct: number) => void
+  onProgress?: (pct: number) => void,
+  quality: number = 15
 ): Promise<Blob> {
   return new Promise((resolve, reject) => {
+    if (!frames.length) {
+      reject(new Error("Нет кадров для GIF"));
+      return;
+    }
     if (typeof GIF === "undefined") {
-      return reject(new Error("GIF.js not loaded"));
+      reject(new Error("GIF.js не загружен"));
+      return;
     }
 
-    // Максимум воркеров для скорости
     const workerCount = Math.min(
-      typeof navigator !== "undefined"
-        ? navigator.hardwareConcurrency || 4
-        : 4,
-      8
+      typeof navigator !== "undefined" ? navigator.hardwareConcurrency || 4 : 4,
+      8,
+      frames.length + 1
     );
 
     const gif = new GIF({
-      workers: workerCount,
-      quality: 15,       // чуть хуже качество, но заметно быстрее
+      workers: Math.max(1, workerCount),
+      quality,
       width,
       height,
       workerScript: "/gif.worker.js",
       background: "#ffffff",
       repeat: 0,
-      dither: false,     // отключаем дизеринг — +30% скорость
+      dither: false,
     });
 
-    // ── Hack-кадр для фикса залипания ──────────────────────────────
-    // Используем ПЕРВЫЙ реальный кадр с минимальной задержкой,
-    // чтобы не было белого кадра в начале
-    const firstCanvas = document.createElement("canvas");
-    firstCanvas.width = width;
-    firstCanvas.height = height;
-    const firstCtx = firstCanvas.getContext("2d")!;
-    firstCtx.putImageData(frames[0], 0, 0);
+    // Минимальный повтор первого реального кадра сохраняет проверенный фикс
+    // начального белого кадра, но без промежуточных canvas-копий.
+    gif.addFrame(frames[0], { delay: 1, copy: true });
 
-    gif.addFrame(firstCanvas, {
-      delay: 1,       // 1ms — невидимо для глаза
-      dispose: 2,
-      copy: true,
-    });
-
-    // ── Основные кадры ──────────────────────────────────────────────
     for (const frame of frames) {
-      const canvas = document.createElement("canvas");
-      canvas.width = width;
-      canvas.height = height;
-      const ctx = canvas.getContext("2d")!;
-      ctx.putImageData(frame, 0, 0);
-
-      gif.addFrame(canvas, {
-        delay: Math.round(delayMs),
-        dispose: 2,
+      gif.addFrame(frame, {
+        delay: Math.max(10, Math.round(delayMs)),
         copy: true,
       });
     }
 
-    gif.on("progress", (p: number) => onProgress?.(Math.round(p * 100)));
+    gif.on("progress", (progress: number) => onProgress?.(Math.round(progress * 100)));
     gif.on("finished", (blob: Blob) => resolve(blob));
-    gif.on("abort", () => reject(new Error("Encoding aborted")));
-
+    gif.on("abort", () => reject(new Error("Кодирование отменено")));
     gif.render();
   });
 }

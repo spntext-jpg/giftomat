@@ -1,9 +1,28 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import Script from "next/script";
-import { loadImage, computeDimensions, imagesToImageData } from "./lib/images";
+import { useEffect, useMemo, useRef, useState, type ChangeEvent, type CSSProperties, type DragEvent, type ReactNode } from "react";
+import { downloadBlob } from "./lib/download";
 import { encodeGif } from "./lib/encoder";
+import {
+  computeDimensions,
+  fitWithin,
+  imageToJpegBlob,
+  imagesToImageData,
+  loadImage,
+} from "./lib/images";
+import { buildImagePdf, type JpegPdfPage } from "./lib/pdf";
+import {
+  formatBytes,
+  GIF_PRESETS,
+  type GifPresetId,
+  LINKEDIN_PDF_MAX_BYTES,
+  PDF_PRESETS,
+  type PdfPresetId,
+  safeBaseName,
+  type ToolMode,
+  X_GIF_MAX_BYTES,
+} from "./lib/presets";
+import { buildStoredZip, type ZipEntry } from "./lib/zip";
 
 interface ImageItem {
   id: string;
@@ -11,625 +30,624 @@ interface ImageItem {
   file: File;
 }
 
-type Stage = "idle" | "encoding" | "done" | "error";
+type Stage = "idle" | "working" | "done" | "error";
+type PreviewMode = "source" | "result";
+
+interface ExportResult {
+  kind: ToolMode;
+  blob: Blob;
+  fileName: string;
+  title: string;
+  details: string[];
+  previewUrl?: string;
+  warning?: string;
+}
+
+const MAX_FILES = 60;
+const MAX_FILE_BYTES = 40 * 1024 * 1024;
+
+function copyToArrayBuffer(bytes: Uint8Array): ArrayBuffer {
+  const buffer = new ArrayBuffer(bytes.byteLength);
+  new Uint8Array(buffer).set(bytes);
+  return buffer;
+}
+
+const TOOL_COPY: Record<ToolMode, { title: string; description: string }> = {
+  gif: {
+    title: "GIF-анимация",
+    description: "Соберите кадры в зацикленную анимацию прямо в браузере.",
+  },
+  pdf: {
+    title: "LinkedIn-карусель",
+    description: "Объедините баннеры в многостраничный PDF без потери порядка.",
+  },
+  compress: {
+    title: "Сжатие баннеров",
+    description: "Конвертируйте PNG в лёгкие JPG для сайта и публикаций.",
+  },
+};
+
+function createId(): string {
+  return typeof crypto !== "undefined" && "randomUUID" in crypto
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+function ToolIcon({ name }: { name: ToolMode | "upload" | "download" | "trash" | "privacy" }) {
+  const paths: Record<string, ReactNode> = {
+    gif: <><rect x="3" y="5" width="18" height="14" rx="3"/><path d="m9 9 6 3-6 3Z"/></>,
+    pdf: <><path d="M6 2h8l4 4v16H6Z"/><path d="M14 2v5h5"/><path d="M9 13h6M9 17h5"/></>,
+    compress: <><path d="m8 3-5 5m0-5v5h5M16 21l5-5m0 5v-5h-5"/><rect x="7" y="7" width="10" height="10" rx="2"/></>,
+    upload: <><path d="M12 16V3m0 0L7 8m5-5 5 5"/><path d="M4 15v5h16v-5"/></>,
+    download: <><path d="M12 3v13m0 0 5-5m-5 5-5-5"/><path d="M4 19v2h16v-2"/></>,
+    trash: <><path d="M4 7h16M9 7V4h6v3M7 7l1 14h8l1-14"/></>,
+    privacy: <><path d="M12 3 5 6v5c0 5 3 8 7 10 4-2 7-5 7-10V6Z"/><path d="m9 12 2 2 4-4"/></>,
+  };
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      {paths[name]}
+    </svg>
+  );
+}
 
 export default function GiftomatPage() {
   const [images, setImages] = useState<ImageItem[]>([]);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [activeTool, setActiveTool] = useState<ToolMode>("gif");
   const [stage, setStage] = useState<Stage>("idle");
   const [progress, setProgress] = useState(0);
-  const [gifUrl, setGifUrl] = useState<string | null>(null);
-  const [gifBlob, setGifBlob] = useState<Blob | null>(null);
+  const [statusText, setStatusText] = useState("");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [result, setResult] = useState<ExportResult | null>(null);
+  const [previewMode, setPreviewMode] = useState<PreviewMode>("source");
   const [frameDuration, setFrameDuration] = useState(2);
+  const [gifPreset, setGifPreset] = useState<GifPresetId>("original");
+  const [pdfPreset, setPdfPreset] = useState<PdfPresetId>("linkedin-portrait");
+  const [pdfFit, setPdfFit] = useState<"contain" | "cover">("contain");
+  const [jpegQuality, setJpegQuality] = useState(82);
+  const [jpegMaxEdge, setJpegMaxEdge] = useState<number | null>(null);
   const [isDragging, setIsDragging] = useState(false);
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const imagesRef = useRef<ImageItem[]>([]);
 
-  // ── Автоопределение темы по системным настройкам ──
   useEffect(() => {
     const mediaQuery = window.matchMedia("(prefers-color-scheme: light)");
-
-    const apply = (isLight: boolean) => {
-      document.documentElement.setAttribute(
-        "data-theme",
-        isLight ? "light" : "dark"
-      );
+    const applyTheme = (isLight: boolean) => {
+      document.documentElement.setAttribute("data-theme", isLight ? "light" : "dark");
     };
-
-    apply(mediaQuery.matches);
-
-    const handler = (e: MediaQueryListEvent) => apply(e.matches);
+    applyTheme(mediaQuery.matches);
+    const handler = (event: MediaQueryListEvent) => applyTheme(event.matches);
     mediaQuery.addEventListener("change", handler);
     return () => mediaQuery.removeEventListener("change", handler);
   }, []);
 
-  const addFiles = (files: FileList) => {
-    const newImgs: ImageItem[] = Array.from(files)
-      .filter((f) => f.type.startsWith("image/"))
-      .map((f) => ({
-        id: Math.random().toString(36).slice(2),
-        url: URL.createObjectURL(f),
-        file: f,
-      }));
-    setImages((prev) => [...prev, ...newImgs]);
-    setGifUrl(null);
-    setGifBlob(null);
+  useEffect(() => {
+    imagesRef.current = images;
+  }, [images]);
+
+  useEffect(() => {
+    return () => {
+      for (const image of imagesRef.current) URL.revokeObjectURL(image.url);
+    };
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (result?.previewUrl) URL.revokeObjectURL(result.previewUrl);
+    };
+  }, [result?.previewUrl]);
+
+  const selectedImage = useMemo(
+    () => images.find((image) => image.id === selectedId) ?? images[0] ?? null,
+    [images, selectedId]
+  );
+
+  const minimumFiles = activeTool === "gif" ? 2 : 1;
+  const canGenerate = images.length >= minimumFiles && stage !== "working";
+
+  const invalidateResult = () => {
+    setResult(null);
+    setPreviewMode("source");
     setStage("idle");
+    setProgress(0);
+    setStatusText("");
+    setErrorMessage(null);
+  };
+
+  const addFiles = (incoming: FileList | File[]) => {
+    if (stage === "working") return;
+    invalidateResult();
+    const availableSlots = Math.max(0, MAX_FILES - images.length);
+    const accepted = Array.from(incoming)
+      .filter((file) => file.type.startsWith("image/") && file.size <= MAX_FILE_BYTES)
+      .slice(0, availableSlots);
+
+    const rejectedCount = Array.from(incoming).length - accepted.length;
+    const nextImages = accepted.map((file) => ({
+      id: createId(),
+      url: URL.createObjectURL(file),
+      file,
+    }));
+
+    if (nextImages.length) {
+      setImages((current) => [...current, ...nextImages]);
+      setSelectedId((current) => current ?? nextImages[0].id);
+    }
+
+    if (rejectedCount > 0) {
+      setErrorMessage(
+        `Пропущено файлов: ${rejectedCount}. Поддерживаются изображения до 40 МБ, максимум ${MAX_FILES} кадров.`
+      );
+    }
+
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const removeImage = (id: string) => {
+    if (stage === "working") return;
+    const removed = images.find((image) => image.id === id);
+    if (removed) URL.revokeObjectURL(removed.url);
+    const next = images.filter((image) => image.id !== id);
+    setImages(next);
+    if (selectedId === id) setSelectedId(next[0]?.id ?? null);
+    invalidateResult();
+  };
+
+  const clearImages = () => {
+    if (stage === "working") return;
+    for (const image of images) URL.revokeObjectURL(image.url);
+    setImages([]);
+    setSelectedId(null);
+    invalidateResult();
+  };
+
+  const switchTool = (tool: ToolMode) => {
+    if (stage === "working" || tool === activeTool) return;
+    setActiveTool(tool);
+    invalidateResult();
   };
 
   const generateGif = async () => {
-    if (images.length < 2) return;
-    setStage("encoding");
-    setProgress(0);
-    try {
-      const loaded = await Promise.all(images.map((i) => loadImage(i.url)));
-      const { width, height } = computeDimensions(loaded);
-      const frames = imagesToImageData(loaded, width, height);
-      const blob = await encodeGif(
+    const loaded = await Promise.all(images.map((image) => loadImage(image.url)));
+    const preset = GIF_PRESETS[gifPreset];
+    const attempts = preset.fixed
+      ? [
+          { width: 1200, height: 675, quality: 18 },
+          { width: 960, height: 540, quality: 24 },
+          { width: 720, height: 405, quality: 30 },
+          { width: 640, height: 360, quality: 36 },
+        ]
+      : [{ ...computeDimensions(loaded, 800, 1200), quality: 15 }];
+
+    let finalBlob: Blob | null = null;
+    let finalSize = attempts[0];
+    let warning: string | undefined;
+
+    for (let index = 0; index < attempts.length; index += 1) {
+      const attempt = attempts[index];
+      finalSize = attempt;
+      setStatusText(index === 0 ? "Собираем GIF" : "Оптимизируем для лимита X");
+      setProgress(0);
+      const frames = imagesToImageData(loaded, attempt.width, attempt.height, "cover");
+      finalBlob = await encodeGif(
         frames,
         frameDuration * 1000,
-        width,
-        height,
-        setProgress
+        attempt.width,
+        attempt.height,
+        setProgress,
+        attempt.quality
       );
-      setGifBlob(blob);
-      setGifUrl(URL.createObjectURL(blob));
+
+      if (!preset.fixed || finalBlob.size <= X_GIF_MAX_BYTES) break;
+    }
+
+    if (!finalBlob) throw new Error("Не удалось создать GIF");
+    if (preset.fixed && finalBlob.size > X_GIF_MAX_BYTES) {
+      warning = "Файл всё ещё превышает 15 МБ. Уменьшите количество кадров или используйте более короткий набор.";
+    }
+
+    const previewUrl = URL.createObjectURL(finalBlob);
+    setResult({
+      kind: "gif",
+      blob: finalBlob,
+      fileName: gifPreset === "x-landscape" ? `giftomat-x-${finalSize.width}x${finalSize.height}.gif` : "giftomat.gif",
+      title: "GIF готов",
+      details: [
+        `${finalSize.width} × ${finalSize.height} px`,
+        formatBytes(finalBlob.size),
+        `${images.length} кадров · ${frameDuration.toFixed(1)} с`,
+      ],
+      previewUrl,
+      warning,
+    });
+    setPreviewMode("result");
+  };
+
+  const generatePdf = async () => {
+    const preset = PDF_PRESETS[pdfPreset];
+    const pages: JpegPdfPage[] = [];
+
+    for (let index = 0; index < images.length; index += 1) {
+      setStatusText(`Готовим страницу ${index + 1} из ${images.length}`);
+      setProgress(Math.round((index / images.length) * 90));
+      const image = await loadImage(images[index].url);
+      const jpeg = await imageToJpegBlob(image, {
+        width: preset.width,
+        height: preset.height,
+        fit: pdfFit,
+        quality: 0.94,
+      });
+      pages.push({
+        bytes: new Uint8Array(await jpeg.arrayBuffer()),
+        pixelWidth: preset.width,
+        pixelHeight: preset.height,
+      });
+    }
+
+    const pdf = buildImagePdf(pages, preset.width, preset.height);
+    setProgress(100);
+    setResult({
+      kind: "pdf",
+      blob: pdf,
+      fileName: pdfPreset === "linkedin-portrait" ? "giftomat-linkedin-carousel.pdf" : "giftomat-carousel.pdf",
+      title: "PDF-карусель готова",
+      details: [
+        `${images.length} страниц`,
+        `${preset.width} × ${preset.height} px`,
+        formatBytes(pdf.size),
+      ],
+      warning: pdf.size > LINKEDIN_PDF_MAX_BYTES
+        ? "PDF превышает лимит LinkedIn 100 МБ. Уменьшите число страниц или используйте более компактные исходники."
+        : undefined,
+    });
+  };
+
+  const compressImages = async () => {
+    const entries: ZipEntry[] = [];
+    let originalBytes = 0;
+    let compressedBytes = 0;
+
+    for (let index = 0; index < images.length; index += 1) {
+      const item = images[index];
+      setStatusText(`Сжимаем ${index + 1} из ${images.length}`);
+      setProgress(Math.round((index / images.length) * 90));
+      const image = await loadImage(item.url);
+      const dimensions = fitWithin(image.naturalWidth, image.naturalHeight, jpegMaxEdge);
+      const jpeg = await imageToJpegBlob(image, {
+        ...dimensions,
+        fit: "contain",
+        quality: jpegQuality / 100,
+      });
+      const name = `${String(index + 1).padStart(2, "0")}-${safeBaseName(item.file.name)}.jpg`;
+      const data = new Uint8Array(await jpeg.arrayBuffer());
+      entries.push({ name, data });
+      originalBytes += item.file.size;
+      compressedBytes += jpeg.size;
+    }
+
+    const output = entries.length === 1
+      ? new Blob([copyToArrayBuffer(entries[0].data)], { type: "image/jpeg" })
+      : buildStoredZip(entries);
+    const savedPercent = originalBytes > 0
+      ? Math.max(0, Math.round((1 - compressedBytes / originalBytes) * 100))
+      : 0;
+
+    setProgress(100);
+    setResult({
+      kind: "compress",
+      blob: output,
+      fileName: entries.length === 1 ? entries[0].name : "giftomat-compressed-jpg.zip",
+      title: "Баннеры оптимизированы",
+      details: [
+        `${formatBytes(originalBytes)} → ${formatBytes(compressedBytes)}`,
+        `Экономия ${savedPercent}%`,
+        `${entries.length} ${entries.length === 1 ? "файл" : "файлов"}`,
+      ],
+    });
+  };
+
+  const runExport = async () => {
+    if (!canGenerate) return;
+    setStage("working");
+    setProgress(0);
+    setErrorMessage(null);
+    setResult(null);
+    try {
+      if (activeTool === "gif") await generateGif();
+      if (activeTool === "pdf") await generatePdf();
+      if (activeTool === "compress") await compressImages();
       setStage("done");
-    } catch (e) {
-      console.error(e);
+    } catch (error) {
+      console.error(error);
       setStage("error");
+      setErrorMessage(error instanceof Error ? error.message : "Неизвестная ошибка обработки");
     }
   };
 
-  const handleDownload = () => {
-    if (!gifUrl) return;
-    const a = document.createElement("a");
-    a.href = gifUrl;
-    a.download = "giftomat.gif";
-    a.click();
-  };
+  const buttonLabel = stage === "working"
+    ? `${statusText || "Обработка"} · ${progress}%`
+    : activeTool === "gif"
+      ? images.length < 2 ? "Добавьте минимум 2 кадра" : "Создать GIF"
+      : activeTool === "pdf"
+        ? images.length < 1 ? "Добавьте изображения" : "Создать PDF"
+        : images.length < 1 ? "Добавьте изображения" : "Сжать в JPG";
 
-  const reset = () => {
-    setStage("idle");
-    setGifUrl(null);
-    setGifBlob(null);
-  };
+  const toolInfo = TOOL_COPY[activeTool];
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        backgroundColor: "var(--bg-page)",
-        color: "var(--text-primary)",
-        display: "flex",
-        justifyContent: "center",
-        fontFamily: "'Inter', sans-serif",
-        overflowX: "hidden",
-        transition: "background-color 0.3s ease, color 0.3s ease",
-      }}
-    >
-      <Script src="/gif.js" strategy="beforeInteractive" />
+    <div className="app-shell">
+      <div className="ambient ambient-one" />
+      <div className="ambient ambient-two" />
 
-      <style dangerouslySetInnerHTML={{ __html: `
-        *, *::before, *::after { box-sizing: border-box; }
-
-        .bit-range {
-          -webkit-appearance: none;
-          appearance: none;
-          width: 100%;
-          height: 8px;
-          background: var(--bg-surface-sub);
-          border-radius: 99px;
-          outline: none;
-          margin: 20px 0;
-          cursor: pointer;
-        }
-        .bit-range::-webkit-slider-thumb {
-          -webkit-appearance: none;
-          appearance: none;
-          width: 28px;
-          height: 28px;
-          background: var(--accent-violet);
-          border-radius: 50%;
-          border: 3px solid var(--bg-page);
-          box-shadow: 0 0 16px rgba(161,105,247,0.4);
-          transition: transform 0.15s;
-          cursor: pointer;
-        }
-        .bit-range::-webkit-slider-thumb:hover {
-          transform: scale(1.15);
-        }
-        .bit-range::-moz-range-thumb {
-          width: 28px;
-          height: 28px;
-          background: var(--accent-violet);
-          border-radius: 50%;
-          border: 3px solid var(--bg-page);
-          cursor: pointer;
-        }
-
-        .gallery-grid {
-          display: grid;
-          grid-template-columns: repeat(2, 1fr);
-          gap: 12px;
-        }
-        @media (min-width: 640px) {
-          .gallery-grid { grid-template-columns: repeat(4, 1fr); }
-        }
-        @media (min-width: 1024px) {
-          .gallery-grid { grid-template-columns: repeat(6, 1fr); }
-        }
-
-        .main-container {
-          width: 100%;
-          max-width: 900px;
-          padding: 40px 24px;
-          display: flex;
-          flex-direction: column;
-        }
-        @media (min-width: 900px) {
-          .main-container { padding: 40px 40px; }
-        }
-
-        .upload-btn {
-          padding: 1.3rem 3.5rem;
-          border-radius: 100px;
-          background-color: var(--accent-orange);
-          color: #fff;
-          border: none;
-          font-size: 18px;
-          font-weight: 900;
-          box-shadow: 0 16px 36px rgba(255,107,0,0.25);
-          transition: transform 0.2s ease, box-shadow 0.2s ease;
-          cursor: pointer;
-          letter-spacing: -0.01em;
-        }
-        .upload-btn:hover {
-          transform: translateY(-3px);
-          box-shadow: 0 22px 44px rgba(255,107,0,0.35);
-        }
-        .upload-btn:active {
-          transform: translateY(0);
-        }
-
-        .generate-btn {
-          width: 100%;
-          padding: 1.5rem;
-          border-radius: 100px;
-          border: none;
-          font-weight: 900;
-          font-size: 20px;
-          color: #fff;
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-          cursor: pointer;
-          letter-spacing: -0.01em;
-        }
-        .generate-btn:not(:disabled):hover {
-          transform: scale(1.02);
-          box-shadow: 0 24px 48px rgba(161,105,247,0.4);
-        }
-        .generate-btn:disabled {
-          opacity: 0.5;
-          cursor: not-allowed;
-          color: var(--text-muted);
-        }
-
-        .action-btn {
-          padding: 13px 26px;
-          border-radius: 100px;
-          border: none;
-          font-weight: 700;
-          font-size: 15px;
-          transition: transform 0.2s ease, box-shadow 0.2s ease;
-          text-decoration: none;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          gap: 8px;
-          color: #fff;
-          cursor: pointer;
-        }
-        .action-btn:hover {
-          transform: translateY(-2px);
-        }
-        .action-btn:active {
-          transform: translateY(0);
-        }
-
-        .hint-box {
-          margin-top: 20px;
-          padding: 16px 20px;
-          border-radius: 16px;
-          background: var(--bg-surface-sub);
-          border: 1px solid var(--border-color);
-          font-size: 13px;
-          line-height: 1.7;
-          color: var(--text-muted);
-          text-align: left;
-        }
-        .hint-box strong {
-          color: var(--text-primary);
-        }
-
-        .card {
-          border-radius: 32px;
-          background: var(--bg-surface);
-          border: 1px solid var(--border-color);
-        }
-
-        .delete-btn {
-          position: absolute;
-          top: 6px;
-          right: 6px;
-          width: 26px;
-          height: 26px;
-          background: rgba(0,0,0,0.65);
-          backdrop-filter: blur(4px);
-          border: none;
-          border-radius: 50%;
-          font-size: 11px;
-          color: #fff;
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          opacity: 0;
-          transition: opacity 0.15s ease;
-        }
-        .frame-item:hover .delete-btn {
-          opacity: 1;
-        }
-      ` }} />
-
-      <main className="main-container">
-
-        {/* ── Header ── */}
-        <header style={{ textAlign: "center", marginBottom: 40 }}>
-          <h1
-            style={{
-              fontSize: "clamp(26px, 5vw, 38px)",
-              fontWeight: 900,
-              letterSpacing: "-0.03em",
-              margin: "0 0 12px 0",
-              lineHeight: 1.2,
-              color: "var(--text-primary)",
-            }}
-          >
-            Самый настоящий гифтомат
-          </h1>
-
-          <p
-            style={{
-              fontSize: 14,
-              fontWeight: 500,
-              lineHeight: 1.7,
-              margin: 0,
-              color: "var(--text-muted)",
-            }}
-          >
-            Со вкусом Прибалтики.
-            <br />
-            И с приветом от Павлика
-          </p>
-        </header>
-
-        {/* ── Dropzone ── */}
-        <div
-          onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
-          onDragLeave={() => setIsDragging(false)}
-          onDrop={(e) => {
-            e.preventDefault();
-            setIsDragging(false);
-            addFiles(e.dataTransfer.files);
-          }}
-          style={{
-            width: "100%",
-            minHeight: 260,
-            borderRadius: 40,
-            border: "2px dashed",
-            borderColor: isDragging ? "var(--accent-orange)" : "var(--border-color)",
-            backgroundColor: isDragging
-              ? "rgba(255,107,0,0.04)"
-              : "var(--bg-surface)",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 20,
-            transition: "all 0.25s ease",
-            cursor: "pointer",
-          }}
-          onClick={() => fileInputRef.current?.click()}
-        >
-          <button
-            className="upload-btn"
-            onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
-          >
-            Загрузить фото ✨
-          </button>
-
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            multiple
-            style={{ display: "none" }}
-            onChange={(e) => e.target.files && addFiles(e.target.files)}
-          />
-
-          <p style={{
-            fontSize: 12,
-            fontWeight: 600,
-            color: "var(--text-muted)",
-            textTransform: "uppercase",
-            letterSpacing: "0.12em",
-            margin: 0,
-          }}>
-            или перетащите сюда
-          </p>
+      <header className="topbar glass-panel">
+        <div className="brand-lockup">
+          <div className="brand-mark">G</div>
+          <div>
+            <strong>Giftomat</strong>
+            <span>media studio</span>
+          </div>
         </div>
+        <div className="privacy-pill">
+          <ToolIcon name="privacy" />
+          <span>Обработка локально · файлы не загружаются</span>
+        </div>
+      </header>
 
-        {/* ── Gallery ── */}
-        {images.length > 0 && (
-          <div className="card" style={{ marginTop: 24, padding: 24 }}>
-            <div style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: 18,
-            }}>
-              <span style={{
-                fontSize: 12,
-                fontWeight: 700,
-                color: "var(--text-muted)",
-                textTransform: "uppercase",
-                letterSpacing: "0.08em",
-              }}>
-                Кадров: {images.length}
+      <div className="app-body">
+        <aside className="tool-sidebar glass-panel" aria-label="Инструменты">
+          <div className="sidebar-label">Инструменты</div>
+          {(["gif", "pdf", "compress"] as ToolMode[]).map((tool) => (
+            <button
+              key={tool}
+              className={`tool-button ${activeTool === tool ? "active" : ""}`}
+              onClick={() => switchTool(tool)}
+              aria-pressed={activeTool === tool}
+              disabled={stage === "working"}
+            >
+              <span className="tool-icon"><ToolIcon name={tool} /></span>
+              <span>
+                <strong>{tool === "gif" ? "GIF" : tool === "pdf" ? "PDF" : "JPG"}</strong>
+                <small>{tool === "gif" ? "Анимация" : tool === "pdf" ? "Карусель" : "Компрессор"}</small>
               </span>
-              <button
-                onClick={() => {
-                  setImages([]);
-                  setStage("idle");
-                  setGifUrl(null);
-                  setGifBlob(null);
-                }}
-                style={{
-                  background: "rgba(239,68,68,0.1)",
-                  border: "none",
-                  color: "#EF4444",
-                  padding: "7px 14px",
-                  borderRadius: 10,
-                  fontSize: 12,
-                  fontWeight: 700,
-                  cursor: "pointer",
-                  transition: "background 0.15s ease",
-                }}
-              >
-                Очистить всё
-              </button>
+            </button>
+          ))}
+          <div className="sidebar-spacer" />
+          <div className="sidebar-note">
+            <span className="status-dot" />
+            <span>Готово к работе</span>
+          </div>
+        </aside>
+
+        <main className="studio-layout">
+          <section
+            className={`canvas-panel glass-panel ${isDragging ? "dragging" : ""}`}
+            onDragOver={(event: DragEvent<HTMLElement>) => { event.preventDefault(); setIsDragging(true); }}
+            onDragLeave={(event: DragEvent<HTMLElement>) => {
+              if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setIsDragging(false);
+            }}
+            onDrop={(event: DragEvent<HTMLElement>) => {
+              event.preventDefault();
+              setIsDragging(false);
+              addFiles(event.dataTransfer.files);
+            }}
+          >
+            <div className="canvas-toolbar">
+              <div>
+                <span className="eyebrow">Рабочая область</span>
+                <strong>{images.length ? `${images.length} ${images.length === 1 ? "изображение" : "изображений"}` : "Новый проект"}</strong>
+              </div>
+              <div className="toolbar-actions">
+                {result?.kind === "gif" && (
+                  <button className="secondary-button compact" onClick={() => setPreviewMode((mode) => mode === "result" ? "source" : "result") }>
+                    {previewMode === "result" ? "Показать кадр" : "Показать GIF"}
+                  </button>
+                )}
+                {images.length > 0 && (
+                  <button className="icon-button danger" onClick={clearImages} disabled={stage === "working"} aria-label="Удалить все изображения" title="Очистить всё">
+                    <ToolIcon name="trash" />
+                  </button>
+                )}
+              </div>
             </div>
 
-            <div className="gallery-grid">
-              {images.map((img) => (
-                <div
-                  key={img.id}
-                  className="frame-item"
-                  style={{
-                    position: "relative",
-                    aspectRatio: "1/1",
-                    borderRadius: 14,
-                    overflow: "hidden",
-                    border: "1px solid var(--border-color)",
-                  }}
-                >
-                  <img
-                    src={img.url}
-                    style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-                    alt=""
-                  />
-                  <button
-                    className="delete-btn"
-                    onClick={() => setImages((p) => p.filter((i) => i.id !== img.id))}
-                  >
-                    ✕
+            {images.length === 0 ? (
+              <button className="empty-dropzone" onClick={() => fileInputRef.current?.click()} disabled={stage === "working"}>
+                <span className="upload-orb"><ToolIcon name="upload" /></span>
+                <strong>Перетащите изображения сюда</strong>
+                <span>или выберите файлы с компьютера</span>
+                <em>PNG, JPG, WEBP · до 40 МБ</em>
+              </button>
+            ) : (
+              <div className="preview-workspace">
+                <div className="preview-stage">
+                  {previewMode === "result" && result?.previewUrl ? (
+                    <img src={result.previewUrl} alt="Готовая GIF-анимация" className="preview-image contain" />
+                  ) : selectedImage ? (
+                    <img src={selectedImage.url} alt={selectedImage.file.name} className="preview-image contain" />
+                  ) : null}
+
+                  {stage === "working" && (
+                    <div className="processing-overlay" role="status" aria-live="polite">
+                      <div className="progress-ring" style={{ "--progress": `${progress * 3.6}deg` } as CSSProperties}>
+                        <span>{progress}%</span>
+                      </div>
+                      <strong>{statusText || "Обработка"}</strong>
+                      <small>Не закрывайте вкладку</small>
+                    </div>
+                  )}
+
+                  <div className="preview-badge">
+                    {previewMode === "result" ? "Результат" : selectedImage?.file.name}
+                  </div>
+                </div>
+
+                <div className="frame-strip" aria-label="Загруженные изображения">
+                  {images.map((image, index) => (
+                    <div key={image.id} className={`frame-card ${selectedImage?.id === image.id ? "selected" : ""}`}>
+                      <button className="frame-select" disabled={stage === "working"} onClick={() => { setSelectedId(image.id); setPreviewMode("source"); }} aria-label={`Выбрать кадр ${index + 1}`}>
+                        <img src={image.url} alt="" />
+                        <span>{index + 1}</span>
+                      </button>
+                      <button className="frame-delete" disabled={stage === "working"} onClick={() => removeImage(image.id)} aria-label={`Удалить кадр ${index + 1}`}>×</button>
+                    </div>
+                  ))}
+                  <button className="add-frame-card" disabled={stage === "working"} onClick={() => fileInputRef.current?.click()} aria-label="Добавить изображения">
+                    <ToolIcon name="upload" />
+                    <span>Добавить</span>
                   </button>
                 </div>
-              ))}
-            </div>
-          </div>
-        )}
+              </div>
+            )}
 
-        {/* ── Slider ── */}
-        {images.length > 0 && (
-          <div className="card" style={{ marginTop: 16, padding: "24px 28px" }}>
-            <div style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}>
-              <span style={{
-                fontSize: 12,
-                fontWeight: 700,
-                color: "var(--text-muted)",
-                textTransform: "uppercase",
-                letterSpacing: "0.08em",
-              }}>
-                Задержка кадра
-              </span>
-              <span style={{
-                fontSize: 22,
-                fontWeight: 900,
-                color: "var(--accent-violet)",
-                fontVariantNumeric: "tabular-nums",
-              }}>
-                {frameDuration.toFixed(1)}s
-              </span>
-            </div>
             <input
-              className="bit-range"
-              type="range"
-              min={1}
-              max={5}
-              step={0.1}
-              value={frameDuration}
-              onChange={(e) => setFrameDuration(Number(e.target.value))}
+              ref={fileInputRef}
+              type="file"
+              accept="image/png,image/jpeg,image/webp,image/gif,image/avif"
+              multiple
+              hidden
+              onChange={(event: ChangeEvent<HTMLInputElement>) => event.target.files && addFiles(event.target.files)}
             />
-          </div>
-        )}
+          </section>
 
-        {/* ── Progress / Result / Generate ── */}
-        <div style={{ marginTop: 24, marginBottom: 60 }}>
-
-          {/* Encoding */}
-          {stage === "encoding" && (
-            <div className="card" style={{ padding: 40, textAlign: "center" }}>
-              <p style={{
-                fontWeight: 800,
-                fontSize: 16,
-                marginBottom: 16,
-                color: "var(--accent-violet)",
-                textTransform: "uppercase",
-                letterSpacing: "0.08em",
-                margin: "0 0 20px 0",
-              }}>
-                Рендеринг {progress}%
-              </p>
-              <div style={{
-                width: "100%",
-                height: 10,
-                background: "var(--bg-surface-sub)",
-                borderRadius: 100,
-                overflow: "hidden",
-              }}>
-                <div
-                  style={{
-                    height: "100%",
-                    background: "linear-gradient(90deg, var(--accent-violet), var(--accent-blue))",
-                    width: `${progress}%`,
-                    borderRadius: 100,
-                    transition: "width 0.3s ease",
-                  }}
-                />
-              </div>
+          <aside className="control-panel glass-panel">
+            <div className="control-heading">
+              <span className="eyebrow">Настройки экспорта</span>
+              <h1>{toolInfo.title}</h1>
+              <p>{toolInfo.description}</p>
             </div>
-          )}
 
-          {/* Error */}
-          {stage === "error" && (
-            <div
-              style={{
-                padding: 28,
-                borderRadius: 24,
-                background: "rgba(239,68,68,0.08)",
-                border: "1px solid rgba(239,68,68,0.2)",
-                textAlign: "center",
-                fontWeight: 700,
-                color: "#EF4444",
-                fontSize: 15,
-              }}
-            >
-              Ошибка генерации.
-              <button
-                onClick={() => setStage("idle")}
-                style={{
-                  marginLeft: 10,
-                  background: "none",
-                  border: "none",
-                  color: "#EF4444",
-                  cursor: "pointer",
-                  textDecoration: "underline",
-                  fontWeight: 700,
-                  fontSize: 15,
-                }}
-              >
-                Попробовать снова
+            <div className="settings-scroll">
+              {activeTool === "gif" && (
+                <>
+                  <div className="setting-group">
+                    <label>Формат публикации</label>
+                    <div className="option-stack">
+                      {(Object.keys(GIF_PRESETS) as GifPresetId[]).map((id) => (
+                        <button key={id} className={`option-card ${gifPreset === id ? "selected" : ""}`} disabled={stage === "working"} aria-pressed={gifPreset === id} onClick={() => { setGifPreset(id); invalidateResult(); }}>
+                          <span><strong>{GIF_PRESETS[id].label}</strong><small>{GIF_PRESETS[id].description}</small></span>
+                          <i />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="setting-group">
+                    <div className="setting-row">
+                      <label htmlFor="frame-duration">Задержка кадра</label>
+                      <output>{frameDuration.toFixed(1)} с</output>
+                    </div>
+                    <input
+                      id="frame-duration"
+                      className="zephyr-range"
+                      type="range"
+                      min="0.3"
+                      max="5"
+                      step="0.1"
+                      value={frameDuration}
+                      disabled={stage === "working"}
+                      onChange={(event: ChangeEvent<HTMLInputElement>) => { setFrameDuration(Number(event.target.value)); invalidateResult(); }}
+                    />
+                    <div className="range-labels"><span>Быстро</span><span>Медленно</span></div>
+                  </div>
+                  <div className="info-card">
+                    <strong>Профиль X</strong>
+                    <p>Экспортирует 16:9 и автоматически снижает разрешение, только если файл превышает лимит 15 МБ.</p>
+                  </div>
+                </>
+              )}
+
+              {activeTool === "pdf" && (
+                <>
+                  <div className="setting-group">
+                    <label>Размер страницы</label>
+                    <div className="option-stack">
+                      {(Object.keys(PDF_PRESETS) as PdfPresetId[]).map((id) => (
+                        <button key={id} className={`option-card ${pdfPreset === id ? "selected" : ""}`} disabled={stage === "working"} aria-pressed={pdfPreset === id} onClick={() => { setPdfPreset(id); invalidateResult(); }}>
+                          <span><strong>{PDF_PRESETS[id].label}</strong><small>{PDF_PRESETS[id].description}</small></span>
+                          <i />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="setting-group">
+                    <label>Размещение изображения</label>
+                    <div className="segmented-control">
+                      <button disabled={stage === "working"} aria-pressed={pdfFit === "contain"} className={pdfFit === "contain" ? "active" : ""} onClick={() => { setPdfFit("contain"); invalidateResult(); }}>Без обрезки</button>
+                      <button disabled={stage === "working"} aria-pressed={pdfFit === "cover"} className={pdfFit === "cover" ? "active" : ""} onClick={() => { setPdfFit("cover"); invalidateResult(); }}>На весь лист</button>
+                    </div>
+                  </div>
+                  <div className="info-card">
+                    <strong>LinkedIn Document Post</strong>
+                    <p>Один PDF, одинаковый размер всех страниц, портретный профиль 1080 × 1350 для мобильной ленты.</p>
+                  </div>
+                </>
+              )}
+
+              {activeTool === "compress" && (
+                <>
+                  <div className="setting-group">
+                    <div className="setting-row">
+                      <label htmlFor="jpeg-quality">Качество JPG</label>
+                      <output>{jpegQuality}%</output>
+                    </div>
+                    <input
+                      id="jpeg-quality"
+                      className="zephyr-range"
+                      type="range"
+                      min="55"
+                      max="95"
+                      step="1"
+                      value={jpegQuality}
+                      disabled={stage === "working"}
+                      onChange={(event: ChangeEvent<HTMLInputElement>) => { setJpegQuality(Number(event.target.value)); invalidateResult(); }}
+                    />
+                    <div className="range-labels"><span>Меньше файл</span><span>Выше качество</span></div>
+                  </div>
+                  <div className="setting-group">
+                    <label htmlFor="max-edge">Максимальная сторона</label>
+                    <select id="max-edge" className="zephyr-select" disabled={stage === "working"} value={jpegMaxEdge ?? "original"} onChange={(event: ChangeEvent<HTMLSelectElement>) => { setJpegMaxEdge(event.target.value === "original" ? null : Number(event.target.value)); invalidateResult(); }}>
+                      <option value="original">Исходный размер</option>
+                      <option value="2400">2400 px</option>
+                      <option value="1920">1920 px</option>
+                      <option value="1600">1600 px</option>
+                      <option value="1200">1200 px</option>
+                    </select>
+                  </div>
+                  <div className="info-card">
+                    <strong>Прозрачность PNG</strong>
+                    <p>JPG не поддерживает прозрачность, поэтому прозрачные области аккуратно заменяются белым фоном.</p>
+                  </div>
+                </>
+              )}
+
+              {errorMessage && <div className="error-card" role="alert">{errorMessage}</div>}
+
+              {result && (
+                <div className="result-card">
+                  <div className="result-check">✓</div>
+                  <div>
+                    <strong>{result.title}</strong>
+                    <div className="result-meta">{result.details.map((detail) => <span key={detail}>{detail}</span>)}</div>
+                    {result.warning && <p className="result-warning">{result.warning}</p>}
+                  </div>
+                  <button className="download-button" onClick={() => downloadBlob(result.blob, result.fileName)}>
+                    <ToolIcon name="download" />
+                    Скачать
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <div className="control-footer">
+              <button className="primary-button" onClick={runExport} disabled={!canGenerate}>
+                {stage === "working" ? <span className="button-spinner" /> : null}
+                {buttonLabel}
               </button>
+              <span>{activeTool === "gif" ? "Минимум 2 изображения" : "Порядок файлов сохраняется"}</span>
             </div>
-          )}
-
-          {/* Done */}
-          {stage === "done" && gifUrl && (
-            <div className="card" style={{ padding: 28, textAlign: "center" }}>
-              {/* Превью */}
-              <img
-                src={gifUrl}
-                style={{
-                  width: "100%",
-                  maxHeight: 500,
-                  objectFit: "contain",
-                  borderRadius: 20,
-                  marginBottom: 24,
-                  backgroundColor: "var(--bg-surface-sub)",
-                  display: "block",
-                }}
-                alt="Result"
-              />
-
-              {/* Кнопки */}
-              <div style={{
-                display: "flex",
-                flexWrap: "wrap",
-                gap: 12,
-                justifyContent: "center",
-              }}>
-                <button
-                  onClick={handleDownload}
-                  className="action-btn"
-                  style={{ background: "var(--accent-green)" }}
-                >
-                  ⬇ Скачать GIF
-                </button>
-
-                <button
-                  onClick={reset}
-                  className="action-btn"
-                  style={{
-                    background: "var(--bg-surface-sub)",
-                    color: "var(--text-primary)",
-                  }}
-                >
-                  ↩ Создать ещё
-                </button>
-              </div>
-
-              {/* Инструкция */}
-              <div className="hint-box">
-                <strong>Как вставить GIF куда нужно?</strong><br />
-                Браузеры не позволяют копировать GIF-анимацию в буфер — это техническое ограничение.<br /><br />
-                <strong>Способ 1 (проще всего):</strong> Скачайте GIF → перетащите файл куда нужно.<br />
-                <strong>Способ 2:</strong> Скачайте → откройте файл → ПКМ → «Копировать».
-              </div>
-            </div>
-          )}
-
-          {/* Idle */}
-          {stage === "idle" && (
-            <button
-              onClick={generateGif}
-              disabled={images.length < 2}
-              className="generate-btn"
-              style={{
-                backgroundColor: images.length >= 2
-                  ? "var(--accent-violet)"
-                  : "var(--bg-surface)",
-                boxShadow: images.length >= 2
-                  ? "0 20px 40px rgba(161,105,247,0.3)"
-                  : "none",
-                border: images.length < 2
-                  ? "1px solid var(--border-color)"
-                  : "none",
-              }}
-            >
-              {images.length === 0
-                ? "Загрузите фото"
-                : images.length === 1
-                ? "Нужно ещё одно фото"
-                : "Сгенерировать GIF →"}
-            </button>
-          )}
-
-        </div>
-      </main>
+          </aside>
+        </main>
+      </div>
     </div>
   );
 }

@@ -5,7 +5,11 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "test": "node --experimental-strip-types --test tests/*.test.ts",
+    "smoke": "node scripts/smoke-check.mjs",
+    "verify": "npm run typecheck && npm test && npm run smoke && npm run build"
   },
   "dependencies": {
     "gif.js": "^0.2.0",
