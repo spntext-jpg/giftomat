@@ -382,10 +382,13 @@ export default function GiftomatPage() {
 
       <header className="topbar glass-panel">
         <div className="brand-lockup">
-          <div className="brand-mark">G</div>
+          <div className="brand-mark" aria-hidden="true">
+            <span className="brand-art" />
+            <span className="brand-gulls" />
+          </div>
           <div>
-            <strong>Giftomat</strong>
-            <span>media studio</span>
+            <strong>Гифтомат</strong>
+            <span>От Павлика и с приветом с Прибалтики</span>
           </div>
         </div>
         <div className="privacy-pill">
@@ -459,13 +462,15 @@ export default function GiftomatPage() {
                 <em>PNG, JPG, WEBP · до 40 МБ</em>
               </button>
             ) : (
-              <div className="preview-workspace">
-                <div className="preview-stage">
-                  {previewMode === "result" && result?.previewUrl ? (
-                    <img src={result.previewUrl} alt="Готовая GIF-анимация" className="preview-image contain" />
-                  ) : selectedImage ? (
-                    <img src={selectedImage.url} alt={selectedImage.file.name} className="preview-image contain" />
-                  ) : null}
+              <div className={`preview-workspace ${previewMode === "result" ? "result-mode" : ""}`}>
+                <div className={`preview-stage ${previewMode === "result" ? "result-mode" : ""}`}>
+                  <div className="preview-media-shell">
+                    {previewMode === "result" && result?.previewUrl ? (
+                      <img src={result.previewUrl} alt="Готовая GIF-анимация" className="preview-image contain result-media" />
+                    ) : selectedImage ? (
+                      <img src={selectedImage.url} alt={selectedImage.file.name} className="preview-image contain source-media" />
+                    ) : null}
+                  </div>
 
                   {stage === "working" && (
                     <div className="processing-overlay" role="status" aria-live="polite">
@@ -478,7 +483,7 @@ export default function GiftomatPage() {
                   )}
 
                   <div className="preview-badge">
-                    {previewMode === "result" ? "Результат" : selectedImage?.file.name}
+                    {previewMode === "result" ? "Результат · полный просмотр" : selectedImage?.file.name}
                   </div>
                 </div>
 
