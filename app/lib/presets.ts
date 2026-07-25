@@ -2,6 +2,7 @@ export type ToolMode = "gif" | "pdf" | "compress";
 export type GifPresetId = "original" | "x-landscape";
 export type PdfPresetId = "linkedin-portrait" | "square" | "landscape";
 export type FitMode = "cover" | "contain";
+export type WebOutputFormat = "jpeg" | "webp";
 
 export interface FixedPreset {
   id: string;
@@ -20,10 +21,10 @@ export const GIF_PRESETS: Record<GifPresetId, Omit<FixedPreset, "id"> & { fixed:
     fixed: false,
   },
   "x-landscape": {
-    label: "X · полный экран",
-    description: "Лента X, 16:9, автоматическое удержание файла до 15 МБ",
-    width: 1200,
-    height: 675,
+    label: "X · 16:9",
+    description: "1280 × 720 px, loop и контроль лимита 15 МБ для web",
+    width: 1280,
+    height: 720,
     fixed: true,
   },
 };
@@ -31,7 +32,7 @@ export const GIF_PRESETS: Record<GifPresetId, Omit<FixedPreset, "id"> & { fixed:
 export const PDF_PRESETS: Record<PdfPresetId, Omit<FixedPreset, "id">> = {
   "linkedin-portrait": {
     label: "LinkedIn · 4:5",
-    description: "1080 × 1350 px — оптимально для карусели",
+    description: "1080 × 1350 px — mobile-first карусель",
     width: 1080,
     height: 1350,
   },
@@ -49,8 +50,11 @@ export const PDF_PRESETS: Record<PdfPresetId, Omit<FixedPreset, "id">> = {
   },
 };
 
-export const X_GIF_MAX_BYTES = 15 * 1024 * 1024;
+export const X_GIF_WEB_MAX_BYTES = 15 * 1024 * 1024;
+export const X_GIF_WEB_TARGET_BYTES = Math.floor(14.5 * 1024 * 1024);
+export const X_GIF_MOBILE_MAX_BYTES = 5 * 1024 * 1024;
 export const LINKEDIN_PDF_MAX_BYTES = 100 * 1024 * 1024;
+export const LINKEDIN_PDF_TARGET_BYTES = 95 * 1024 * 1024;
 
 export function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));

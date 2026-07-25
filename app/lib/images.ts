@@ -4,7 +4,7 @@ export interface RenderOptions {
   width: number;
   height: number;
   fit?: FitMode;
-  background?: string;
+  background?: string | null;
 }
 
 export function loadImage(src: string): Promise<HTMLImageElement> {
@@ -43,8 +43,10 @@ export function drawImageToCanvas(
   const { width, height, fit = "cover", background = "#ffffff" } = options;
   ctx.save();
   ctx.clearRect(0, 0, width, height);
-  ctx.fillStyle = background;
-  ctx.fillRect(0, 0, width, height);
+  if (background !== null) {
+    ctx.fillStyle = background;
+    ctx.fillRect(0, 0, width, height);
+  }
 
   const sourceWidth = Math.max(1, img.naturalWidth);
   const sourceHeight = Math.max(1, img.naturalHeight);
@@ -95,6 +97,27 @@ export function canvasToBlob(
   });
 }
 
+export async function imageToOptimizedBlob(
+  image: HTMLImageElement,
+  options: {
+    width: number;
+    height: number;
+    fit?: FitMode;
+    quality?: number;
+    type: "image/jpeg" | "image/webp";
+    background?: string | null;
+  }
+): Promise<Blob> {
+  const canvas = document.createElement("canvas");
+  canvas.width = options.width;
+  canvas.height = options.height;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Canvas 2D недоступен в этом браузере");
+
+  drawImageToCanvas(ctx, image, options);
+  return canvasToBlob(canvas, options.type, options.quality ?? 0.86);
+}
+
 export async function imageToJpegBlob(
   image: HTMLImageElement,
   options: {
@@ -105,14 +128,11 @@ export async function imageToJpegBlob(
     background?: string;
   }
 ): Promise<Blob> {
-  const canvas = document.createElement("canvas");
-  canvas.width = options.width;
-  canvas.height = options.height;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) throw new Error("Canvas 2D недоступен в этом браузере");
-
-  drawImageToCanvas(ctx, image, options);
-  return canvasToBlob(canvas, "image/jpeg", options.quality ?? 0.9);
+  return imageToOptimizedBlob(image, {
+    ...options,
+    type: "image/jpeg",
+    background: options.background ?? "#ffffff",
+  });
 }
 
 export function fitWithin(

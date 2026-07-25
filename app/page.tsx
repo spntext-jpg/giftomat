@@ -7,6 +7,7 @@ import {
   computeDimensions,
   fitWithin,
   imageToJpegBlob,
+  imageToOptimizedBlob,
   imagesToImageData,
   loadImage,
 } from "./lib/images";
@@ -16,11 +17,15 @@ import {
   GIF_PRESETS,
   type GifPresetId,
   LINKEDIN_PDF_MAX_BYTES,
+  LINKEDIN_PDF_TARGET_BYTES,
   PDF_PRESETS,
   type PdfPresetId,
   safeBaseName,
   type ToolMode,
-  X_GIF_MAX_BYTES,
+  type WebOutputFormat,
+  X_GIF_MOBILE_MAX_BYTES,
+  X_GIF_WEB_MAX_BYTES,
+  X_GIF_WEB_TARGET_BYTES,
 } from "./lib/presets";
 import { buildStoredZip, type ZipEntry } from "./lib/zip";
 
@@ -63,7 +68,7 @@ const TOOL_COPY: Record<ToolMode, { title: string; description: string }> = {
   },
   compress: {
     title: "Сжатие баннеров",
-    description: "Конвертируйте PNG в лёгкие JPG для сайта и публикаций.",
+    description: "Экспортируйте лёгкие JPG или WebP для сайтов, блогов и публикаций.",
   },
 };
 
@@ -105,7 +110,8 @@ export default function GiftomatPage() {
   const [pdfPreset, setPdfPreset] = useState<PdfPresetId>("linkedin-portrait");
   const [pdfFit, setPdfFit] = useState<"contain" | "cover">("contain");
   const [jpegQuality, setJpegQuality] = useState(82);
-  const [jpegMaxEdge, setJpegMaxEdge] = useState<number | null>(null);
+  const [jpegMaxEdge, setJpegMaxEdge] = useState<number | null>(1920);
+  const [webOutputFormat, setWebOutputFormat] = useState<WebOutputFormat>("jpeg");
   const [isDragging, setIsDragging] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -213,10 +219,11 @@ export default function GiftomatPage() {
     const preset = GIF_PRESETS[gifPreset];
     const attempts = preset.fixed
       ? [
-          { width: 1200, height: 675, quality: 18 },
-          { width: 960, height: 540, quality: 24 },
-          { width: 720, height: 405, quality: 30 },
-          { width: 640, height: 360, quality: 36 },
+          { width: 1280, height: 720, quality: 18 },
+          { width: 1024, height: 576, quality: 22 },
+          { width: 960, height: 540, quality: 26 },
+          { width: 720, height: 405, quality: 32 },
+          { width: 640, height: 360, quality: 38 },
         ]
       : [{ ...computeDimensions(loaded, 800, 1200), quality: 15 }];
 
@@ -239,12 +246,14 @@ export default function GiftomatPage() {
         attempt.quality
       );
 
-      if (!preset.fixed || finalBlob.size <= X_GIF_MAX_BYTES) break;
+      if (!preset.fixed || finalBlob.size <= X_GIF_WEB_TARGET_BYTES) break;
     }
 
     if (!finalBlob) throw new Error("Не удалось создать GIF");
-    if (preset.fixed && finalBlob.size > X_GIF_MAX_BYTES) {
-      warning = "Файл всё ещё превышает 15 МБ. Уменьшите количество кадров или используйте более короткий набор.";
+    if (preset.fixed && finalBlob.size > X_GIF_WEB_MAX_BYTES) {
+      warning = "Файл превышает лимит X 15 МБ для web. Уменьшите число кадров или задержку кадра.";
+    } else if (preset.fixed && finalBlob.size > X_GIF_MOBILE_MAX_BYTES) {
+      warning = "GIF подходит для загрузки через x.com. Для мобильного приложения X нужен файл до 5 МБ.";
     }
 
     const previewUrl = URL.createObjectURL(finalBlob);
@@ -266,26 +275,41 @@ export default function GiftomatPage() {
 
   const generatePdf = async () => {
     const preset = PDF_PRESETS[pdfPreset];
-    const pages: JpegPdfPage[] = [];
+    const qualityAttempts = [0.92, 0.86, 0.8];
+    let pdf: Blob | null = null;
+    let usedQuality = qualityAttempts[0];
 
-    for (let index = 0; index < images.length; index += 1) {
-      setStatusText(`Готовим страницу ${index + 1} из ${images.length}`);
-      setProgress(Math.round((index / images.length) * 90));
-      const image = await loadImage(images[index].url);
-      const jpeg = await imageToJpegBlob(image, {
-        width: preset.width,
-        height: preset.height,
-        fit: pdfFit,
-        quality: 0.94,
-      });
-      pages.push({
-        bytes: new Uint8Array(await jpeg.arrayBuffer()),
-        pixelWidth: preset.width,
-        pixelHeight: preset.height,
-      });
+    for (let attemptIndex = 0; attemptIndex < qualityAttempts.length; attemptIndex += 1) {
+      const quality = qualityAttempts[attemptIndex];
+      const pages: JpegPdfPage[] = [];
+      usedQuality = quality;
+
+      for (let index = 0; index < images.length; index += 1) {
+        setStatusText(
+          attemptIndex === 0
+            ? `Готовим страницу ${index + 1} из ${images.length}`
+            : `Оптимизируем PDF · страница ${index + 1} из ${images.length}`
+        );
+        setProgress(Math.round(((attemptIndex + index / images.length) / qualityAttempts.length) * 90));
+        const image = await loadImage(images[index].url);
+        const jpeg = await imageToJpegBlob(image, {
+          width: preset.width,
+          height: preset.height,
+          fit: pdfFit,
+          quality,
+        });
+        pages.push({
+          bytes: new Uint8Array(await jpeg.arrayBuffer()),
+          pixelWidth: preset.width,
+          pixelHeight: preset.height,
+        });
+      }
+
+      pdf = buildImagePdf(pages, preset.width, preset.height);
+      if (pdf.size <= LINKEDIN_PDF_TARGET_BYTES) break;
     }
 
-    const pdf = buildImagePdf(pages, preset.width, preset.height);
+    if (!pdf) throw new Error("Не удалось создать PDF");
     setProgress(100);
     setResult({
       kind: "pdf",
@@ -296,9 +320,10 @@ export default function GiftomatPage() {
         `${images.length} страниц`,
         `${preset.width} × ${preset.height} px`,
         formatBytes(pdf.size),
+        `качество ${Math.round(usedQuality * 100)}%`,
       ],
       warning: pdf.size > LINKEDIN_PDF_MAX_BYTES
-        ? "PDF превышает лимит LinkedIn 100 МБ. Уменьшите число страниц или используйте более компактные исходники."
+        ? "PDF превышает лимит LinkedIn 100 МБ. Уменьшите число страниц или размер исходников."
         : undefined,
     });
   };
@@ -307,27 +332,31 @@ export default function GiftomatPage() {
     const entries: ZipEntry[] = [];
     let originalBytes = 0;
     let compressedBytes = 0;
+    const mimeType = webOutputFormat === "webp" ? "image/webp" : "image/jpeg";
+    const extension = webOutputFormat === "webp" ? "webp" : "jpg";
 
     for (let index = 0; index < images.length; index += 1) {
       const item = images[index];
-      setStatusText(`Сжимаем ${index + 1} из ${images.length}`);
+      setStatusText(`Оптимизируем ${index + 1} из ${images.length}`);
       setProgress(Math.round((index / images.length) * 90));
       const image = await loadImage(item.url);
       const dimensions = fitWithin(image.naturalWidth, image.naturalHeight, jpegMaxEdge);
-      const jpeg = await imageToJpegBlob(image, {
+      const optimized = await imageToOptimizedBlob(image, {
         ...dimensions,
         fit: "contain",
         quality: jpegQuality / 100,
+        type: mimeType,
+        background: webOutputFormat === "webp" ? null : "#ffffff",
       });
-      const name = `${String(index + 1).padStart(2, "0")}-${safeBaseName(item.file.name)}.jpg`;
-      const data = new Uint8Array(await jpeg.arrayBuffer());
+      const name = `${String(index + 1).padStart(2, "0")}-${safeBaseName(item.file.name)}.${extension}`;
+      const data = new Uint8Array(await optimized.arrayBuffer());
       entries.push({ name, data });
       originalBytes += item.file.size;
-      compressedBytes += jpeg.size;
+      compressedBytes += optimized.size;
     }
 
     const output = entries.length === 1
-      ? new Blob([copyToArrayBuffer(entries[0].data)], { type: "image/jpeg" })
+      ? new Blob([copyToArrayBuffer(entries[0].data)], { type: mimeType })
       : buildStoredZip(entries);
     const savedPercent = originalBytes > 0
       ? Math.max(0, Math.round((1 - compressedBytes / originalBytes) * 100))
@@ -337,12 +366,15 @@ export default function GiftomatPage() {
     setResult({
       kind: "compress",
       blob: output,
-      fileName: entries.length === 1 ? entries[0].name : "giftomat-compressed-jpg.zip",
+      fileName: entries.length === 1
+        ? entries[0].name
+        : `giftomat-web-${webOutputFormat}.zip`,
       title: "Баннеры оптимизированы",
       details: [
         `${formatBytes(originalBytes)} → ${formatBytes(compressedBytes)}`,
         `Экономия ${savedPercent}%`,
         `${entries.length} ${entries.length === 1 ? "файл" : "файлов"}`,
+        webOutputFormat.toUpperCase(),
       ],
     });
   };
@@ -371,7 +403,7 @@ export default function GiftomatPage() {
       ? images.length < 2 ? "Добавьте минимум 2 кадра" : "Создать GIF"
       : activeTool === "pdf"
         ? images.length < 1 ? "Добавьте изображения" : "Создать PDF"
-        : images.length < 1 ? "Добавьте изображения" : "Сжать в JPG";
+        : images.length < 1 ? "Добавьте изображения" : `Оптимизировать в ${webOutputFormat.toUpperCase()}`;
 
   const toolInfo = TOOL_COPY[activeTool];
 
@@ -407,6 +439,7 @@ export default function GiftomatPage() {
               onClick={() => switchTool(tool)}
               aria-pressed={activeTool === tool}
               disabled={stage === "working"}
+              title={TOOL_COPY[tool].title}
             >
               <span className="tool-icon"><ToolIcon name={tool} /></span>
               <span>
@@ -556,7 +589,7 @@ export default function GiftomatPage() {
                   </div>
                   <div className="info-card">
                     <strong>Профиль X</strong>
-                    <p>Экспортирует 16:9 и автоматически снижает разрешение, только если файл превышает лимит 15 МБ.</p>
+                    <p>Формат 16:9, бесконечный loop и безопасный запас до web-лимита 15 МБ. Для mobile X действует лимит 5 МБ.</p>
                   </div>
                 </>
               )}
@@ -583,7 +616,7 @@ export default function GiftomatPage() {
                   </div>
                   <div className="info-card">
                     <strong>LinkedIn Document Post</strong>
-                    <p>Один PDF, одинаковый размер всех страниц, портретный профиль 1080 × 1350 для мобильной ленты.</p>
+                    <p>Один PDF, одинаковый размер страниц и mobile-first профиль 1080 × 1350. Автооптимизация удерживает файл ниже 100 МБ.</p>
                   </div>
                 </>
               )}
@@ -591,8 +624,15 @@ export default function GiftomatPage() {
               {activeTool === "compress" && (
                 <>
                   <div className="setting-group">
+                    <label>Формат для сайта</label>
+                    <div className="segmented-control">
+                      <button disabled={stage === "working"} aria-pressed={webOutputFormat === "jpeg"} className={webOutputFormat === "jpeg" ? "active" : ""} onClick={() => { setWebOutputFormat("jpeg"); invalidateResult(); }}>JPG</button>
+                      <button disabled={stage === "working"} aria-pressed={webOutputFormat === "webp"} className={webOutputFormat === "webp" ? "active" : ""} onClick={() => { setWebOutputFormat("webp"); invalidateResult(); }}>WebP</button>
+                    </div>
+                  </div>
+                  <div className="setting-group">
                     <div className="setting-row">
-                      <label htmlFor="jpeg-quality">Качество JPG</label>
+                      <label htmlFor="jpeg-quality">Качество {webOutputFormat.toUpperCase()}</label>
                       <output>{jpegQuality}%</output>
                     </div>
                     <input
@@ -613,14 +653,14 @@ export default function GiftomatPage() {
                     <select id="max-edge" className="zephyr-select" disabled={stage === "working"} value={jpegMaxEdge ?? "original"} onChange={(event: ChangeEvent<HTMLSelectElement>) => { setJpegMaxEdge(event.target.value === "original" ? null : Number(event.target.value)); invalidateResult(); }}>
                       <option value="original">Исходный размер</option>
                       <option value="2400">2400 px</option>
-                      <option value="1920">1920 px</option>
+                      <option value="1920">1920 px · рекомендуется</option>
                       <option value="1600">1600 px</option>
                       <option value="1200">1200 px</option>
                     </select>
                   </div>
                   <div className="info-card">
-                    <strong>Прозрачность PNG</strong>
-                    <p>JPG не поддерживает прозрачность, поэтому прозрачные области аккуратно заменяются белым фоном.</p>
+                    <strong>{webOutputFormat === "webp" ? "WebP для производительности" : "JPG для совместимости"}</strong>
+                    <p>{webOutputFormat === "webp" ? "WebP обычно весит меньше и сохраняет прозрачность. Подходит современным сайтам и блогам." : "JPG открывается везде. Прозрачные области PNG заменяются белым фоном."}</p>
                   </div>
                 </>
               )}

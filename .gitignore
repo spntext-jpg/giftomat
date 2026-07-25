@@ -1,40 +1,27 @@
-# Giftomat generated and local files
+# dependencies
 node_modules/
+
+# Next.js
 .next/
 out/
-.vscode/
-__pycache__/
-*.py[cod]
+
+# build caches
 *.tsbuildinfo
+
+# local environment
 .env*
 !.env.example
+
+# OS / editor
 .DS_Store
-repomix-output*.xml
-giftomat-backup-*/
-
-# Giftomat repository safety
-# Dependencies and Next.js build output
-node_modules/
-.next/
-out/
-dist/
-coverage/
-*.tsbuildinfo
-
-# Local editor and Python artifacts
 .vscode/
+
+# local patch, backup and repository snapshot files
+giftomat_*.py
+apply_giftomat_sprint.py
+giftomat-sprint-report.md
+giftomat-sprint-2026.zip
+repomix-output*.xml
+.giftomat-verified.json
 __pycache__/
 *.py[cod]
-
-# Local AI / migration artifacts
-repomix-output*.xml
-apply_giftomat_sprint.py
-giftomat_recovery.py
-giftomat_typecheck_hotfix.py
-giftomat_git_cleanup.py
-giftomat-sprint-report.md
-
-# Local environment files
-.env
-.env.local
-.env.*.local
