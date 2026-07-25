@@ -25,3 +25,7 @@ repomix-output*.xml
 .giftomat-verified.json
 __pycache__/
 *.py[cod]
+
+# Giftomat GIF orientation patch
+giftomat_gif_orientation_v2.py
+.giftomat-orientation-v2-verified.json

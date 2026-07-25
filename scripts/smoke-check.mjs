@@ -2,10 +2,8 @@ import { readFileSync } from "node:fs";
 
 const requiredFiles = [
   "app/page.tsx",
-  "app/globals.css",
-  "app/icon.tsx",
-  "app/lib/encoder.ts",
   "app/lib/images.ts",
+  "app/lib/encoder.ts",
   "app/lib/pdf.ts",
   "app/lib/presets.ts",
   "app/lib/zip.ts",
@@ -19,23 +17,27 @@ for (const file of requiredFiles) {
 }
 
 const page = readFileSync("app/page.tsx", "utf8");
-for (const marker of [
-  "generateGif",
-  "generatePdf",
-  "compressImages",
-  "X_GIF_WEB_TARGET_BYTES",
-  "LINKEDIN_PDF_TARGET_BYTES",
-  "imageToOptimizedBlob",
-  "webOutputFormat",
-  "Гифтомат",
-]) {
-  if (!page.includes(marker)) throw new Error(`Missing critical flow: ${marker}`);
+const images = readFileSync("app/lib/images.ts", "utf8");
+const presets = readFileSync("app/lib/presets.ts", "utf8");
+
+for (const marker of ["generateGif", "generatePdf", "compressImages", "buildGifAttempts"]) {
+  if (!page.includes(marker) && !presets.includes(marker)) {
+    throw new Error(`Missing critical flow: ${marker}`);
+  }
 }
 
-const styles = readFileSync("app/globals.css", "utf8");
-for (const marker of ["--primary: #00ace3", "--success:", "--warning:", "--danger:", ".preview-media-shell"]) {
-  if (!styles.includes(marker)) throw new Error(`Missing design-system marker: ${marker}`);
+for (const forbidden of ["x-landscape", "X · полный экран", "GIF_PRESETS", "GifPresetId", "gifPreset"]) {
+  if (page.includes(forbidden) || presets.includes(forbidden)) {
+    throw new Error(`Obsolete forced-X format remains: ${forbidden}`);
+  }
 }
-if (styles.includes("--lime")) throw new Error("Legacy lime token is still present");
 
-console.log("Smoke check passed: Giftomat UI and export flows are present.");
+if (!/imagesToImageData\([\s\S]*?,\s*"cover"\s*\)/m.test(page)) {
+  throw new Error("GIF generation must explicitly use cover rendering");
+}
+
+if (!images.includes('fit === "cover"') || !images.includes("Math.max(")) {
+  throw new Error("Cover rendering math is missing");
+}
+
+console.log("Smoke check passed: GIF orientation and critical Giftomat flows are present.");

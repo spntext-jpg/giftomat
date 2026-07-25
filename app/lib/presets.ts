@@ -1,5 +1,4 @@
 export type ToolMode = "gif" | "pdf" | "compress";
-export type GifPresetId = "original" | "x-landscape";
 export type PdfPresetId = "linkedin-portrait" | "square" | "landscape";
 export type FitMode = "cover" | "contain";
 export type WebOutputFormat = "jpeg" | "webp";
@@ -12,22 +11,40 @@ export interface FixedPreset {
   height: number;
 }
 
-export const GIF_PRESETS: Record<GifPresetId, Omit<FixedPreset, "id"> & { fixed: boolean }> = {
-  original: {
-    label: "Исходный формат",
-    description: "Пропорции первого кадра, до 800 × 1200 px",
-    width: 800,
-    height: 1200,
-    fixed: false,
-  },
-  "x-landscape": {
-    label: "X · 16:9",
-    description: "1280 × 720 px, loop и контроль лимита 15 МБ для web",
-    width: 1280,
-    height: 720,
-    fixed: true,
-  },
-};
+export interface GifAttempt {
+  width: number;
+  height: number;
+  quality: number;
+}
+
+export const GIF_WEB_MAX_BYTES = 15 * 1024 * 1024;
+export const GIF_MOBILE_MAX_BYTES = 5 * 1024 * 1024;
+
+/**
+ * Creates proportional render attempts from the first frame.
+ * The first frame defines the GIF canvas orientation and aspect ratio.
+ */
+export function buildGifAttempts(
+  sourceWidth: number,
+  sourceHeight: number
+): GifAttempt[] {
+  const width = Math.max(1, Math.round(sourceWidth));
+  const height = Math.max(1, Math.round(sourceHeight));
+  const sourceMaxEdge = Math.max(width, height);
+  const firstMaxEdge = Math.min(sourceMaxEdge, 1280);
+  const edges = [firstMaxEdge, 1080, 900, 720, 600]
+    .filter((edge, index, values) => edge > 0 && edge <= firstMaxEdge && values.indexOf(edge) === index);
+  const qualities = [15, 19, 24, 30, 36];
+
+  return edges.map((maxEdge, index) => {
+    const scale = Math.min(1, maxEdge / sourceMaxEdge);
+    return {
+      width: Math.max(1, Math.round(width * scale)),
+      height: Math.max(1, Math.round(height * scale)),
+      quality: qualities[Math.min(index, qualities.length - 1)],
+    };
+  });
+}
 
 export const PDF_PRESETS: Record<PdfPresetId, Omit<FixedPreset, "id">> = {
   "linkedin-portrait": {

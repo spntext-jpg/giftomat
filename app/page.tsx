@@ -14,8 +14,6 @@ import {
 import { buildImagePdf, type JpegPdfPage } from "./lib/pdf";
 import {
   formatBytes,
-  GIF_PRESETS,
-  type GifPresetId,
   LINKEDIN_PDF_MAX_BYTES,
   LINKEDIN_PDF_TARGET_BYTES,
   PDF_PRESETS,
@@ -26,6 +24,9 @@ import {
   X_GIF_MOBILE_MAX_BYTES,
   X_GIF_WEB_MAX_BYTES,
   X_GIF_WEB_TARGET_BYTES,
+  buildGifAttempts,
+  GIF_MOBILE_MAX_BYTES,
+  GIF_WEB_MAX_BYTES,
 } from "./lib/presets";
 import { buildStoredZip, type ZipEntry } from "./lib/zip";
 
@@ -106,7 +107,6 @@ export default function GiftomatPage() {
   const [result, setResult] = useState<ExportResult | null>(null);
   const [previewMode, setPreviewMode] = useState<PreviewMode>("source");
   const [frameDuration, setFrameDuration] = useState(2);
-  const [gifPreset, setGifPreset] = useState<GifPresetId>("original");
   const [pdfPreset, setPdfPreset] = useState<PdfPresetId>("linkedin-portrait");
   const [pdfFit, setPdfFit] = useState<"contain" | "cover">("contain");
   const [jpegQuality, setJpegQuality] = useState(82);
@@ -216,16 +216,8 @@ export default function GiftomatPage() {
 
   const generateGif = async () => {
     const loaded = await Promise.all(images.map((image) => loadImage(image.url)));
-    const preset = GIF_PRESETS[gifPreset];
-    const attempts = preset.fixed
-      ? [
-          { width: 1280, height: 720, quality: 18 },
-          { width: 1024, height: 576, quality: 22 },
-          { width: 960, height: 540, quality: 26 },
-          { width: 720, height: 405, quality: 32 },
-          { width: 640, height: 360, quality: 38 },
-        ]
-      : [{ ...computeDimensions(loaded, 800, 1200), quality: 15 }];
+    const firstFrame = loaded[0];
+    const attempts = buildGifAttempts(firstFrame.naturalWidth, firstFrame.naturalHeight);
 
     let finalBlob: Blob | null = null;
     let finalSize = attempts[0];
@@ -234,8 +226,11 @@ export default function GiftomatPage() {
     for (let index = 0; index < attempts.length; index += 1) {
       const attempt = attempts[index];
       finalSize = attempt;
-      setStatusText(index === 0 ? "Собираем GIF" : "Оптимизируем для лимита X");
+      setStatusText(index === 0 ? "Собираем GIF" : "Пропорционально уменьшаем GIF");
       setProgress(0);
+
+      // The first frame defines the canvas. Every following frame uses cover,
+      // preventing artificial white or transparent side bars.
       const frames = imagesToImageData(loaded, attempt.width, attempt.height, "cover");
       finalBlob = await encodeGif(
         frames,
@@ -246,24 +241,25 @@ export default function GiftomatPage() {
         attempt.quality
       );
 
-      if (!preset.fixed || finalBlob.size <= X_GIF_WEB_TARGET_BYTES) break;
+      if (finalBlob.size <= GIF_WEB_MAX_BYTES) break;
     }
 
     if (!finalBlob) throw new Error("Не удалось создать GIF");
-    if (preset.fixed && finalBlob.size > X_GIF_WEB_MAX_BYTES) {
-      warning = "Файл превышает лимит X 15 МБ для web. Уменьшите число кадров или задержку кадра.";
-    } else if (preset.fixed && finalBlob.size > X_GIF_MOBILE_MAX_BYTES) {
-      warning = "GIF подходит для загрузки через x.com. Для мобильного приложения X нужен файл до 5 МБ.";
+    if (finalBlob.size > GIF_WEB_MAX_BYTES) {
+      warning = "Файл превышает 15 МБ. Сократите количество кадров или длительность анимации перед публикацией в X.";
+    } else if (finalBlob.size > GIF_MOBILE_MAX_BYTES) {
+      warning = "GIF готов для загрузки через x.com. Для мобильного приложения X нужен файл до 5 МБ.";
     }
 
     const previewUrl = URL.createObjectURL(finalBlob);
     setResult({
       kind: "gif",
       blob: finalBlob,
-      fileName: gifPreset === "x-landscape" ? `giftomat-x-${finalSize.width}x${finalSize.height}.gif` : "giftomat.gif",
+      fileName: "giftomat.gif",
       title: "GIF готов",
       details: [
         `${finalSize.width} × ${finalSize.height} px`,
+        finalSize.width > finalSize.height ? "Landscape" : finalSize.height > finalSize.width ? "Portrait" : "Square",
         formatBytes(finalBlob.size),
         `${images.length} кадров · ${frameDuration.toFixed(1)} с`,
       ],
@@ -558,16 +554,9 @@ export default function GiftomatPage() {
             <div className="settings-scroll">
               {activeTool === "gif" && (
                 <>
-                  <div className="setting-group">
-                    <label>Формат публикации</label>
-                    <div className="option-stack">
-                      {(Object.keys(GIF_PRESETS) as GifPresetId[]).map((id) => (
-                        <button key={id} className={`option-card ${gifPreset === id ? "selected" : ""}`} disabled={stage === "working"} aria-pressed={gifPreset === id} onClick={() => { setGifPreset(id); invalidateResult(); }}>
-                          <span><strong>{GIF_PRESETS[id].label}</strong><small>{GIF_PRESETS[id].description}</small></span>
-                          <i />
-                        </button>
-                      ))}
-                    </div>
+                                    <div className="info-card">
+                    <strong>Автоматический формат без рамок</strong>
+                    <p>Ориентация и пропорции берутся из первого кадра. Остальные изображения заполняют холст по центру без пустых полос, а разрешение при необходимости уменьшается только пропорционально.</p>
                   </div>
                   <div className="setting-group">
                     <div className="setting-row">
@@ -587,9 +576,9 @@ export default function GiftomatPage() {
                     />
                     <div className="range-labels"><span>Быстро</span><span>Медленно</span></div>
                   </div>
-                  <div className="info-card">
-                    <strong>Профиль X</strong>
-                    <p>Формат 16:9, бесконечный loop и безопасный запас до web-лимита 15 МБ. Для mobile X действует лимит 5 МБ.</p>
+                                    <div className="info-card">
+                    <strong>Готово для X</strong>
+                    <p>GIF остаётся зацикленным, сохраняет portrait, landscape или square и оптимизируется по весу без принудительного формата 16:9.</p>
                   </div>
                 </>
               )}

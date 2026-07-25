@@ -10,6 +10,7 @@ import {
   X_GIF_MOBILE_MAX_BYTES,
   X_GIF_WEB_MAX_BYTES,
   X_GIF_WEB_TARGET_BYTES,
+  buildGifAttempts,
 } from "../app/lib/presets.ts";
 
 const decoder = new TextDecoder("latin1");
@@ -53,4 +54,18 @@ test("social export safety thresholds stay below platform limits", () => {
   assert.ok(X_GIF_WEB_TARGET_BYTES < X_GIF_WEB_MAX_BYTES);
   assert.ok(X_GIF_MOBILE_MAX_BYTES < X_GIF_WEB_MAX_BYTES);
   assert.ok(LINKEDIN_PDF_TARGET_BYTES < LINKEDIN_PDF_MAX_BYTES);
+});
+
+test("GIF attempts preserve portrait, landscape and square orientation", () => {
+  const portrait = buildGifAttempts(1080, 1350);
+  const landscape = buildGifAttempts(1920, 1080);
+  const square = buildGifAttempts(1200, 1200);
+
+  assert.deepEqual(portrait[0], { width: 1024, height: 1280, quality: 15 });
+  assert.deepEqual(landscape[0], { width: 1280, height: 720, quality: 15 });
+  assert.deepEqual(square[0], { width: 1200, height: 1200, quality: 15 });
+
+  assert.ok(portrait.every((attempt) => attempt.height > attempt.width));
+  assert.ok(landscape.every((attempt) => attempt.width > attempt.height));
+  assert.ok(square.every((attempt) => attempt.width === attempt.height));
 });
