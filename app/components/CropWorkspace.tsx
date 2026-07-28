@@ -32,13 +32,26 @@ interface CropWorkspaceProps {
 
 type CropFormat = "jpeg" | "png";
 
+// GIFTOMAT_CROP_RATIO_CLEANUP_V1_CROP_START
+const MIN_CROP_DIMENSION = 64;
+const MAX_CROP_DIMENSION = 8000;
+
+function normalizeCropDimension(value: string, fallback: number): number {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return fallback;
+  return Math.round(clampCropValue(parsed, MIN_CROP_DIMENSION, MAX_CROP_DIMENSION));
+}
+// GIFTOMAT_CROP_RATIO_CLEANUP_V1_CROP_END
+
 export default function CropWorkspace({
   image,
   disabled = false,
   onAddFiles,
 }: CropWorkspaceProps) {
-  const [width, setWidth] = useState(1200);
-  const [height, setHeight] = useState(628);
+  const [widthInput, setWidthInput] = useState("1200");
+  const [heightInput, setHeightInput] = useState("628");
+  const [keepAspectRatio, setKeepAspectRatio] = useState(false);
+  const [lockedAspectRatio, setLockedAspectRatio] = useState(1200 / 628);
   const [zoom, setZoom] = useState(1);
   const [offsetX, setOffsetX] = useState(0);
   const [offsetY, setOffsetY] = useState(0);
@@ -57,6 +70,9 @@ export default function CropWorkspace({
     offsetX: number;
     offsetY: number;
   } | null>(null);
+
+  const width = normalizeCropDimension(widthInput, 1200);
+  const height = normalizeCropDimension(heightInput, 628);
 
   const resetPosition = useCallback(() => {
     setZoom(1);
@@ -93,11 +109,55 @@ export default function CropWorkspace({
     void paintPreview();
   }, [paintPreview]);
 
-  const updateSize = (axis: "width" | "height", value: string) => {
+  const updateSizeInput = (axis: "width" | "height", value: string) => {
+    if (axis === "width") setWidthInput(value);
+    else setHeightInput(value);
+    setResult(null);
+
+    if (!keepAspectRatio) return;
     const parsed = Number(value);
-    const safe = Number.isFinite(parsed) ? clampCropValue(Math.round(parsed), 64, 8000) : 64;
-    if (axis === "width") setWidth(safe);
-    else setHeight(safe);
+    if (!Number.isFinite(parsed) || parsed < MIN_CROP_DIMENSION || parsed > MAX_CROP_DIMENSION) return;
+
+    if (axis === "width") {
+      const nextHeight = Math.round(parsed / lockedAspectRatio);
+      if (nextHeight >= MIN_CROP_DIMENSION && nextHeight <= MAX_CROP_DIMENSION) {
+        setHeightInput(String(nextHeight));
+      }
+    } else {
+      const nextWidth = Math.round(parsed * lockedAspectRatio);
+      if (nextWidth >= MIN_CROP_DIMENSION && nextWidth <= MAX_CROP_DIMENSION) {
+        setWidthInput(String(nextWidth));
+      }
+    }
+  };
+
+  const commitSizeInput = (axis: "width" | "height") => {
+    const normalized = axis === "width" ? width : height;
+    if (axis === "width") setWidthInput(String(normalized));
+    else setHeightInput(String(normalized));
+
+    if (!keepAspectRatio) return;
+    if (axis === "width") {
+      const nextHeight = Math.round(clampCropValue(
+        normalized / lockedAspectRatio,
+        MIN_CROP_DIMENSION,
+        MAX_CROP_DIMENSION
+      ));
+      setHeightInput(String(nextHeight));
+    } else {
+      const nextWidth = Math.round(clampCropValue(
+        normalized * lockedAspectRatio,
+        MIN_CROP_DIMENSION,
+        MAX_CROP_DIMENSION
+      ));
+      setWidthInput(String(nextWidth));
+    }
+  };
+
+  const toggleAspectRatio = () => {
+    const nextValue = !keepAspectRatio;
+    if (nextValue) setLockedAspectRatio(width / height);
+    setKeepAspectRatio(nextValue);
     setResult(null);
   };
 
@@ -225,31 +285,46 @@ export default function CropWorkspace({
           <div className="crop-size-grid">
             <label>
               <span>Ширина, px</span>
-              <input type="number" min="64" max="8000" value={width} disabled={working || disabled} onChange={(event) => updateSize("width", event.target.value)} />
+              <input
+                type="number"
+                min={MIN_CROP_DIMENSION}
+                max={MAX_CROP_DIMENSION}
+                value={widthInput}
+                disabled={working || disabled}
+                onChange={(event) => updateSizeInput("width", event.target.value)}
+                onBlur={() => commitSizeInput("width")}
+              />
             </label>
             <label>
               <span>Высота, px</span>
-              <input type="number" min="64" max="8000" value={height} disabled={working || disabled} onChange={(event) => updateSize("height", event.target.value)} />
+              <input
+                type="number"
+                min={MIN_CROP_DIMENSION}
+                max={MAX_CROP_DIMENSION}
+                value={heightInput}
+                disabled={working || disabled}
+                onChange={(event) => updateSizeInput("height", event.target.value)}
+                onBlur={() => commitSizeInput("height")}
+              />
             </label>
           </div>
 
-          <div className="setting-group crop-setting-group">
-            <div className="setting-row">
-              <label htmlFor="crop-zoom">Масштаб</label>
-              <output>{Math.round(zoom * 100)}%</output>
-            </div>
-            <input
-              id="crop-zoom"
-              className="zephyr-range"
-              type="range"
-              min="1"
-              max="4"
-              step="0.01"
-              value={zoom}
-              disabled={working || disabled || !image}
-              onChange={(event) => { setZoom(Number(event.target.value)); setResult(null); }}
-            />
-          </div>
+          <button
+            type="button"
+            className={`crop-ratio-toggle ${keepAspectRatio ? "active" : ""}`}
+            role="switch"
+            aria-checked={keepAspectRatio}
+            disabled={working || disabled}
+            onClick={toggleAspectRatio}
+          >
+            <span className="crop-ratio-copy">
+              <strong>Сохранять пропорции</strong>
+              <small>Ширина и высота будут меняться вместе</small>
+            </span>
+            <span className="crop-ratio-track" aria-hidden="true">
+              <span className="crop-ratio-thumb" />
+            </span>
+          </button>
 
           <div className="setting-group crop-setting-group">
             <label>Формат</label>

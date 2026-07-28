@@ -6,7 +6,6 @@ import { downloadBlob } from "./lib/download";
 import { encodeGif } from "./lib/encoder";
 import {
   computeDimensions,
-  fitWithin,
   imageToJpegBlob,
   imageToOptimizedBlob,
   imagesToImageData,
@@ -102,6 +101,7 @@ function ToolIcon({ name }: { name: ToolMode | "upload" | "download" | "trash" |
   );
 }
 
+// GIFTOMAT_CROP_RATIO_CLEANUP_V1_PAGE
 export default function GiftomatPage() {
   const [images, setImages] = useState<ImageItem[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -116,7 +116,6 @@ export default function GiftomatPage() {
   const [pdfPreset, setPdfPreset] = useState<PdfPresetId>("linkedin-portrait");
   const [pdfFit, setPdfFit] = useState<"contain" | "cover">("contain");
   const [jpegQuality, setJpegQuality] = useState(82);
-  const [jpegMaxEdge, setJpegMaxEdge] = useState<number | null>(1920);
   const [webOutputFormat, setWebOutputFormat] = useState<WebOutputFormat>("jpeg");
   const [isDragging, setIsDragging] = useState(false);
 
@@ -342,9 +341,9 @@ export default function GiftomatPage() {
       setStatusText(`Оптимизируем ${index + 1} из ${images.length}`);
       setProgress(Math.round((index / images.length) * 90));
       const image = await loadImage(item.url);
-      const dimensions = fitWithin(image.naturalWidth, image.naturalHeight, jpegMaxEdge);
       const optimized = await imageToOptimizedBlob(image, {
-        ...dimensions,
+        width: image.naturalWidth,
+        height: image.naturalHeight,
         fit: "contain",
         quality: jpegQuality / 100,
         type: mimeType,
@@ -421,7 +420,7 @@ export default function GiftomatPage() {
           </div>
           <div>
             <strong>Гифтомат</strong>
-            <span>От Павлика и с приветом с Прибалтики</span>
+            <span>От Павлика с Прибалтики</span>
           </div>
         </div>
         <div className="privacy-pill">
@@ -685,16 +684,6 @@ export default function GiftomatPage() {
                       onChange={(event: ChangeEvent<HTMLInputElement>) => { setJpegQuality(Number(event.target.value)); invalidateResult(); }}
                     />
                     <div className="range-labels"><span>Меньше файл</span><span>Выше качество</span></div>
-                  </div>
-                  <div className="setting-group">
-                    <label htmlFor="max-edge">Максимальная сторона</label>
-                    <select id="max-edge" className="zephyr-select" disabled={stage === "working"} value={jpegMaxEdge ?? "original"} onChange={(event: ChangeEvent<HTMLSelectElement>) => { setJpegMaxEdge(event.target.value === "original" ? null : Number(event.target.value)); invalidateResult(); }}>
-                      <option value="original">Исходный размер</option>
-                      <option value="2400">2400 px</option>
-                      <option value="1920">1920 px · рекомендуется</option>
-                      <option value="1600">1600 px</option>
-                      <option value="1200">1200 px</option>
-                    </select>
                   </div>
                   <div className="info-card">
                     <strong>{webOutputFormat === "webp" ? "WebP для производительности" : "JPG для совместимости"}</strong>
