@@ -965,3 +965,50 @@ svg { width: 1.25rem; height: 1.25rem; }
 }
 
 /* GIFTOMAT_PREMIUM_LAYOUT_V1_END */
+
+/* GIFTOMAT_NEXT_SPRINT_CROP_V1_START */
+@media (min-width: 981px) {
+  .app-body { grid-template-columns: 190px minmax(0, 1fr); gap: 18px; }
+  .tool-sidebar { padding: 16px 12px; gap: 10px; }
+  .tool-button { min-height: 64px; padding: 10px 12px; gap: 12px; }
+  .tool-button > span:not(.tool-icon) { display: block; min-width: 0; }
+  .tool-button strong { font-size: 14px; }
+  .tool-button small { display: block; margin-top: 3px; font-size: 11px; }
+}
+
+.canvas-panel { padding: 18px; }
+.studio-layout { gap: 18px; }
+.preview-workspace { gap: 16px; }
+.empty-dropzone { min-height: clamp(220px, 36vh, 340px); }
+.frame-strip { gap: 12px; padding-top: 5px; }
+.frame-card, .add-frame-card { transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease; }
+.frame-card:hover, .add-frame-card:hover { transform: translateY(-2px); box-shadow: 0 14px 32px rgba(64,158,239,.18); }
+.info-card p, .control-heading p, .option-card small { font-size: 11px; line-height: 1.55; }
+.info-card strong, .option-card strong { font-size: 12px; }
+
+.crop-canvas-panel { min-width: 0; }
+.crop-dropzone { min-height: clamp(220px, 38vh, 360px); }
+.crop-upload-symbol { width: 64px; height: 64px; display: grid; place-items: center; border-radius: 22px; background: linear-gradient(145deg,var(--blue),var(--cyan)); color: #fff; font-size: 30px; box-shadow: 0 18px 42px rgba(64,158,239,.25); }
+.crop-editor-shell { flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 8px 0 2px; }
+.crop-stage { position: relative; width: min(100%, 980px); max-height: calc(100% - 42px); display: grid; place-items: center; overflow: hidden; border-radius: 22px; border: 1px solid var(--border); background: #101923; box-shadow: inset 0 0 0 1px rgba(255,255,255,.03), 0 20px 50px rgba(0,0,0,.18); }
+.crop-preview-canvas { width: 100%; height: 100%; max-width: 100%; max-height: 100%; display: block; object-fit: contain; cursor: grab; touch-action: none; user-select: none; }
+.crop-preview-canvas:active { cursor: grabbing; }
+.crop-frame-size { position: absolute; right: 12px; bottom: 12px; padding: 7px 10px; border-radius: 10px; background: rgba(3,16,30,.76); color: #fff; font-size: 10px; font-weight: 800; backdrop-filter: blur(12px); }
+.crop-editor-hint { color: var(--text-muted); font-size: 11px; text-align: center; }
+.crop-size-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+.crop-size-grid label { display: grid; gap: 7px; }
+.crop-size-grid label > span { color: var(--text-secondary); font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; }
+.crop-size-grid input { width: 100%; min-height: 44px; padding: 0 12px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface-soft); color: var(--text-primary); font: inherit; font-size: 13px; }
+.crop-setting-group { margin-bottom: 20px; }
+.crop-info-card { margin-top: 2px; }
+.crop-result-card { margin-top: 14px; }
+.tool-button:hover, .option-card:hover, .secondary-button:hover, .primary-button:not(:disabled):hover { box-shadow: 0 14px 34px rgba(64,158,239,.16); }
+
+@media (max-width: 980px) {
+  .crop-stage { width: min(100%, 760px); }
+}
+@media (max-width: 620px) {
+  .crop-size-grid { grid-template-columns: 1fr; }
+  .crop-editor-hint { font-size: 10px; }
+}
+/* GIFTOMAT_NEXT_SPRINT_CROP_V1_END */

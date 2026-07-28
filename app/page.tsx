@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, type ChangeEvent, type CSSProperties, type DragEvent, type ReactNode } from "react";
+import CropWorkspace from "./components/CropWorkspace";
 import { downloadBlob } from "./lib/download";
 import { encodeGif } from "./lib/encoder";
 import {
@@ -61,15 +62,19 @@ function copyToArrayBuffer(bytes: Uint8Array): ArrayBuffer {
 const TOOL_COPY: Record<ToolMode, { title: string; description: string }> = {
   gif: {
     title: "GIF-анимация",
-    description: "Соберите кадры в зацикленную анимацию прямо в браузере.",
+    description: "Соберите GIF прямо в браузере.",
   },
   pdf: {
     title: "LinkedIn-карусель",
-    description: "Объедините баннеры в многостраничный PDF без потери порядка.",
+    description: "Соберите баннеры в PDF-карусель.",
   },
   compress: {
     title: "Сжатие баннеров",
     description: "Экспортируйте лёгкие JPG или WebP для сайтов, блогов и публикаций.",
+  },
+  crop: {
+    title: "Обрезка баннера",
+    description: "Задайте точный размер и выберите нужную область.",
   },
 };
 
@@ -428,19 +433,18 @@ export default function GiftomatPage() {
       <div className="app-body">
         <aside className="tool-sidebar glass-panel" aria-label="Инструменты">
           <div className="sidebar-label">Инструменты</div>
-          {(["gif", "pdf", "compress"] as ToolMode[]).map((tool) => (
+          {(["gif", "pdf", "compress", "crop"] as ToolMode[]).map((tool) => (
             <button
               key={tool}
               className={`tool-button ${activeTool === tool ? "active" : ""}`}
               onClick={() => switchTool(tool)}
               aria-pressed={activeTool === tool}
               disabled={stage === "working"}
-              title={TOOL_COPY[tool].title}
             >
               <span className="tool-icon"><ToolIcon name={tool} /></span>
-              <span>
-                <strong>{tool === "gif" ? "GIF" : tool === "pdf" ? "PDF" : "JPG"}</strong>
-                <small>{tool === "gif" ? "Анимация" : tool === "pdf" ? "Карусель" : "Компрессор"}</small>
+              <span className="tool-copy">
+                <strong>{tool === "gif" ? "GIF" : tool === "pdf" ? "PDF" : tool === "compress" ? "JPG" : "Обрезка"}</strong>
+                <small>{tool === "gif" ? "Анимация" : tool === "pdf" ? "Карусель" : tool === "compress" ? "Компрессия" : "Размеры"}</small>
               </span>
             </button>
           ))}
@@ -452,6 +456,10 @@ export default function GiftomatPage() {
         </aside>
 
         <main className="studio-layout">
+          {activeTool === "crop" ? (
+            <CropWorkspace image={selectedImage} disabled={stage === "working"} onAddFiles={addFiles} />
+          ) : (
+            <>
           <section
             className={`canvas-panel glass-panel ${isDragging ? "dragging" : ""}`}
             onDragOver={(event: DragEvent<HTMLElement>) => { event.preventDefault(); setIsDragging(true); }}
@@ -556,7 +564,7 @@ export default function GiftomatPage() {
                 <>
                                     <div className="info-card">
                     <strong>Автоматический формат без рамок</strong>
-                    <p>Ориентация и пропорции берутся из первого кадра. Остальные изображения заполняют холст по центру без пустых полос, а разрешение при необходимости уменьшается только пропорционально.</p>
+                    <p>Размер и ориентация — по первому кадру. Без пустых полей.</p>
                   </div>
                   <div className="setting-group">
                     <div className="setting-row">
@@ -578,7 +586,7 @@ export default function GiftomatPage() {
                   </div>
                                     <div className="info-card">
                     <strong>Готово для X</strong>
-                    <p>GIF остаётся зацикленным, сохраняет portrait, landscape или square и оптимизируется по весу без принудительного формата 16:9.</p>
+                    <p>Зациклено и оптимизировано без пустых полос.</p>
                   </div>
                 </>
               )}
@@ -680,6 +688,8 @@ export default function GiftomatPage() {
               <span>{activeTool === "gif" ? "Минимум 2 изображения" : "Порядок файлов сохраняется"}</span>
             </div>
           </aside>
+            </>
+          )}
         </main>
       </div>
     </div>

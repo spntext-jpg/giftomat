@@ -41,3 +41,13 @@ if (!images.includes('fit === "cover"') || !images.includes("Math.max(")) {
 }
 
 console.log("Smoke check passed: GIF orientation and critical Giftomat flows are present.");
+
+// GIFTOMAT_CROP_SMOKE_V1_START
+const cropWorkspace = readFileSync("app/components/CropWorkspace.tsx", "utf8");
+const cropModule = readFileSync("app/lib/crop.ts", "utf8");
+for (const marker of ["cropImageToBlob", "crop-preview-canvas", "Обрезать и скачать"]) {
+  if (!cropWorkspace.includes(marker) && !cropModule.includes(marker)) {
+    throw new Error(`Missing crop flow: ${marker}`);
+  }
+}
+// GIFTOMAT_CROP_SMOKE_V1_END
