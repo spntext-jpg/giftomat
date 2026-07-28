@@ -167,10 +167,7 @@ export default function CropWorkspace({
     <>
       <section className="canvas-panel crop-canvas-panel glass-panel">
         <div className="canvas-toolbar">
-          <div>
-            <span className="eyebrow">Редактор обрезки</span>
-            <strong>{image ? image.file.name : "Новый баннер"}</strong>
-          </div>
+
           {image && (
             <button className="secondary-button compact" onClick={resetPosition} disabled={working || disabled}>
               По центру
@@ -180,8 +177,7 @@ export default function CropWorkspace({
 
         {!image ? (
           <button className="empty-dropzone crop-dropzone" onClick={() => inputRef.current?.click()} disabled={disabled}>
-            <span className="crop-upload-symbol" aria-hidden="true">⌗</span>
-            <strong>Добавьте баннер</strong>
+<strong>Добавьте баннер</strong>
             <span>Затем задайте размер и перетащите нужную область</span>
             <em>PNG, JPG, WEBP</em>
           </button>
@@ -293,7 +289,7 @@ export default function CropWorkspace({
         <div className="control-footer">
           <button className="primary-button" onClick={exportCrop} disabled={!image || working || disabled}>
             {working ? <span className="button-spinner" /> : null}
-            {working ? "Обрезаем…" : "Обрезать и скачать"}
+            {working ? "Обрезаем…" : image ? "Обрезать и скачать" : "Добавьте изображение"}
           </button>
           <span>Файл обрабатывается локально</span>
         </div>

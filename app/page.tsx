@@ -417,8 +417,7 @@ export default function GiftomatPage() {
       <header className="topbar glass-panel">
         <div className="brand-lockup">
           <div className="brand-mark" aria-hidden="true">
-            <span className="brand-art" />
-            <span className="brand-gulls" />
+            <img className="brand-mark-image" src="/giftomat-favicon-stack-v4.png?v=20260728-v4" alt="" />
           </div>
           <div>
             <strong>Гифтомат</strong>
@@ -427,26 +426,24 @@ export default function GiftomatPage() {
         </div>
         <div className="privacy-pill">
           <ToolIcon name="privacy" />
-          <span>Обработка локально · файлы не загружаются</span>
+          <span>Обработка локально</span>
         </div>
       </header>
 
       <div className="app-body">
-        <aside className="tool-sidebar glass-panel" aria-label="Инструменты">
-          <div className="sidebar-label">Инструменты</div>
+                <aside className="tool-sidebar glass-panel" aria-label="Инструменты">
           <button
             type="button"
             data-tool="gif"
             className={`tool-button ${activeTool === "gif" ? "active" : ""}`}
             onClick={() => switchTool("gif")}
             aria-pressed={activeTool === "gif"}
-            aria-label="GIF — Анимация"
             disabled={stage === "working"}
           >
             <span className="tool-icon"><ToolIcon name="gif" /></span>
-            <span className="tool-copy">
-              <strong className="tool-title">GIF</strong>
-              <small className="tool-note">Анимация</small>
+            <span className="giftomat-tool-copy">
+              <strong className="giftomat-tool-title">GIF</strong>
+              <small className="giftomat-tool-note">Анимация</small>
             </span>
           </button>
           <button
@@ -455,13 +452,12 @@ export default function GiftomatPage() {
             className={`tool-button ${activeTool === "pdf" ? "active" : ""}`}
             onClick={() => switchTool("pdf")}
             aria-pressed={activeTool === "pdf"}
-            aria-label="PDF — Карусель"
             disabled={stage === "working"}
           >
             <span className="tool-icon"><ToolIcon name="pdf" /></span>
-            <span className="tool-copy">
-              <strong className="tool-title">PDF</strong>
-              <small className="tool-note">Карусель</small>
+            <span className="giftomat-tool-copy">
+              <strong className="giftomat-tool-title">PDF</strong>
+              <small className="giftomat-tool-note">Карусель</small>
             </span>
           </button>
           <button
@@ -470,13 +466,12 @@ export default function GiftomatPage() {
             className={`tool-button ${activeTool === "compress" ? "active" : ""}`}
             onClick={() => switchTool("compress")}
             aria-pressed={activeTool === "compress"}
-            aria-label="JPG — Компрессия"
             disabled={stage === "working"}
           >
             <span className="tool-icon"><ToolIcon name="compress" /></span>
-            <span className="tool-copy">
-              <strong className="tool-title">JPG</strong>
-              <small className="tool-note">Компрессия</small>
+            <span className="giftomat-tool-copy">
+              <strong className="giftomat-tool-title">JPG</strong>
+              <small className="giftomat-tool-note">Компрессия</small>
             </span>
           </button>
           <button
@@ -485,20 +480,14 @@ export default function GiftomatPage() {
             className={`tool-button ${activeTool === "crop" ? "active" : ""}`}
             onClick={() => switchTool("crop")}
             aria-pressed={activeTool === "crop"}
-            aria-label="Обрезка — Размеры"
             disabled={stage === "working"}
           >
             <span className="tool-icon"><ToolIcon name="crop" /></span>
-            <span className="tool-copy">
-              <strong className="tool-title">Обрезка</strong>
-              <small className="tool-note">Размеры</small>
+            <span className="giftomat-tool-copy">
+              <strong className="giftomat-tool-title">Обрезка</strong>
+              <small className="giftomat-tool-note">Размеры</small>
             </span>
           </button>
-          <div className="sidebar-spacer" />
-          <div className="sidebar-note">
-            <span className="status-dot" />
-            <span>Готово к работе</span>
-          </div>
         </aside>
 
         <main className="studio-layout">
@@ -519,10 +508,6 @@ export default function GiftomatPage() {
             }}
           >
             <div className="canvas-toolbar">
-              <div>
-                <span className="eyebrow">Рабочая область</span>
-                <strong>{images.length ? `${images.length} ${images.length === 1 ? "изображение" : "изображений"}` : "Новый проект"}</strong>
-              </div>
               <div className="toolbar-actions">
                 {result?.kind === "gif" && (
                   <button className="secondary-button compact" onClick={() => setPreviewMode((mode) => mode === "result" ? "source" : "result") }>
@@ -539,8 +524,7 @@ export default function GiftomatPage() {
 
             {images.length === 0 ? (
               <button className="empty-dropzone" onClick={() => fileInputRef.current?.click()} disabled={stage === "working"}>
-                <span className="upload-orb"><ToolIcon name="upload" /></span>
-                <strong>Перетащите изображения сюда</strong>
+<strong>Перетащите изображения сюда</strong>
                 <span>или выберите файлы с компьютера</span>
                 <em>PNG, JPG, WEBP · до 40 МБ</em>
               </button>
