@@ -37,12 +37,14 @@ const MIN_CROP_DIMENSION = 64;
 const MAX_CROP_DIMENSION = 8000;
 
 function normalizeCropDimension(value: string, fallback: number): number {
+  if (value.trim() === "") return fallback;
   const parsed = Number(value);
   if (!Number.isFinite(parsed)) return fallback;
   return Math.round(clampCropValue(parsed, MIN_CROP_DIMENSION, MAX_CROP_DIMENSION));
 }
 // GIFTOMAT_CROP_RATIO_CLEANUP_V1_CROP_END
 
+// GIFTOMAT_CJM_POLISH_V2_CROP
 export default function CropWorkspace({
   image,
   disabled = false,
@@ -287,44 +289,49 @@ export default function CropWorkspace({
               <span>Ширина, px</span>
               <input
                 type="number"
+                inputMode="numeric"
                 min={MIN_CROP_DIMENSION}
                 max={MAX_CROP_DIMENSION}
                 value={widthInput}
                 disabled={working || disabled}
                 onChange={(event) => updateSizeInput("width", event.target.value)}
                 onBlur={() => commitSizeInput("width")}
+                aria-label="Ширина результата в пикселях"
               />
             </label>
+            <button
+              type="button"
+              className={`crop-ratio-link ${keepAspectRatio ? "active" : ""}`}
+              role="switch"
+              aria-checked={keepAspectRatio}
+              aria-label="Сохранять пропорции"
+              title={keepAspectRatio ? "Пропорции связаны" : "Связать ширину и высоту"}
+              disabled={working || disabled}
+              onClick={toggleAspectRatio}
+            >
+              <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M10 13a5 5 0 0 0 7.1.1l2-2a5 5 0 0 0-7.1-7.1l-1.1 1.1" />
+                <path d="M14 11a5 5 0 0 0-7.1-.1l-2 2A5 5 0 0 0 12 20l1.1-1.1" />
+              </svg>
+            </button>
             <label>
               <span>Высота, px</span>
               <input
                 type="number"
+                inputMode="numeric"
                 min={MIN_CROP_DIMENSION}
                 max={MAX_CROP_DIMENSION}
                 value={heightInput}
                 disabled={working || disabled}
                 onChange={(event) => updateSizeInput("height", event.target.value)}
                 onBlur={() => commitSizeInput("height")}
+                aria-label="Высота результата в пикселях"
               />
             </label>
           </div>
-
-          <button
-            type="button"
-            className={`crop-ratio-toggle ${keepAspectRatio ? "active" : ""}`}
-            role="switch"
-            aria-checked={keepAspectRatio}
-            disabled={working || disabled}
-            onClick={toggleAspectRatio}
-          >
-            <span className="crop-ratio-copy">
-              <strong>Сохранять пропорции</strong>
-              <small>Ширина и высота будут меняться вместе</small>
-            </span>
-            <span className="crop-ratio-track" aria-hidden="true">
-              <span className="crop-ratio-thumb" />
-            </span>
-          </button>
+          <div className={`crop-size-helper ${keepAspectRatio ? "active" : ""}`}>
+            {keepAspectRatio ? "Пропорции сохраняются" : "Размеры меняются независимо"}
+          </div>
 
           <div className="setting-group crop-setting-group">
             <label>Формат</label>

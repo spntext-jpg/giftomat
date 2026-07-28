@@ -102,6 +102,7 @@ function ToolIcon({ name }: { name: ToolMode | "upload" | "download" | "trash" |
 }
 
 // GIFTOMAT_CROP_RATIO_CLEANUP_V1_PAGE
+// GIFTOMAT_CJM_POLISH_V2_PAGE
 export default function GiftomatPage() {
   const [images, setImages] = useState<ImageItem[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -470,15 +471,15 @@ export default function GiftomatPage() {
             className={`tool-button giftomat-nav-button ${activeTool === "compress" ? "active" : ""}`}
             onClick={() => switchTool("compress")}
             aria-pressed={activeTool === "compress"}
-            aria-label="JPG — Компрессия"
+            aria-label="Сжатие — JPG и WebP"
             disabled={stage === "working"}
           >
             <span className="tool-icon giftomat-nav-icon" aria-hidden="true">
               <ToolIcon name="compress" />
             </span>
             <div className="giftomat-nav-copy">
-              <div className="giftomat-nav-title">JPG</div>
-              <div className="giftomat-nav-note">Компрессия</div>
+              <div className="giftomat-nav-title">Сжатие</div>
+              <div className="giftomat-nav-note">JPG · WebP</div>
             </div>
           </button>
 
@@ -487,15 +488,15 @@ export default function GiftomatPage() {
             className={`tool-button giftomat-nav-button ${activeTool === "crop" ? "active" : ""}`}
             onClick={() => switchTool("crop")}
             aria-pressed={activeTool === "crop"}
-            aria-label="CROP — Обрезка"
+            aria-label="Обрезка — Точный размер"
             disabled={stage === "working"}
           >
             <span className="tool-icon giftomat-nav-icon" aria-hidden="true">
               <ToolIcon name="crop" />
             </span>
             <div className="giftomat-nav-copy">
-              <div className="giftomat-nav-title">CROP</div>
-              <div className="giftomat-nav-note">Обрезка</div>
+              <div className="giftomat-nav-title">Обрезка</div>
+              <div className="giftomat-nav-note">Точный размер</div>
             </div>
           </button>
         </aside>
@@ -685,9 +686,9 @@ export default function GiftomatPage() {
                     />
                     <div className="range-labels"><span>Меньше файл</span><span>Выше качество</span></div>
                   </div>
-                  <div className="info-card">
-                    <strong>{webOutputFormat === "webp" ? "WebP для производительности" : "JPG для совместимости"}</strong>
-                    <p>{webOutputFormat === "webp" ? "WebP обычно весит меньше и сохраняет прозрачность. Подходит современным сайтам и блогам." : "JPG открывается везде. Прозрачные области PNG заменяются белым фоном."}</p>
+                  <div className="info-card compression-info-card">
+                    <strong>{webOutputFormat === "webp" ? "WebP · меньше вес" : "JPG · открывается везде"}</strong>
+                    <p>{webOutputFormat === "webp" ? "Прозрачность сохраняется. Ширина и высота остаются как в исходнике." : "Прозрачные области станут белыми. Ширина и высота остаются как в исходнике."}</p>
                   </div>
                 </>
               )}
