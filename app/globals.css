@@ -1800,3 +1800,135 @@ svg { width: 1.25rem; height: 1.25rem; }
   }
 }
 /* GIFTOMAT_CJM_POLISH_V2_CSS_END */
+
+/* GIFTOMAT_PDF_DROPDOWN_V1_CSS_START */
+.pdf-page-size-group {
+  margin-bottom: 22px !important;
+}
+
+.pdf-preset-select {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  margin-top: 11px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background:
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--surface-soft) 92%, rgba(255, 255, 255, .025)),
+      color-mix(in srgb, var(--surface-strong) 52%, transparent)
+    );
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .055),
+    0 7px 20px rgba(0, 0, 0, .055);
+  transition:
+    border-color .16s ease,
+    background .16s ease,
+    box-shadow .16s ease,
+    transform .16s ease;
+}
+
+.pdf-preset-select:hover {
+  border-color: color-mix(in srgb, var(--cyan) 30%, var(--border));
+  background:
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--surface-hover) 94%, rgba(255, 255, 255, .025)),
+      color-mix(in srgb, var(--surface-strong) 58%, transparent)
+    );
+}
+
+.pdf-preset-select:focus-within {
+  border-color: color-mix(in srgb, var(--cyan) 68%, var(--border));
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent),
+    0 10px 26px rgba(0, 172, 227, .12),
+    inset 0 1px 0 rgba(255, 255, 255, .07);
+}
+
+.pdf-preset-icon,
+.pdf-preset-chevron {
+  position: absolute;
+  z-index: 2;
+  flex: 0 0 auto;
+  pointer-events: none;
+}
+
+.pdf-preset-icon {
+  left: 14px;
+  width: 18px;
+  height: 18px;
+  color: var(--cyan);
+}
+
+.pdf-preset-chevron {
+  right: 14px;
+  width: 17px;
+  height: 17px;
+  color: var(--text-muted);
+  transition: color .16s ease, transform .16s ease;
+}
+
+.pdf-preset-select:focus-within .pdf-preset-chevron {
+  color: var(--cyan);
+  transform: translateY(1px);
+}
+
+.pdf-preset-control {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  min-width: 0;
+  min-height: 48px;
+  margin: 0;
+  padding: 0 43px 0 43px;
+  appearance: none;
+  -webkit-appearance: none;
+  border: 0;
+  border-radius: 13px;
+  outline: 0;
+  background: transparent;
+  color: var(--text-primary);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 760;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  text-overflow: ellipsis;
+}
+
+.pdf-preset-control:focus-visible {
+  outline: 0;
+}
+
+.pdf-preset-control:disabled {
+  cursor: progress;
+  opacity: .58;
+}
+
+.pdf-preset-control option {
+  background: var(--surface-strong);
+  color: var(--text-primary);
+}
+
+@media (max-width: 620px) {
+  .pdf-preset-control {
+    min-height: 46px;
+    padding-left: 40px;
+    padding-right: 38px;
+    font-size: 11px;
+  }
+
+  .pdf-preset-icon {
+    left: 13px;
+    width: 17px;
+    height: 17px;
+  }
+
+  .pdf-preset-chevron {
+    right: 12px;
+  }
+}
+/* GIFTOMAT_PDF_DROPDOWN_V1_CSS_END */

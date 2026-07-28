@@ -103,6 +103,7 @@ function ToolIcon({ name }: { name: ToolMode | "upload" | "download" | "trash" |
 
 // GIFTOMAT_CROP_RATIO_CLEANUP_V1_PAGE
 // GIFTOMAT_CJM_POLISH_V2_PAGE
+// GIFTOMAT_PDF_DROPDOWN_V1_PAGE
 export default function GiftomatPage() {
   const [images, setImages] = useState<ImageItem[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -634,15 +635,32 @@ export default function GiftomatPage() {
 
               {activeTool === "pdf" && (
                 <>
-                  <div className="setting-group">
-                    <label>Размер страницы</label>
-                    <div className="option-stack">
-                      {(Object.keys(PDF_PRESETS) as PdfPresetId[]).map((id) => (
-                        <button key={id} className={`option-card ${pdfPreset === id ? "selected" : ""}`} disabled={stage === "working"} aria-pressed={pdfPreset === id} onClick={() => { setPdfPreset(id); invalidateResult(); }}>
-                          <span><strong>{PDF_PRESETS[id].label}</strong><small>{PDF_PRESETS[id].description}</small></span>
-                          <i />
-                        </button>
-                      ))}
+                  <div className="setting-group pdf-page-size-group">
+                    <label htmlFor="pdf-page-size">Размер страницы</label>
+                    <div className="pdf-preset-select">
+                      <svg className="pdf-preset-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M6 2h8l4 4v16H6Z" />
+                        <path d="M14 2v5h5" />
+                      </svg>
+                      <select
+                        id="pdf-page-size"
+                        className="pdf-preset-control"
+                        value={pdfPreset}
+                        disabled={stage === "working"}
+                        onChange={(event: ChangeEvent<HTMLSelectElement>) => {
+                          setPdfPreset(event.target.value as PdfPresetId);
+                          invalidateResult();
+                        }}
+                      >
+                        {(Object.keys(PDF_PRESETS) as PdfPresetId[]).map((id) => (
+                          <option key={id} value={id}>
+                            {PDF_PRESETS[id].label} · {PDF_PRESETS[id].width} × {PDF_PRESETS[id].height} px
+                          </option>
+                        ))}
+                      </select>
+                      <svg className="pdf-preset-chevron" aria-hidden="true" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="m6 8 4 4 4-4" />
+                      </svg>
                     </div>
                   </div>
                   <div className="setting-group">
