@@ -1012,3 +1012,188 @@ svg { width: 1.25rem; height: 1.25rem; }
   .crop-editor-hint { font-size: 10px; }
 }
 /* GIFTOMAT_NEXT_SPRINT_CROP_V1_END */
+
+/* GIFTOMAT_UI_CORRECTION_V1_START */
+
+@media (min-width: 981px) {
+  .app-body {
+    grid-template-columns: 178px minmax(0, 1fr) !important;
+    gap: 22px !important;
+  }
+
+  .tool-sidebar {
+    padding: 14px 10px !important;
+    gap: 13px !important;
+  }
+
+  .tool-button {
+    min-height: 54px !important;
+    padding: 8px 9px !important;
+    display: grid !important;
+    grid-template-columns: 36px minmax(0, 1fr) !important;
+    align-items: center !important;
+    gap: 10px !important;
+    border-radius: 15px !important;
+  }
+
+  .tool-icon {
+    width: 36px !important;
+    height: 36px !important;
+    border-radius: 12px !important;
+  }
+
+  .tool-copy {
+    min-width: 0 !important;
+    width: auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 2px !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    overflow: visible !important;
+  }
+
+  .tool-title,
+  .tool-note {
+    display: block !important;
+    max-width: 100% !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  .tool-title {
+    color: var(--text-primary) !important;
+    font-size: 13px !important;
+    font-weight: 800 !important;
+    line-height: 1.15 !important;
+    letter-spacing: -0.015em !important;
+  }
+
+  .tool-note {
+    margin-top: 1px !important;
+    color: var(--text-muted) !important;
+    font-size: 10px !important;
+    font-weight: 600 !important;
+    line-height: 1.2 !important;
+  }
+}
+
+.tool-button {
+  transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease, background-color .18s ease !important;
+}
+
+.tool-button:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 14px 34px rgba(64, 158, 239, .18) !important;
+}
+
+.tool-button.active {
+  box-shadow: 0 16px 38px rgba(64, 158, 239, .22) !important;
+}
+
+.studio-layout {
+  gap: 22px !important;
+}
+
+.canvas-panel {
+  padding: 18px !important;
+}
+
+.preview-workspace {
+  gap: 18px !important;
+}
+
+.empty-dropzone {
+  flex: 0 1 auto !important;
+  width: 100% !important;
+  min-height: clamp(210px, 31vh, 290px) !important;
+  max-height: 310px !important;
+  margin: 10px 0 auto !important;
+  border-radius: 22px !important;
+}
+
+.frame-strip {
+  gap: 16px !important;
+  padding: 5px 3px 8px !important;
+}
+
+.frame-card,
+.add-frame-card {
+  flex: 0 0 66px !important;
+  width: 66px !important;
+  height: 66px !important;
+  border-radius: 13px !important;
+  transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease !important;
+}
+
+.frame-card:hover,
+.add-frame-card:hover {
+  transform: translateY(-3px) !important;
+  box-shadow: 0 16px 34px rgba(64, 158, 239, .20) !important;
+}
+
+.option-stack {
+  gap: 13px !important;
+}
+
+.option-card {
+  min-height: 48px !important;
+  padding: 10px 12px !important;
+  border-radius: 14px !important;
+}
+
+.option-card:hover,
+.info-card:hover,
+.result-card:hover {
+  box-shadow: 0 14px 34px rgba(64, 158, 239, .14) !important;
+}
+
+.crop-size-grid {
+  gap: 14px !important;
+}
+
+.crop-setting-group {
+  margin-bottom: 24px !important;
+}
+
+.crop-dropzone {
+  min-height: clamp(210px, 31vh, 300px) !important;
+  max-height: 320px !important;
+}
+
+@media (min-width: 1500px) {
+  .frame-card,
+  .add-frame-card {
+    flex-basis: 72px !important;
+    width: 72px !important;
+    height: 72px !important;
+  }
+}
+
+@media (max-width: 980px) {
+  .tool-copy {
+    display: flex !important;
+    min-width: 72px !important;
+    flex-direction: column !important;
+  }
+
+  .tool-title,
+  .tool-note {
+    display: block !important;
+  }
+
+  .tool-title {
+    font-size: 12px !important;
+  }
+
+  .tool-note {
+    font-size: 9px !important;
+    color: var(--text-muted) !important;
+  }
+}
+
+/* GIFTOMAT_UI_CORRECTION_V1_END */

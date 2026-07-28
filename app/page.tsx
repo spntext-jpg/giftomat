@@ -89,6 +89,7 @@ function ToolIcon({ name }: { name: ToolMode | "upload" | "download" | "trash" |
     gif: <><rect x="3" y="5" width="18" height="14" rx="3"/><path d="m9 9 6 3-6 3Z"/></>,
     pdf: <><path d="M6 2h8l4 4v16H6Z"/><path d="M14 2v5h5"/><path d="M9 13h6M9 17h5"/></>,
     compress: <><path d="m8 3-5 5m0-5v5h5M16 21l5-5m0 5v-5h-5"/><rect x="7" y="7" width="10" height="10" rx="2"/></>,
+    crop: <><path d="M7 3v13a5 5 0 0 0 5 5h9"/><path d="M3 7h13a5 5 0 0 1 5 5v9"/><path d="M7 7h10v10H7Z"/></>,
     upload: <><path d="M12 16V3m0 0L7 8m5-5 5 5"/><path d="M4 15v5h16v-5"/></>,
     download: <><path d="M12 3v13m0 0 5-5m-5 5-5-5"/><path d="M4 19v2h16v-2"/></>,
     trash: <><path d="M4 7h16M9 7V4h6v3M7 7l1 14h8l1-14"/></>,
@@ -443,8 +444,8 @@ export default function GiftomatPage() {
             >
               <span className="tool-icon"><ToolIcon name={tool} /></span>
               <span className="tool-copy">
-                <strong>{tool === "gif" ? "GIF" : tool === "pdf" ? "PDF" : tool === "compress" ? "JPG" : "Обрезка"}</strong>
-                <small>{tool === "gif" ? "Анимация" : tool === "pdf" ? "Карусель" : tool === "compress" ? "Компрессия" : "Размеры"}</small>
+                <strong className="tool-title">{tool === "gif" ? "GIF" : tool === "pdf" ? "PDF" : tool === "compress" ? "JPG" : "Обрезка"}</strong>
+                <small className="tool-note">{tool === "gif" ? "Анимация" : tool === "pdf" ? "Карусель" : tool === "compress" ? "Компрессия" : "Размеры"}</small>
               </span>
             </button>
           ))}

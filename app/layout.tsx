@@ -5,6 +5,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Гифтомат — GIF, PDF и сжатие изображений",
   description: "Локальная студия для GIF, PDF-каруселей LinkedIn и оптимизированных изображений для сайтов.",
+  icons: { icon: "/giftomat-stack-icon.jpg", shortcut: "/giftomat-stack-icon.jpg", apple: "/giftomat-stack-icon.jpg" },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
