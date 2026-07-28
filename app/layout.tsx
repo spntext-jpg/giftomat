@@ -5,7 +5,11 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Гифтомат — GIF, PDF и сжатие изображений",
   description: "Локальная студия для GIF, PDF-каруселей LinkedIn и оптимизированных изображений для сайтов.",
-  icons: { icon: "/giftomat-stack-icon.jpg", shortcut: "/giftomat-stack-icon.jpg", apple: "/giftomat-stack-icon.jpg" },
+  icons: {
+    icon: [{ url: "/giftomat-favicon-stack-v3.png?v=20260728-v3", type: "image/png", sizes: "512x512" }],
+    shortcut: "/giftomat-favicon-stack-v3.png?v=20260728-v3",
+    apple: "/giftomat-favicon-stack-v3.png?v=20260728-v3",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

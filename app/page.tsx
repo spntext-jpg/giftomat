@@ -434,21 +434,66 @@ export default function GiftomatPage() {
       <div className="app-body">
         <aside className="tool-sidebar glass-panel" aria-label="Инструменты">
           <div className="sidebar-label">Инструменты</div>
-          {(["gif", "pdf", "compress", "crop"] as ToolMode[]).map((tool) => (
-            <button
-              key={tool}
-              className={`tool-button ${activeTool === tool ? "active" : ""}`}
-              onClick={() => switchTool(tool)}
-              aria-pressed={activeTool === tool}
-              disabled={stage === "working"}
-            >
-              <span className="tool-icon"><ToolIcon name={tool} /></span>
-              <span className="tool-copy">
-                <strong className="tool-title">{tool === "gif" ? "GIF" : tool === "pdf" ? "PDF" : tool === "compress" ? "JPG" : "Обрезка"}</strong>
-                <small className="tool-note">{tool === "gif" ? "Анимация" : tool === "pdf" ? "Карусель" : tool === "compress" ? "Компрессия" : "Размеры"}</small>
-              </span>
-            </button>
-          ))}
+          <button
+            type="button"
+            data-tool="gif"
+            className={`tool-button ${activeTool === "gif" ? "active" : ""}`}
+            onClick={() => switchTool("gif")}
+            aria-pressed={activeTool === "gif"}
+            aria-label="GIF — Анимация"
+            disabled={stage === "working"}
+          >
+            <span className="tool-icon"><ToolIcon name="gif" /></span>
+            <span className="tool-copy">
+              <strong className="tool-title">GIF</strong>
+              <small className="tool-note">Анимация</small>
+            </span>
+          </button>
+          <button
+            type="button"
+            data-tool="pdf"
+            className={`tool-button ${activeTool === "pdf" ? "active" : ""}`}
+            onClick={() => switchTool("pdf")}
+            aria-pressed={activeTool === "pdf"}
+            aria-label="PDF — Карусель"
+            disabled={stage === "working"}
+          >
+            <span className="tool-icon"><ToolIcon name="pdf" /></span>
+            <span className="tool-copy">
+              <strong className="tool-title">PDF</strong>
+              <small className="tool-note">Карусель</small>
+            </span>
+          </button>
+          <button
+            type="button"
+            data-tool="compress"
+            className={`tool-button ${activeTool === "compress" ? "active" : ""}`}
+            onClick={() => switchTool("compress")}
+            aria-pressed={activeTool === "compress"}
+            aria-label="JPG — Компрессия"
+            disabled={stage === "working"}
+          >
+            <span className="tool-icon"><ToolIcon name="compress" /></span>
+            <span className="tool-copy">
+              <strong className="tool-title">JPG</strong>
+              <small className="tool-note">Компрессия</small>
+            </span>
+          </button>
+          <button
+            type="button"
+            data-tool="crop"
+            className={`tool-button ${activeTool === "crop" ? "active" : ""}`}
+            onClick={() => switchTool("crop")}
+            aria-pressed={activeTool === "crop"}
+            aria-label="Обрезка — Размеры"
+            disabled={stage === "working"}
+          >
+            <span className="tool-icon"><ToolIcon name="crop" /></span>
+            <span className="tool-copy">
+              <strong className="tool-title">Обрезка</strong>
+              <small className="tool-note">Размеры</small>
+            </span>
+          </button>
           <div className="sidebar-spacer" />
           <div className="sidebar-note">
             <span className="status-dot" />
