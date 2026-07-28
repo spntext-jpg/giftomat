@@ -431,62 +431,73 @@ export default function GiftomatPage() {
       </header>
 
       <div className="app-body">
-                <aside className="tool-sidebar glass-panel" aria-label="Инструменты">
+                        <aside className="tool-sidebar glass-panel giftomat-nav" aria-label="Инструменты">
           <button
             type="button"
-            data-tool="gif"
-            className={`tool-button ${activeTool === "gif" ? "active" : ""}`}
+            className={`tool-button giftomat-nav-button ${activeTool === "gif" ? "active" : ""}`}
             onClick={() => switchTool("gif")}
             aria-pressed={activeTool === "gif"}
+            aria-label="GIF — Анимация"
             disabled={stage === "working"}
           >
-            <span className="tool-icon"><ToolIcon name="gif" /></span>
-            <span className="giftomat-tool-copy">
-              <strong className="giftomat-tool-title">GIF</strong>
-              <small className="giftomat-tool-note">Анимация</small>
+            <span className="tool-icon giftomat-nav-icon" aria-hidden="true">
+              <ToolIcon name="gif" />
             </span>
+            <div className="giftomat-nav-copy">
+              <div className="giftomat-nav-title">GIF</div>
+              <div className="giftomat-nav-note">Анимация</div>
+            </div>
           </button>
+
           <button
             type="button"
-            data-tool="pdf"
-            className={`tool-button ${activeTool === "pdf" ? "active" : ""}`}
+            className={`tool-button giftomat-nav-button ${activeTool === "pdf" ? "active" : ""}`}
             onClick={() => switchTool("pdf")}
             aria-pressed={activeTool === "pdf"}
+            aria-label="PDF — Карусель"
             disabled={stage === "working"}
           >
-            <span className="tool-icon"><ToolIcon name="pdf" /></span>
-            <span className="giftomat-tool-copy">
-              <strong className="giftomat-tool-title">PDF</strong>
-              <small className="giftomat-tool-note">Карусель</small>
+            <span className="tool-icon giftomat-nav-icon" aria-hidden="true">
+              <ToolIcon name="pdf" />
             </span>
+            <div className="giftomat-nav-copy">
+              <div className="giftomat-nav-title">PDF</div>
+              <div className="giftomat-nav-note">Карусель</div>
+            </div>
           </button>
+
           <button
             type="button"
-            data-tool="compress"
-            className={`tool-button ${activeTool === "compress" ? "active" : ""}`}
+            className={`tool-button giftomat-nav-button ${activeTool === "compress" ? "active" : ""}`}
             onClick={() => switchTool("compress")}
             aria-pressed={activeTool === "compress"}
+            aria-label="JPG — Компрессия"
             disabled={stage === "working"}
           >
-            <span className="tool-icon"><ToolIcon name="compress" /></span>
-            <span className="giftomat-tool-copy">
-              <strong className="giftomat-tool-title">JPG</strong>
-              <small className="giftomat-tool-note">Компрессия</small>
+            <span className="tool-icon giftomat-nav-icon" aria-hidden="true">
+              <ToolIcon name="compress" />
             </span>
+            <div className="giftomat-nav-copy">
+              <div className="giftomat-nav-title">JPG</div>
+              <div className="giftomat-nav-note">Компрессия</div>
+            </div>
           </button>
+
           <button
             type="button"
-            data-tool="crop"
-            className={`tool-button ${activeTool === "crop" ? "active" : ""}`}
+            className={`tool-button giftomat-nav-button ${activeTool === "crop" ? "active" : ""}`}
             onClick={() => switchTool("crop")}
             aria-pressed={activeTool === "crop"}
+            aria-label="CROP — Обрезка"
             disabled={stage === "working"}
           >
-            <span className="tool-icon"><ToolIcon name="crop" /></span>
-            <span className="giftomat-tool-copy">
-              <strong className="giftomat-tool-title">Обрезка</strong>
-              <small className="giftomat-tool-note">Размеры</small>
+            <span className="tool-icon giftomat-nav-icon" aria-hidden="true">
+              <ToolIcon name="crop" />
             </span>
+            <div className="giftomat-nav-copy">
+              <div className="giftomat-nav-title">CROP</div>
+              <div className="giftomat-nav-note">Обрезка</div>
+            </div>
           </button>
         </aside>
 
