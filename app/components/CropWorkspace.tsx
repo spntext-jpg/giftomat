@@ -217,7 +217,7 @@ export default function CropWorkspace({
       const extension = format === "jpeg" ? "jpg" : "png";
       const name = `${safeBaseName(image.file.name)}-${width}x${height}.${extension}`;
       setResult({ name, size: blob.size });
-      downloadBlob(blob, name);
+      await downloadBlob(blob, name);
     } catch (cropError) {
       setError(cropError instanceof Error ? cropError.message : "Не удалось обрезать изображение");
     } finally {

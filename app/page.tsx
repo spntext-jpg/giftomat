@@ -47,10 +47,23 @@ interface ExportResult {
   details: string[];
   previewUrl?: string;
   warning?: string;
+  aspectHint?: string;
 }
 
 const MAX_FILES = 60;
 const MAX_FILE_BYTES = 40 * 1024 * 1024;
+
+function getGifXAspectHint(width: number, height: number): string | undefined {
+  if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) return undefined;
+  const ratio = width / height;
+  if (ratio < 0.95) {
+    return `GIF ${width} × ${height} слишком вертикальный для поста в X. В ленте могут появиться полосы справа и слева. Лучше слегка подрезать кадры до 1:1 или 16:9.`;
+  }
+  if (ratio > 2.05) {
+    return `GIF ${width} × ${height} слишком широкий для поста в X. Для более аккуратного вида лучше слегка подрезать кадры до 16:9 или 1:1.`;
+  }
+  return undefined;
+}
 
 function copyToArrayBuffer(bytes: Uint8Array): ArrayBuffer {
   const buffer = new ArrayBuffer(bytes.byteLength);
@@ -258,6 +271,7 @@ export default function GiftomatPage() {
       warning = "GIF готов для загрузки через x.com. Для мобильного приложения X нужен файл до 5 МБ.";
     }
 
+    const aspectHint = getGifXAspectHint(finalSize.width, finalSize.height);
     const previewUrl = URL.createObjectURL(finalBlob);
     setResult({
       kind: "gif",
@@ -272,9 +286,11 @@ export default function GiftomatPage() {
       ],
       previewUrl,
       warning,
+      aspectHint,
     });
     setPreviewMode("result");
   };
+
 
   const generatePdf = async () => {
     const preset = PDF_PRESETS[pdfPreset];
@@ -627,8 +643,8 @@ export default function GiftomatPage() {
                     <div className="range-labels"><span>Быстро</span><span>Медленно</span></div>
                   </div>
                                     <div className="info-card">
-                    <strong>Готово для X</strong>
-                    <p>Зациклено и оптимизировано без пустых полос.</p>
+                    <strong>Лучше для X — 1:1 или 16:9</strong>
+                    <p>Если GIF получается слишком узким или очень широким, Гифтомат подскажет слегка подрезать кадры.</p>
                   </div>
                 </>
               )}
@@ -720,8 +736,24 @@ export default function GiftomatPage() {
                     <strong>{result.title}</strong>
                     <div className="result-meta">{result.details.map((detail) => <span key={detail}>{detail}</span>)}</div>
                     {result.warning && <p className="result-warning">{result.warning}</p>}
+                    {result.aspectHint && (
+                      <div className="result-tip">
+                        <p>{result.aspectHint}</p>
+                        {result.kind === "gif" && (
+                          <button
+                            className="secondary-button result-inline-action"
+                            onClick={() => {
+                              if (images[0]) setSelectedId(images[0].id);
+                              switchTool("crop");
+                            }}
+                          >
+                            Подрезать в Crop
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </div>
-                  <button className="download-button" onClick={() => downloadBlob(result.blob, result.fileName)}>
+                  <button className="download-button" onClick={() => { void downloadBlob(result.blob, result.fileName); }}>
                     <ToolIcon name="download" />
                     Скачать
                   </button>
