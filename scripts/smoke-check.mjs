@@ -45,9 +45,33 @@ console.log("Smoke check passed: GIF orientation and critical Giftomat flows are
 // GIFTOMAT_CROP_SMOKE_V1_START
 const cropWorkspace = readFileSync("app/components/CropWorkspace.tsx", "utf8");
 const cropModule = readFileSync("app/lib/crop.ts", "utf8");
-for (const marker of ["cropImageToBlob", "crop-preview-canvas", "Обрезать и скачать"]) {
+for (const marker of ["cropImageToBlob", "crop-preview-canvas", "Подготовить файл"]) {
   if (!cropWorkspace.includes(marker) && !cropModule.includes(marker)) {
     throw new Error(`Missing crop flow: ${marker}`);
   }
 }
 // GIFTOMAT_CROP_SMOKE_V1_END
+
+
+// GIFTOMAT_NATIVE_DOWNLOAD_SMOKE_V1_START
+const downloadModule = readFileSync("app/lib/download.ts", "utf8");
+if (!downloadModule.includes("createDownloadUrl") || !downloadModule.includes("URL.createObjectURL")) {
+  throw new Error("Native Blob URL download helper is missing");
+}
+if (page.includes("downloadBlob(") || cropWorkspace.includes("downloadBlob(")) {
+  throw new Error("Legacy programmatic download call remains");
+}
+if (!/<a[\s\S]*?className="download-button"[\s\S]*?download=\{result\.fileName\}/m.test(page)) {
+  throw new Error("Main GIF/PDF/compression result must use a native download link");
+}
+if (!/<a[\s\S]*?className="download-button"[\s\S]*?download=\{result\.name\}/m.test(cropWorkspace)) {
+  throw new Error("Crop result must use a native download link");
+}
+for (const marker of [
+  "const downloadUrl = createDownloadUrl(finalBlob)",
+  "const downloadUrl = createDownloadUrl(pdf)",
+  "const downloadUrl = createDownloadUrl(output)",
+]) {
+  if (!page.includes(marker)) throw new Error(`Missing native download URL: ${marker}`);
+}
+// GIFTOMAT_NATIVE_DOWNLOAD_SMOKE_V1_END

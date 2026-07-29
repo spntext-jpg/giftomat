@@ -9,7 +9,7 @@ import {
   type PointerEvent as ReactPointerEvent,
   type WheelEvent,
 } from "react";
-import { downloadBlob } from "../lib/download";
+import { createDownloadUrl, revokeDownloadUrl } from "../lib/download";
 import {
   clampCropValue,
   cropImageToBlob,
@@ -61,7 +61,7 @@ export default function CropWorkspace({
   const [quality, setQuality] = useState(92);
   const [working, setWorking] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<{ name: string; size: number } | null>(null);
+  const [result, setResult] = useState<{ name: string; size: number; downloadUrl: string } | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const loadedImageRef = useRef<HTMLImageElement | null>(null);
@@ -87,6 +87,10 @@ export default function CropWorkspace({
     resetPosition();
     setError(null);
   }, [image?.url, resetPosition]);
+
+  useEffect(() => {
+    return () => revokeDownloadUrl(result?.downloadUrl);
+  }, [result?.downloadUrl]);
 
   const paintPreview = useCallback(async () => {
     if (!image || !canvasRef.current) return;
@@ -216,8 +220,8 @@ export default function CropWorkspace({
       });
       const extension = format === "jpeg" ? "jpg" : "png";
       const name = `${safeBaseName(image.file.name)}-${width}x${height}.${extension}`;
-      setResult({ name, size: blob.size });
-      await downloadBlob(blob, name);
+      const downloadUrl = createDownloadUrl(blob);
+      setResult({ name, size: blob.size, downloadUrl });
     } catch (cropError) {
       setError(cropError instanceof Error ? cropError.message : "Не удалось обрезать изображение");
     } finally {
@@ -364,6 +368,15 @@ export default function CropWorkspace({
                 <strong>Баннер готов</strong>
                 <div className="result-meta"><span>{result.name}</span><span>{formatBytes(result.size)}</span></div>
               </div>
+              <a
+                className="download-button"
+                href={result.downloadUrl}
+                download={result.name}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Скачать файл
+              </a>
             </div>
           )}
         </div>
@@ -371,7 +384,7 @@ export default function CropWorkspace({
         <div className="control-footer">
           <button className="primary-button" onClick={exportCrop} disabled={!image || working || disabled}>
             {working ? <span className="button-spinner" /> : null}
-            {working ? "Обрезаем…" : image ? "Обрезать и скачать" : "Добавьте изображение"}
+            {working ? "Обрезаем…" : image ? "Подготовить файл" : "Добавьте изображение"}
           </button>
           <span>Файл обрабатывается локально</span>
         </div>

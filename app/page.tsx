@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, type ChangeEvent, type CSSProperties, type DragEvent, type ReactNode } from "react";
 import CropWorkspace from "./components/CropWorkspace";
-import { downloadBlob } from "./lib/download";
+import { createDownloadUrl, revokeDownloadUrl } from "./lib/download";
 import { encodeGif } from "./lib/encoder";
 import {
   computeDimensions,
@@ -45,6 +45,7 @@ interface ExportResult {
   fileName: string;
   title: string;
   details: string[];
+  downloadUrl: string;
   previewUrl?: string;
   warning?: string;
   aspectHint?: string;
@@ -160,9 +161,12 @@ export default function GiftomatPage() {
 
   useEffect(() => {
     return () => {
-      if (result?.previewUrl) URL.revokeObjectURL(result.previewUrl);
+      revokeDownloadUrl(result?.downloadUrl);
+      if (result?.previewUrl && result.previewUrl !== result.downloadUrl) {
+        revokeDownloadUrl(result.previewUrl);
+      }
     };
-  }, [result?.previewUrl]);
+  }, [result?.downloadUrl, result?.previewUrl]);
 
   const selectedImage = useMemo(
     () => images.find((image) => image.id === selectedId) ?? images[0] ?? null,
@@ -272,10 +276,12 @@ export default function GiftomatPage() {
     }
 
     const aspectHint = getGifXAspectHint(finalSize.width, finalSize.height);
-    const previewUrl = URL.createObjectURL(finalBlob);
+    const downloadUrl = createDownloadUrl(finalBlob);
+    const previewUrl = downloadUrl;
     setResult({
       kind: "gif",
       blob: finalBlob,
+      downloadUrl,
       fileName: "giftomat.gif",
       title: "GIF готов",
       details: [
@@ -330,9 +336,11 @@ export default function GiftomatPage() {
 
     if (!pdf) throw new Error("Не удалось создать PDF");
     setProgress(100);
+    const downloadUrl = createDownloadUrl(pdf);
     setResult({
       kind: "pdf",
       blob: pdf,
+      downloadUrl,
       fileName: pdfPreset === "linkedin-portrait" ? "giftomat-linkedin-carousel.pdf" : "giftomat-carousel.pdf",
       title: "PDF-карусель готова",
       details: [
@@ -382,9 +390,11 @@ export default function GiftomatPage() {
       : 0;
 
     setProgress(100);
+    const downloadUrl = createDownloadUrl(output);
     setResult({
       kind: "compress",
       blob: output,
+      downloadUrl,
       fileName: entries.length === 1
         ? entries[0].name
         : `giftomat-web-${webOutputFormat}.zip`,
@@ -753,10 +763,16 @@ export default function GiftomatPage() {
                       </div>
                     )}
                   </div>
-                  <button className="download-button" onClick={() => { void downloadBlob(result.blob, result.fileName); }}>
+                  <a
+                    className="download-button"
+                    href={result.downloadUrl}
+                    download={result.fileName}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
                     <ToolIcon name="download" />
                     Скачать
-                  </button>
+                  </a>
                 </div>
               )}
             </div>
