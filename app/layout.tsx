@@ -1,6 +1,16 @@
 import type { Metadata } from "next";
 import Script from "next/script";
+import localFont from "next/font/local";
 import "./globals.css";
+
+// GIFTOMAT_PREMIUM_POLISH_V1_FONT
+// Самохостящийся Inter (app/fonts/InterVariable.woff2) — без обращения к Google Fonts на сборке.
+const inter = localFont({
+  src: "./fonts/InterVariable.woff2",
+  variable: "--font-sans",
+  display: "swap",
+  weight: "100 900",
+});
 
 export const metadata: Metadata = {
   title: "Гифтомат — GIF, PDF и сжатие изображений",
@@ -14,7 +24,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ru" suppressHydrationWarning>
+    <html lang="ru" suppressHydrationWarning className={inter.variable}>
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
         <meta name="theme-color" content="#111820" media="(prefers-color-scheme: dark)" />
