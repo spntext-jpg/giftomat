@@ -17,7 +17,7 @@ import {
   getCropPreviewSize,
 } from "../lib/crop";
 import { loadImage } from "../lib/images";
-import { formatBytes, safeBaseName } from "../lib/presets";
+import { CROP_PRESETS, formatBytes, safeBaseName, type FixedPreset } from "../lib/presets";
 
 interface CropSource {
   url: string;
@@ -167,6 +167,13 @@ export default function CropWorkspace({
     setResult(null);
   };
 
+  const applyPreset = (preset: FixedPreset) => {
+    setWidthInput(String(preset.width));
+    setHeightInput(String(preset.height));
+    setLockedAspectRatio(preset.width / preset.height);
+    setResult(null);
+  };
+
   const handlePointerDown = (event: ReactPointerEvent<HTMLCanvasElement>) => {
     if (disabled || !image) return;
     event.currentTarget.setPointerCapture(event.pointerId);
@@ -288,6 +295,20 @@ export default function CropWorkspace({
         </div>
 
         <div className="settings-scroll">
+          <div className="crop-preset-row" role="group" aria-label="Быстрые пресеты размера">
+            {CROP_PRESETS.map((preset) => (
+              <button
+                key={preset.id}
+                type="button"
+                className="crop-preset-button"
+                disabled={working || disabled}
+                onClick={() => applyPreset(preset)}
+                title={`${preset.width} × ${preset.height} px`}
+              >
+                {preset.label}
+              </button>
+            ))}
+          </div>
           <div className="crop-size-grid">
             <label>
               <span>Ширина, px</span>

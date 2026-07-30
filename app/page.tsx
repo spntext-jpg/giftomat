@@ -133,6 +133,9 @@ export default function GiftomatPage() {
   const [pdfFit, setPdfFit] = useState<"contain" | "cover">("contain");
   const [jpegQuality, setJpegQuality] = useState(82);
   const [webOutputFormat, setWebOutputFormat] = useState<WebOutputFormat>("jpeg");
+  // GIFTOMAT_SPRINT1_V1_COMPARE
+  const [comparePreview, setComparePreview] = useState<{ url: string; size: number } | null>(null);
+  const [showCompressPreview, setShowCompressPreview] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -168,10 +171,45 @@ export default function GiftomatPage() {
     };
   }, [result?.downloadUrl, result?.previewUrl]);
 
+  useEffect(() => {
+    return () => revokeDownloadUrl(comparePreview?.url);
+  }, [comparePreview?.url]);
+
   const selectedImage = useMemo(
     () => images.find((image) => image.id === selectedId) ?? images[0] ?? null,
     [images, selectedId]
   );
+
+  useEffect(() => {
+    if (activeTool !== "compress" || !selectedImage) {
+      setComparePreview(null);
+      return;
+    }
+    let cancelled = false;
+    const timer = window.setTimeout(async () => {
+      try {
+        const sourceImage = await loadImage(selectedImage.url);
+        if (cancelled) return;
+        const mimeType = webOutputFormat === "webp" ? "image/webp" : "image/jpeg";
+        const blob = await imageToOptimizedBlob(sourceImage, {
+          width: sourceImage.naturalWidth,
+          height: sourceImage.naturalHeight,
+          fit: "contain",
+          quality: jpegQuality / 100,
+          type: mimeType,
+          background: webOutputFormat === "webp" ? null : "#ffffff",
+        });
+        if (cancelled) return;
+        setComparePreview({ url: createDownloadUrl(blob), size: blob.size });
+      } catch {
+        if (!cancelled) setComparePreview(null);
+      }
+    }, 220);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [activeTool, selectedImage, webOutputFormat, jpegQuality]);
 
   const minimumFiles = activeTool === "gif" ? 2 : 1;
   const canGenerate = images.length >= minimumFiles && stage !== "working";
@@ -213,6 +251,24 @@ export default function GiftomatPage() {
 
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
+
+  // GIFTOMAT_SPRINT1_V1_PASTE
+  useEffect(() => {
+    const handlePaste = (event: ClipboardEvent) => {
+      const items = event.clipboardData?.items;
+      if (!items) return;
+      const files = Array.from(items)
+        .filter((item) => item.kind === "file" && item.type.startsWith("image/"))
+        .map((item) => item.getAsFile())
+        .filter((file): file is File => file !== null);
+      if (files.length > 0) {
+        event.preventDefault();
+        addFiles(files);
+      }
+    };
+    window.addEventListener("paste", handlePaste);
+    return () => window.removeEventListener("paste", handlePaste);
+  }, [addFiles]);
 
   const removeImage = (id: string) => {
     if (stage === "working") return;
@@ -552,6 +608,11 @@ export default function GiftomatPage() {
                     {previewMode === "result" ? "Показать кадр" : "Показать GIF"}
                   </button>
                 )}
+                {activeTool === "compress" && comparePreview && (
+                  <button className="secondary-button compact" onClick={() => setShowCompressPreview((value) => !value)}>
+                    {showCompressPreview ? "Показать оригинал" : "Показать сжатое"}
+                  </button>
+                )}
                 {images.length > 0 && (
                   <button className="icon-button danger" onClick={clearImages} disabled={stage === "working"} aria-label="Удалить все изображения" title="Очистить всё">
                     <ToolIcon name="trash" />
@@ -564,7 +625,7 @@ export default function GiftomatPage() {
               <button className="empty-dropzone" onClick={() => fileInputRef.current?.click()} disabled={stage === "working"}>
 <strong>Перетащите изображения сюда</strong>
                 <span>или выберите файлы с компьютера</span>
-                <em>PNG, JPG, WEBP · до 40 МБ</em>
+                <em>PNG, JPG, WEBP · до 40 МБ · Ctrl+V, чтобы вставить из буфера</em>
               </button>
             ) : (
               <div className={`preview-workspace ${previewMode === "result" ? "result-mode" : ""}`}>
@@ -572,6 +633,8 @@ export default function GiftomatPage() {
                   <div className="preview-media-shell">
                     {previewMode === "result" && result?.previewUrl ? (
                       <img src={result.previewUrl} alt="Готовая GIF-анимация" className="preview-image contain result-media" />
+                    ) : activeTool === "compress" && showCompressPreview && comparePreview ? (
+                      <img src={comparePreview.url} alt="Сжатая версия" className="preview-image contain compare-media" />
                     ) : selectedImage ? (
                       <img src={selectedImage.url} alt={selectedImage.file.name} className="preview-image contain source-media" />
                     ) : null}
@@ -588,7 +651,15 @@ export default function GiftomatPage() {
                   )}
 
                   <div className="preview-badge">
-                    {previewMode === "result" ? "Результат · полный просмотр" : selectedImage?.file.name}
+                    {previewMode === "result"
+                      ? "Результат · полный просмотр"
+                      : activeTool === "compress" && showCompressPreview && comparePreview
+                        ? `${formatBytes(selectedImage?.file.size ?? 0)} → ${formatBytes(comparePreview.size)}${
+                            selectedImage && selectedImage.file.size > 0
+                              ? ` · −${Math.max(0, Math.round((1 - comparePreview.size / selectedImage.file.size) * 100))}%`
+                              : ""
+                          }`
+                        : selectedImage?.file.name}
                   </div>
                 </div>
 

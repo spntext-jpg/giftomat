@@ -67,6 +67,14 @@ export const PDF_PRESETS: Record<PdfPresetId, Omit<FixedPreset, "id">> = {
   },
 };
 
+// GIFTOMAT_SPRINT1_V1_CROP_PRESETS
+export const CROP_PRESETS: FixedPreset[] = [
+  { id: "ig-post", label: "Instagram пост", description: "1080 × 1080 px", width: 1080, height: 1080 },
+  { id: "ig-story", label: "Instagram сторис", description: "1080 × 1920 px", width: 1080, height: 1920 },
+  { id: "linkedin-banner", label: "LinkedIn баннер", description: "1584 × 396 px", width: 1584, height: 396 },
+  { id: "youtube-thumb", label: "YouTube превью", description: "1280 × 720 px", width: 1280, height: 720 },
+];
+
 export const X_GIF_WEB_MAX_BYTES = 15 * 1024 * 1024;
 export const X_GIF_WEB_TARGET_BYTES = Math.floor(14.5 * 1024 * 1024);
 export const X_GIF_MOBILE_MAX_BYTES = 5 * 1024 * 1024;
