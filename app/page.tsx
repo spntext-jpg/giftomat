@@ -27,6 +27,7 @@ import {
   buildGifAttempts,
   GIF_MOBILE_MAX_BYTES,
   GIF_WEB_MAX_BYTES,
+  getNextFrameDuration,
 } from "./lib/presets";
 import { buildStoredZip, type ZipEntry } from "./lib/zip";
 
@@ -129,6 +130,8 @@ export default function GiftomatPage() {
   const [result, setResult] = useState<ExportResult | null>(null);
   const [previewMode, setPreviewMode] = useState<PreviewMode>("source");
   const [frameDuration, setFrameDuration] = useState(2);
+  // GIFTOMAT_SPRINT3_V1_FRAME_DURATIONS
+  const [frameDurationOverrides, setFrameDurationOverrides] = useState<Record<string, number>>({});
   const [pdfPreset, setPdfPreset] = useState<PdfPresetId>("linkedin-portrait");
   const [pdfFit, setPdfFit] = useState<"contain" | "cover">("contain");
   const [jpegQuality, setJpegQuality] = useState(82);
@@ -277,6 +280,12 @@ export default function GiftomatPage() {
     const next = images.filter((image) => image.id !== id);
     setImages(next);
     if (selectedId === id) setSelectedId(next[0]?.id ?? null);
+    setFrameDurationOverrides((current) => {
+      if (!(id in current)) return current;
+      const nextOverrides = { ...current };
+      delete nextOverrides[id];
+      return nextOverrides;
+    });
     invalidateResult();
   };
 
@@ -299,6 +308,22 @@ export default function GiftomatPage() {
     for (const image of images) URL.revokeObjectURL(image.url);
     setImages([]);
     setSelectedId(null);
+    setFrameDurationOverrides({});
+    invalidateResult();
+  };
+
+  // GIFTOMAT_SPRINT3_V1_CYCLE_DURATION
+  const cycleFrameDuration = (id: string) => {
+    setFrameDurationOverrides((current) => {
+      const next = { ...current };
+      const nextValue = getNextFrameDuration(current[id]);
+      if (nextValue === undefined) {
+        delete next[id];
+      } else {
+        next[id] = nextValue;
+      }
+      return next;
+    });
     invalidateResult();
   };
 
@@ -312,6 +337,9 @@ export default function GiftomatPage() {
     const loaded = await Promise.all(images.map((image) => loadImage(image.url)));
     const firstFrame = loaded[0];
     const attempts = buildGifAttempts(firstFrame.naturalWidth, firstFrame.naturalHeight);
+    // GIFTOMAT_SPRINT3_V1_DELAYS
+    const delaysMs = images.map((image) => (frameDurationOverrides[image.id] ?? frameDuration) * 1000);
+    const hasCustomDurations = images.some((image) => frameDurationOverrides[image.id] !== undefined);
 
     let finalBlob: Blob | null = null;
     let finalSize = attempts[0];
@@ -328,7 +356,7 @@ export default function GiftomatPage() {
       const frames = imagesToImageData(loaded, attempt.width, attempt.height, "cover");
       finalBlob = await encodeGif(
         frames,
-        frameDuration * 1000,
+        delaysMs,
         attempt.width,
         attempt.height,
         setProgress,
@@ -358,7 +386,9 @@ export default function GiftomatPage() {
         `${finalSize.width} × ${finalSize.height} px`,
         finalSize.width > finalSize.height ? "Landscape" : finalSize.height > finalSize.width ? "Portrait" : "Square",
         formatBytes(finalBlob.size),
-        `${images.length} кадров · ${frameDuration.toFixed(1)} с`,
+        hasCustomDurations
+          ? `${images.length} кадров · разная длительность`
+          : `${images.length} кадров · ${frameDuration.toFixed(1)} с`,
       ],
       previewUrl,
       warning,
@@ -690,6 +720,18 @@ export default function GiftomatPage() {
                         <img src={image.url} alt="" />
                         <span>{index + 1}</span>
                       </button>
+                      {activeTool === "gif" && (
+                        <button
+                          type="button"
+                          className={`frame-duration-badge ${frameDurationOverrides[image.id] !== undefined ? "custom" : ""}`}
+                          disabled={stage === "working"}
+                          onClick={() => cycleFrameDuration(image.id)}
+                          aria-label={`Задержка кадра ${index + 1}: ${(frameDurationOverrides[image.id] ?? frameDuration).toFixed(1)} секунд. Нажмите, чтобы изменить.`}
+                          title="Нажмите, чтобы изменить задержку этого кадра"
+                        >
+                          {frameDurationOverrides[image.id] !== undefined ? `${frameDurationOverrides[image.id].toFixed(1)}с` : "Авто"}
+                        </button>
+                      )}
                       <button className="frame-delete" disabled={stage === "working"} onClick={() => removeImage(image.id)} aria-label={`Удалить кадр ${index + 1}`}>×</button>
                     </div>
                   ))}
@@ -742,6 +784,7 @@ export default function GiftomatPage() {
                       onChange={(event: ChangeEvent<HTMLInputElement>) => { setFrameDuration(Number(event.target.value)); invalidateResult(); }}
                     />
                     <div className="range-labels"><span>Быстро</span><span>Медленно</span></div>
+                    <p className="setting-hint">Это значение по умолчанию. Задержку отдельного кадра можно настроить на его миниатюре ниже.</p>
                   </div>
                                     <div className="info-card">
                     <strong>Лучше для X — 1:1 или 16:9</strong>

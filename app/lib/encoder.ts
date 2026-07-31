@@ -7,7 +7,7 @@ export interface GifEncodeOptions {
 
 export function encodeGif(
   frames: ImageData[],
-  delayMs: number,
+  delaysMs: number[],
   width: number,
   height: number,
   onProgress?: (pct: number) => void,
@@ -44,12 +44,14 @@ export function encodeGif(
     // начального белого кадра, но без промежуточных canvas-копий.
     gif.addFrame(frames[0], { delay: 1, copy: true });
 
-    for (const frame of frames) {
+    // GIFTOMAT_SPRINT3_V1_ENCODER
+    frames.forEach((frame, index) => {
+      const delayMs = delaysMs[index] ?? delaysMs[0] ?? 1000;
       gif.addFrame(frame, {
         delay: Math.max(10, Math.round(delayMs)),
         copy: true,
       });
-    }
+    });
 
     gif.on("progress", (progress: number) => onProgress?.(Math.round(progress * 100)));
     gif.on("finished", (blob: Blob) => resolve(blob));

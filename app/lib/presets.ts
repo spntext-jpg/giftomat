@@ -75,6 +75,19 @@ export const CROP_PRESETS: FixedPreset[] = [
   { id: "youtube-thumb", label: "YouTube превью", description: "1280 × 720 px", width: 1280, height: 720 },
 ];
 
+// GIFTOMAT_SPRINT3_V1_FRAME_DURATION_CYCLE
+export const GIF_FRAME_DURATION_STEPS = [0.3, 0.5, 0.8, 1, 1.5, 2, 3, 5];
+
+export function getNextFrameDuration(
+  current: number | undefined,
+  steps: number[] = GIF_FRAME_DURATION_STEPS
+): number | undefined {
+  if (current === undefined) return steps[0];
+  const index = steps.findIndex((step) => Math.abs(step - current) < 0.01);
+  if (index === -1 || index === steps.length - 1) return undefined;
+  return steps[index + 1];
+}
+
 export const X_GIF_WEB_MAX_BYTES = 15 * 1024 * 1024;
 export const X_GIF_WEB_TARGET_BYTES = Math.floor(14.5 * 1024 * 1024);
 export const X_GIF_MOBILE_MAX_BYTES = 5 * 1024 * 1024;
