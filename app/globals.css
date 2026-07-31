@@ -2059,3 +2059,28 @@ svg { width: 1.25rem; height: 1.25rem; }
   outline-offset: -2px;
 }
 /* GIFTOMAT_SPRINT1_V1_CSS_END */
+
+/* GIFTOMAT_SPRINT2_V1_CSS_START */
+.crop-batch-toggle {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--text-primary);
+}
+
+.crop-batch-toggle input[type="checkbox"] {
+  width: 17px;
+  height: 17px;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+
+.crop-batch-note {
+  margin: 5px 0 0;
+  color: var(--text-secondary);
+  font-size: 10.5px;
+  line-height: 1.5;
+}
+/* GIFTOMAT_SPRINT2_V1_CSS_END */

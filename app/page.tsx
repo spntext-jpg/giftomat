@@ -280,6 +280,20 @@ export default function GiftomatPage() {
     invalidateResult();
   };
 
+  // GIFTOMAT_SPRINT2_V1_REPLACE
+  const replaceImages = (updates: { id: string; file: File }[]) => {
+    if (!updates.length) return;
+    setImages((current) =>
+      current.map((image) => {
+        const update = updates.find((item) => item.id === image.id);
+        if (!update) return image;
+        URL.revokeObjectURL(image.url);
+        return { id: image.id, url: URL.createObjectURL(update.file), file: update.file };
+      })
+    );
+    invalidateResult();
+  };
+
   const clearImages = () => {
     if (stage === "working") return;
     for (const image of images) URL.revokeObjectURL(image.url);
@@ -586,7 +600,13 @@ export default function GiftomatPage() {
 
         <main className="studio-layout">
           {activeTool === "crop" ? (
-            <CropWorkspace image={selectedImage} disabled={stage === "working"} onAddFiles={addFiles} />
+            <CropWorkspace
+              image={selectedImage}
+              disabled={stage === "working"}
+              onAddFiles={addFiles}
+              batchImages={images}
+              onReplaceImages={replaceImages}
+            />
           ) : (
             <>
           <section

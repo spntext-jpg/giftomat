@@ -20,6 +20,7 @@ import { loadImage } from "../lib/images";
 import { CROP_PRESETS, formatBytes, safeBaseName, type FixedPreset } from "../lib/presets";
 
 interface CropSource {
+  id: string;
   url: string;
   file: File;
 }
@@ -28,6 +29,8 @@ interface CropWorkspaceProps {
   image: CropSource | null;
   disabled?: boolean;
   onAddFiles: (files: FileList | File[]) => void;
+  batchImages: CropSource[];
+  onReplaceImages: (updates: { id: string; file: File }[]) => void;
 }
 
 type CropFormat = "jpeg" | "png";
@@ -49,6 +52,8 @@ export default function CropWorkspace({
   image,
   disabled = false,
   onAddFiles,
+  batchImages,
+  onReplaceImages,
 }: CropWorkspaceProps) {
   const [widthInput, setWidthInput] = useState("1200");
   const [heightInput, setHeightInput] = useState("628");
@@ -61,7 +66,12 @@ export default function CropWorkspace({
   const [quality, setQuality] = useState(92);
   const [working, setWorking] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<{ name: string; size: number; downloadUrl: string } | null>(null);
+  const [result, setResult] = useState<{ name: string; size: number; downloadUrl: string; blob: Blob } | null>(null);
+  const [usedAsSource, setUsedAsSource] = useState(false);
+  const [batchMode, setBatchMode] = useState(false);
+  const [batchWorking, setBatchWorking] = useState(false);
+  const [batchProgress, setBatchProgress] = useState(0);
+  const [batchResult, setBatchResult] = useState<{ count: number } | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const loadedImageRef = useRef<HTMLImageElement | null>(null);
@@ -81,6 +91,7 @@ export default function CropWorkspace({
     setOffsetX(0);
     setOffsetY(0);
     setResult(null);
+    setUsedAsSource(false);
   }, []);
 
   useEffect(() => {
@@ -228,11 +239,53 @@ export default function CropWorkspace({
       const extension = format === "jpeg" ? "jpg" : "png";
       const name = `${safeBaseName(image.file.name)}-${width}x${height}.${extension}`;
       const downloadUrl = createDownloadUrl(blob);
-      setResult({ name, size: blob.size, downloadUrl });
+      setUsedAsSource(false);
+      setResult({ name, size: blob.size, downloadUrl, blob });
     } catch (cropError) {
       setError(cropError instanceof Error ? cropError.message : "Не удалось обрезать изображение");
     } finally {
       setWorking(false);
+    }
+  };
+
+  const useCropAsSource = () => {
+    if (!result || !image) return;
+    const file = new File([result.blob], result.name, { type: result.blob.type });
+    onReplaceImages([{ id: image.id, file }]);
+    setUsedAsSource(true);
+  };
+
+  const exportCropBatch = async () => {
+    if (!batchImages.length || batchWorking) return;
+    setBatchWorking(true);
+    setError(null);
+    setBatchResult(null);
+    setBatchProgress(0);
+    try {
+      const updates: { id: string; file: File }[] = [];
+      for (let index = 0; index < batchImages.length; index += 1) {
+        const source = batchImages[index];
+        const loaded = await loadImage(source.url);
+        const blob = await cropImageToBlob(loaded, {
+          width,
+          height,
+          zoom,
+          offsetX,
+          offsetY,
+          format,
+          quality: quality / 100,
+        });
+        const extension = format === "jpeg" ? "jpg" : "png";
+        const name = `${safeBaseName(source.file.name)}-${width}x${height}.${extension}`;
+        updates.push({ id: source.id, file: new File([blob], name, { type: blob.type }) });
+        setBatchProgress(Math.round(((index + 1) / batchImages.length) * 100));
+      }
+      onReplaceImages(updates);
+      setBatchResult({ count: updates.length });
+    } catch (batchError) {
+      setError(batchError instanceof Error ? batchError.message : "Не удалось обрезать пачку изображений");
+    } finally {
+      setBatchWorking(false);
     }
   };
 
@@ -358,6 +411,23 @@ export default function CropWorkspace({
             {keepAspectRatio ? "Пропорции сохраняются" : "Размеры меняются независимо"}
           </div>
 
+          {batchImages.length > 1 && (
+            <div className="setting-group crop-setting-group crop-batch-group">
+              <label className="crop-batch-toggle">
+                <input
+                  type="checkbox"
+                  checked={batchMode}
+                  disabled={working || batchWorking || disabled}
+                  onChange={(event) => {
+                    setBatchMode(event.target.checked);
+                    setBatchResult(null);
+                  }}
+                />
+                <span>Применить рамку ко всем загруженным кадрам ({batchImages.length})</span>
+              </label>
+            </div>
+          )}
+
           <div className="setting-group crop-setting-group">
             <label>Формат</label>
             <div className="segmented-control">
@@ -382,12 +452,19 @@ export default function CropWorkspace({
           </div>
 
           {error && <div className="error-card" role="alert">{error}</div>}
-          {result && (
+          {!batchMode && result && (
             <div className="result-card crop-result-card">
               <div className="result-check">✓</div>
               <div>
                 <strong>Баннер готов</strong>
                 <div className="result-meta"><span>{result.name}</span><span>{formatBytes(result.size)}</span></div>
+                <button
+                  type="button"
+                  className="secondary-button result-inline-action"
+                  onClick={useCropAsSource}
+                >
+                  {usedAsSource ? "✓ Добавлено в общий список" : "Использовать в GIF / PDF / Compress"}
+                </button>
               </div>
               <a
                 className="download-button"
@@ -400,12 +477,33 @@ export default function CropWorkspace({
               </a>
             </div>
           )}
+          {batchMode && batchResult && (
+            <div className="result-card crop-result-card">
+              <div className="result-check">✓</div>
+              <div>
+                <strong>Готово: обновлено кадров — {batchResult.count}</strong>
+                <p className="crop-batch-note">Кадры заменены обрезанной версией и уже доступны в GIF, PDF и Compress.</p>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="control-footer">
-          <button className="primary-button" onClick={exportCrop} disabled={!image || working || disabled}>
-            {working ? <span className="button-spinner" /> : null}
-            {working ? "Обрезаем…" : image ? "Подготовить файл" : "Добавьте изображение"}
+          <button
+            className="primary-button"
+            onClick={batchMode ? exportCropBatch : exportCrop}
+            disabled={batchMode ? (!batchImages.length || batchWorking || disabled) : (!image || working || disabled)}
+          >
+            {(working || batchWorking) ? <span className="button-spinner" /> : null}
+            {batchMode
+              ? batchWorking
+                ? `Обрабатываем… ${batchProgress}%`
+                : `Обрезать все кадры (${batchImages.length})`
+              : working
+                ? "Обрезаем…"
+                : image
+                  ? "Подготовить файл"
+                  : "Добавьте изображение"}
           </button>
           <span>Файл обрабатывается локально</span>
         </div>
