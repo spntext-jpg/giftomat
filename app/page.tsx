@@ -140,6 +140,8 @@ export default function GiftomatPage() {
   const [comparePreview, setComparePreview] = useState<{ url: string; size: number } | null>(null);
   const [showCompressPreview, setShowCompressPreview] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  // GIFTOMAT_SPRINT4B_V1_MOBILE_NAV
+  const [mobileNavCollapsed, setMobileNavCollapsed] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const imagesRef = useRef<ImageItem[]>([]);
@@ -555,10 +557,24 @@ export default function GiftomatPage() {
           <ToolIcon name="privacy" />
           <span>Обработка локально</span>
         </div>
+        <button
+          type="button"
+          className="mobile-nav-toggle"
+          onClick={() => setMobileNavCollapsed((value) => !value)}
+          aria-expanded={!mobileNavCollapsed}
+          aria-controls="giftomat-tool-nav"
+        >
+          <span aria-hidden="true">{mobileNavCollapsed ? "▾" : "▴"}</span>
+          {mobileNavCollapsed ? "Инструменты" : "Свернуть"}
+        </button>
       </header>
 
       <div className="app-body">
-                        <aside className="tool-sidebar glass-panel giftomat-nav" aria-label="Инструменты">
+                        <aside
+          id="giftomat-tool-nav"
+          className={`tool-sidebar glass-panel giftomat-nav ${mobileNavCollapsed ? "collapsed" : ""}`}
+          aria-label="Инструменты"
+        >
           <button
             type="button"
             className={`tool-button giftomat-nav-button ${activeTool === "gif" ? "active" : ""}`}
