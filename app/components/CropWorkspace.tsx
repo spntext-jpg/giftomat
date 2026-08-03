@@ -72,6 +72,8 @@ export default function CropWorkspace({
   const [batchWorking, setBatchWorking] = useState(false);
   const [batchProgress, setBatchProgress] = useState(0);
   const [batchResult, setBatchResult] = useState<{ count: number } | null>(null);
+  // GIFTOMAT_CLEANUP_V1_PRESET_SELECT
+  const [selectedPresetId, setSelectedPresetId] = useState("");
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const loadedImageRef = useRef<HTMLImageElement | null>(null);
@@ -127,6 +129,7 @@ export default function CropWorkspace({
   }, [paintPreview]);
 
   const updateSizeInput = (axis: "width" | "height", value: string) => {
+    setSelectedPresetId("");
     if (axis === "width") setWidthInput(value);
     else setHeightInput(value);
     setResult(null);
@@ -182,6 +185,7 @@ export default function CropWorkspace({
     setWidthInput(String(preset.width));
     setHeightInput(String(preset.height));
     setLockedAspectRatio(preset.width / preset.height);
+    setSelectedPresetId(preset.id);
     setResult(null);
   };
 
@@ -348,19 +352,34 @@ export default function CropWorkspace({
         </div>
 
         <div className="settings-scroll">
-          <div className="crop-preset-row" role="group" aria-label="Быстрые пресеты размера">
-            {CROP_PRESETS.map((preset) => (
-              <button
-                key={preset.id}
-                type="button"
-                className="crop-preset-button"
+          <div className="setting-group crop-setting-group crop-preset-group">
+            <label htmlFor="crop-preset">Пресет размера</label>
+            <div className="pdf-preset-select">
+              <svg className="pdf-preset-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M6 2h8l4 4v16H6Z" />
+                <path d="M14 2v5h5" />
+              </svg>
+              <select
+                id="crop-preset"
+                className="pdf-preset-control"
+                value={selectedPresetId}
                 disabled={working || disabled}
-                onClick={() => applyPreset(preset)}
-                title={`${preset.width} × ${preset.height} px`}
+                onChange={(event) => {
+                  const preset = CROP_PRESETS.find((item) => item.id === event.target.value);
+                  if (preset) applyPreset(preset);
+                }}
               >
-                {preset.label}
-              </button>
-            ))}
+                <option value="">Свой размер</option>
+                {CROP_PRESETS.map((preset) => (
+                  <option key={preset.id} value={preset.id}>
+                    {preset.label} · {preset.width} × {preset.height} px
+                  </option>
+                ))}
+              </select>
+              <svg className="pdf-preset-chevron" aria-hidden="true" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="m6 8 4 4 4-4" />
+              </svg>
+            </div>
           </div>
           <div className="crop-size-grid">
             <label>
@@ -445,11 +464,6 @@ export default function CropWorkspace({
               <input id="crop-quality" className="zephyr-range" type="range" min="70" max="100" value={quality} disabled={working || disabled} onChange={(event) => setQuality(Number(event.target.value))} />
             </div>
           )}
-
-          <div className="info-card crop-info-card">
-            <strong>Точный размер</strong>
-            <p>Результат будет строго {width} × {height} px.</p>
-          </div>
 
           {error && <div className="error-card" role="alert">{error}</div>}
           {!batchMode && result && (

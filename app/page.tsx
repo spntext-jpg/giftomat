@@ -143,7 +143,22 @@ export default function GiftomatPage() {
   const [showCompressPreview, setShowCompressPreview] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   // GIFTOMAT_SPRINT4B_V1_MOBILE_NAV
-  const [mobileNavCollapsed, setMobileNavCollapsed] = useState(false);
+  // GIFTOMAT_MOBILE_DRAWER_V1_STATE
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+
+  useEffect(() => {
+    if (!mobileNavOpen) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMobileNavOpen(false);
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [mobileNavOpen]);
   // GIFTOMAT_VIDEO_GIF_V1_STATE
   const [videoImportOpen, setVideoImportOpen] = useState(false);
 
@@ -351,6 +366,7 @@ export default function GiftomatPage() {
   };
 
   const switchTool = (tool: ToolMode) => {
+    setMobileNavOpen(false);
     if (stage === "working" || tool === activeTool) return;
     setActiveTool(tool);
     invalidateResult();
@@ -581,19 +597,29 @@ export default function GiftomatPage() {
         <button
           type="button"
           className="mobile-nav-toggle"
-          onClick={() => setMobileNavCollapsed((value) => !value)}
-          aria-expanded={!mobileNavCollapsed}
+          onClick={() => setMobileNavOpen(true)}
+          aria-expanded={mobileNavOpen}
           aria-controls="giftomat-tool-nav"
+          aria-label="Открыть меню инструментов"
         >
-          <span aria-hidden="true">{mobileNavCollapsed ? "▾" : "▴"}</span>
-          {mobileNavCollapsed ? "Инструменты" : "Свернуть"}
+          <span className="mobile-nav-toggle-icon" aria-hidden="true">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
         </button>
       </header>
+
+      <div
+        className={`mobile-nav-backdrop ${mobileNavOpen ? "visible" : ""}`}
+        onClick={() => setMobileNavOpen(false)}
+        aria-hidden="true"
+      />
 
       <div className="app-body">
                         <aside
           id="giftomat-tool-nav"
-          className={`tool-sidebar glass-panel giftomat-nav ${mobileNavCollapsed ? "collapsed" : ""}`}
+          className={`tool-sidebar glass-panel giftomat-nav ${mobileNavOpen ? "open" : ""}`}
           aria-label="Инструменты"
         >
           <button
@@ -810,10 +836,6 @@ export default function GiftomatPage() {
             <div className="settings-scroll">
               {activeTool === "gif" && (
                 <>
-                                    <div className="info-card">
-                    <strong>Автоматический формат без рамок</strong>
-                    <p>Размер и ориентация — по первому кадру. Без пустых полей.</p>
-                  </div>
                   <button
                     type="button"
                     className="secondary-button"
@@ -840,10 +862,6 @@ export default function GiftomatPage() {
                     />
                     <div className="range-labels"><span>Быстро</span><span>Медленно</span></div>
                     <p className="setting-hint">Это значение по умолчанию. Задержку отдельного кадра можно настроить на его миниатюре ниже.</p>
-                  </div>
-                                    <div className="info-card">
-                    <strong>Лучше для X — 1:1 или 16:9</strong>
-                    <p>Если GIF получается слишком узким или очень широким, Гифтомат подскажет слегка подрезать кадры.</p>
                   </div>
                 </>
               )}
@@ -885,10 +903,6 @@ export default function GiftomatPage() {
                       <button disabled={stage === "working"} aria-pressed={pdfFit === "cover"} className={pdfFit === "cover" ? "active" : ""} onClick={() => { setPdfFit("cover"); invalidateResult(); }}>На весь лист</button>
                     </div>
                   </div>
-                  <div className="info-card">
-                    <strong>LinkedIn Document Post</strong>
-                    <p>Один PDF, одинаковый размер страниц и mobile-first профиль 1080 × 1350. Автооптимизация удерживает файл ниже 100 МБ.</p>
-                  </div>
                 </>
               )}
 
@@ -918,10 +932,6 @@ export default function GiftomatPage() {
                       onChange={(event: ChangeEvent<HTMLInputElement>) => { setJpegQuality(Number(event.target.value)); invalidateResult(); }}
                     />
                     <div className="range-labels"><span>Меньше файл</span><span>Выше качество</span></div>
-                  </div>
-                  <div className="info-card compression-info-card">
-                    <strong>{webOutputFormat === "webp" ? "WebP · меньше вес" : "JPG · открывается везде"}</strong>
-                    <p>{webOutputFormat === "webp" ? "Прозрачность сохраняется. Ширина и высота остаются как в исходнике." : "Прозрачные области станут белыми. Ширина и высота остаются как в исходнике."}</p>
                   </div>
                 </>
               )}
