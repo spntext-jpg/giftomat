@@ -5,6 +5,7 @@ import CropWorkspace from "./components/CropWorkspace";
 import VideoImportPanel from "./components/VideoImportPanel";
 import { createDownloadUrl, revokeDownloadUrl } from "./lib/download";
 import { encodeGif } from "./lib/encoder";
+import { looksLikeHeic, resolveImageFile } from "./lib/heic";
 import {
   computeDimensions,
   imageToJpegBlob,
@@ -147,6 +148,8 @@ export default function GiftomatPage() {
   const [videoImportOpen, setVideoImportOpen] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  // GIFTOMAT_HEIC_V1_INFLIGHT
+  const addFilesInFlightRef = useRef(false);
   const imagesRef = useRef<ImageItem[]>([]);
 
   useEffect(() => {
@@ -231,33 +234,48 @@ export default function GiftomatPage() {
     setErrorMessage(null);
   };
 
-  const addFiles = (incoming: FileList | File[]) => {
-    if (stage === "working") return;
+  const addFiles = async (incoming: FileList | File[]) => {
+    if (stage === "working" || addFilesInFlightRef.current) return;
+    addFilesInFlightRef.current = true;
     invalidateResult();
-    const availableSlots = Math.max(0, MAX_FILES - images.length);
-    const accepted = Array.from(incoming)
-      .filter((file) => file.type.startsWith("image/") && file.size <= MAX_FILE_BYTES)
-      .slice(0, availableSlots);
+    try {
+      const availableSlots = Math.max(0, MAX_FILES - images.length);
+      const candidates = Array.from(incoming)
+        .filter((file) => (file.type.startsWith("image/") || looksLikeHeic(file)) && file.size <= MAX_FILE_BYTES)
+        .slice(0, availableSlots);
 
-    const rejectedCount = Array.from(incoming).length - accepted.length;
-    const nextImages = accepted.map((file) => ({
-      id: createId(),
-      url: URL.createObjectURL(file),
-      file,
-    }));
+      const rejectedCount = Array.from(incoming).length - candidates.length;
 
-    if (nextImages.length) {
-      setImages((current) => [...current, ...nextImages]);
-      setSelectedId((current) => current ?? nextImages[0].id);
+      // GIFTOMAT_HEIC_V1_RESOLVE
+      const resolved = await Promise.all(candidates.map((file) => resolveImageFile(file)));
+      const usableFiles = resolved.filter((file): file is File => file !== null);
+      const failedHeicCount = resolved.length - usableFiles.length;
+
+      const nextImages = usableFiles.map((file) => ({
+        id: createId(),
+        url: URL.createObjectURL(file),
+        file,
+      }));
+
+      if (nextImages.length) {
+        setImages((current) => [...current, ...nextImages]);
+        setSelectedId((current) => current ?? nextImages[0].id);
+      }
+
+      const notices: string[] = [];
+      if (rejectedCount > 0) {
+        notices.push(
+          `Пропущено файлов: ${rejectedCount}. Поддерживаются изображения до 40 МБ, максимум ${MAX_FILES} кадров.`
+        );
+      }
+      if (failedHeicCount > 0) {
+        notices.push(`Не удалось прочитать HEIC/HEIF: ${failedHeicCount}.`);
+      }
+      if (notices.length) setErrorMessage(notices.join(" "));
+    } finally {
+      addFilesInFlightRef.current = false;
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
-
-    if (rejectedCount > 0) {
-      setErrorMessage(
-        `Пропущено файлов: ${rejectedCount}. Поддерживаются изображения до 40 МБ, максимум ${MAX_FILES} кадров.`
-      );
-    }
-
-    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   // GIFTOMAT_SPRINT1_V1_PASTE
@@ -704,7 +722,7 @@ export default function GiftomatPage() {
               <button className="empty-dropzone" onClick={() => fileInputRef.current?.click()} disabled={stage === "working"}>
 <strong>Перетащите изображения сюда</strong>
                 <span>или выберите файлы с компьютера</span>
-                <em>PNG, JPG, WEBP · до 40 МБ · Ctrl+V, чтобы вставить из буфера</em>
+                <em>PNG, JPG, WEBP, HEIC · до 40 МБ · Ctrl+V, чтобы вставить из буфера</em>
               </button>
             ) : (
               <div className={`preview-workspace ${previewMode === "result" ? "result-mode" : ""}`}>
@@ -775,7 +793,7 @@ export default function GiftomatPage() {
             <input
               ref={fileInputRef}
               type="file"
-              accept="image/png,image/jpeg,image/webp,image/gif,image/avif"
+              accept="image/png,image/jpeg,image/webp,image/gif,image/avif,image/heic,image/heif,.heic,.heif"
               multiple
               hidden
               onChange={(event: ChangeEvent<HTMLInputElement>) => event.target.files && addFiles(event.target.files)}

@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "gif.js": "^0.2.0",
+    "heic-to": "^1.5.2",
     "next": "16.2.4",
     "react": "19.2.4",
     "react-dom": "19.2.4"
