@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, type ChangeEvent, type CSSProperties, type DragEvent, type ReactNode } from "react";
 import CropWorkspace from "./components/CropWorkspace";
+import VideoImportPanel from "./components/VideoImportPanel";
 import { createDownloadUrl, revokeDownloadUrl } from "./lib/download";
 import { encodeGif } from "./lib/encoder";
 import {
@@ -142,6 +143,8 @@ export default function GiftomatPage() {
   const [isDragging, setIsDragging] = useState(false);
   // GIFTOMAT_SPRINT4B_V1_MOBILE_NAV
   const [mobileNavCollapsed, setMobileNavCollapsed] = useState(false);
+  // GIFTOMAT_VIDEO_GIF_V1_STATE
+  const [videoImportOpen, setVideoImportOpen] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const imagesRef = useRef<ImageItem[]>([]);
@@ -653,6 +656,16 @@ export default function GiftomatPage() {
               batchImages={images}
               onReplaceImages={replaceImages}
             />
+          ) : activeTool === "gif" && videoImportOpen ? (
+            <VideoImportPanel
+              disabled={stage === "working"}
+              maxFrames={Math.max(0, MAX_FILES - images.length)}
+              onExtracted={(files) => {
+                addFiles(files);
+                setVideoImportOpen(false);
+              }}
+              onClose={() => setVideoImportOpen(false)}
+            />
           ) : (
             <>
           <section
@@ -783,6 +796,14 @@ export default function GiftomatPage() {
                     <strong>Автоматический формат без рамок</strong>
                     <p>Размер и ориентация — по первому кадру. Без пустых полей.</p>
                   </div>
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    onClick={() => setVideoImportOpen(true)}
+                    disabled={stage === "working" || images.length >= MAX_FILES}
+                  >
+                    Кадры из видео
+                  </button>
                   <div className="setting-group">
                     <div className="setting-row">
                       <label htmlFor="frame-duration">Задержка кадра</label>

@@ -2183,3 +2183,52 @@ svg { width: 1.25rem; height: 1.25rem; }
   }
 }
 /* GIFTOMAT_SPRINT4B_V1_CSS_END */
+
+/* GIFTOMAT_VIDEO_GIF_V1_CSS_START */
+.video-canvas-panel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.video-import-preview {
+  width: 100%;
+  max-height: 460px;
+  border-radius: 14px;
+  background: #000;
+}
+
+.video-control-panel .video-import-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.video-import-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.video-import-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.video-import-grid input {
+  min-height: 40px;
+  padding: 0 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface-soft);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 13px;
+}
+/* GIFTOMAT_VIDEO_GIF_V1_CSS_END */
