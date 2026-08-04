@@ -1,23 +1,25 @@
-// GIFTOMAT_SPRINT4_V1_SW
-// Ванильный service worker без сборочных плагинов (Turbopack ещё не дружит с Serwist
-// на офлайн-кеше — см. официальный гайд Next.js по PWA). Стратегия:
-//   - /_next/static/* — контент-хэшированные файлы, безопасно кешировать навсегда;
-//   - навигация (HTML) — network-first с фолбэком на кеш (всегда свежая версия онлайн,
-//     рабочий шелл офлайн);
-//   - всё остальное (шрифт, gif.js, gif.worker.js, favicon) — cache-first с обновлением
-//     кеша в фоне.
-//
-// Если меняете /gif.js, /gif.worker.js или другой некэш-хэшированный файл из public/ —
-// поднимите CACHE_VERSION ниже, иначе офлайн-пользователи получат старую копию.
-const CACHE_VERSION = "giftomat-v1";
+// GIFTOMAT_PRODUCTION_RELEASE_V1_SW
+// Static Next.js chunks are immutable. Public runtime assets use stale-while-revalidate,
+// so an installed PWA opens immediately but still receives the next production revision.
+const CACHE_VERSION = "giftomat-v2";
 
 const APP_SHELL = [
   "/",
   "/manifest.webmanifest",
   "/gif.js",
   "/gif.worker.js",
+  "/html-to-image.js",
   "/giftomat-favicon-stack-v4.png?v=20260728-v4",
 ];
+
+async function fetchAndCache(request) {
+  const response = await fetch(request);
+  if (response.ok) {
+    const cache = await caches.open(CACHE_VERSION);
+    await cache.put(request, response.clone());
+  }
+  return response;
+}
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -25,7 +27,7 @@ self.addEventListener("install", (event) => {
       .open(CACHE_VERSION)
       .then((cache) => cache.addAll(APP_SHELL))
       .catch(() => {
-        // Один из ресурсов недоступен при установке — не блокируем активацию SW.
+        // Offline support must never block activation of the main application.
       })
   );
   self.skipWaiting();
@@ -45,50 +47,25 @@ self.addEventListener("fetch", (event) => {
   if (request.method !== "GET") return;
 
   const url = new URL(request.url);
-  if (url.origin !== self.location.origin) return;
-  // Blob-URL — локально сгенерированные GIF/PDF/изображения, сеть тут не участвует.
-  if (url.protocol === "blob:") return;
+  if (url.origin !== self.location.origin || url.protocol === "blob:") return;
 
   if (url.pathname.startsWith("/_next/static/")) {
-    event.respondWith(
-      caches.match(request).then(
-        (cached) =>
-          cached ||
-          fetch(request).then((response) => {
-            const copy = response.clone();
-            caches.open(CACHE_VERSION).then((cache) => cache.put(request, copy));
-            return response;
-          })
-      )
-    );
+    const network = fetchAndCache(request);
+    event.waitUntil(network.then(() => undefined).catch(() => undefined));
+    event.respondWith(caches.match(request).then((cached) => cached || network));
     return;
   }
 
   if (request.mode === "navigate") {
+    const network = fetchAndCache(request);
+    event.waitUntil(network.then(() => undefined).catch(() => undefined));
     event.respondWith(
-      fetch(request)
-        .then((response) => {
-          const copy = response.clone();
-          caches.open(CACHE_VERSION).then((cache) => cache.put(request, copy));
-          return response;
-        })
-        .catch(() => caches.match(request).then((cached) => cached || caches.match("/")))
+      network.catch(() => caches.match(request).then((cached) => cached || caches.match("/")))
     );
     return;
   }
 
-  event.respondWith(
-    caches.match(request).then((cached) => {
-      if (cached) return cached;
-      return fetch(request)
-        .then((response) => {
-          if (response && response.status === 200) {
-            const copy = response.clone();
-            caches.open(CACHE_VERSION).then((cache) => cache.put(request, copy));
-          }
-          return response;
-        })
-        .catch(() => cached);
-    })
-  );
+  const network = fetchAndCache(request);
+  event.waitUntil(network.then(() => undefined).catch(() => undefined));
+  event.respondWith(caches.match(request).then((cached) => cached || network));
 });

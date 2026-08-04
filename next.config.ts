@@ -1,9 +1,20 @@
 import type { NextConfig } from "next";
 
-// GIFTOMAT_SPRINT4_V1_HEADERS
+// GIFTOMAT_PRODUCTION_RELEASE_V1_HEADERS
+const securityHeaders = [
+  { key: "X-Content-Type-Options", value: "nosniff" },
+  { key: "X-Frame-Options", value: "DENY" },
+  { key: "Referrer-Policy", value: "no-referrer" },
+  { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+];
+
 const nextConfig: NextConfig = {
   async headers() {
     return [
+      {
+        source: "/:path*",
+        headers: securityHeaders,
+      },
       {
         source: "/sw.js",
         headers: [

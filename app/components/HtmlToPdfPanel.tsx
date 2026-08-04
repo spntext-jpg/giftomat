@@ -28,6 +28,7 @@ const DEFAULT_PIXEL_RATIO = 2;
 const CAPTURE_TIMEOUT_MS = 20000;
 
 // GIFTOMAT_HTML2PDF_V1_PANEL
+// GIFTOMAT_PRODUCTION_RELEASE_V1_HTML_PANEL
 export default function HtmlToPdfPanel({ disabled = false }: HtmlToPdfPanelProps) {
   const [htmlSource, setHtmlSource] = useState("");
   const [sourceFileName, setSourceFileName] = useState("document");
@@ -57,6 +58,7 @@ export default function HtmlToPdfPanel({ disabled = false }: HtmlToPdfPanelProps
 
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
+      if (event.source !== iframeRef.current?.contentWindow) return;
       const data = event.data as CaptureMessage | undefined;
       if (!data || typeof data !== "object") return;
       if (data.type === "GIFTOMAT_READY") {
@@ -204,6 +206,7 @@ export default function HtmlToPdfPanel({ disabled = false }: HtmlToPdfPanelProps
               ref={iframeRef}
               srcDoc={previewSrcDoc}
               sandbox="allow-scripts"
+              referrerPolicy="no-referrer"
               title="Предпросмотр HTML"
               className="html-import-frame"
               style={{ width: `${iframeWidthPx}px` }}

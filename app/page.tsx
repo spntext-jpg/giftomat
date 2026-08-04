@@ -127,6 +127,7 @@ function ToolIcon({ name }: { name: ToolMode | "upload" | "download" | "trash" |
 // GIFTOMAT_CROP_RATIO_CLEANUP_V1_PAGE
 // GIFTOMAT_CJM_POLISH_V2_PAGE
 // GIFTOMAT_PDF_DROPDOWN_V1_PAGE
+// GIFTOMAT_PRODUCTION_RELEASE_V1_PAGE
 export default function GiftomatPage() {
   const [images, setImages] = useState<ImageItem[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -633,6 +634,7 @@ export default function GiftomatPage() {
             className={`tool-button giftomat-nav-button ${activeTool === "gif" ? "active" : ""}`}
             onClick={() => switchTool("gif")}
             aria-pressed={activeTool === "gif"}
+            aria-current={activeTool === "gif" ? "page" : undefined}
             aria-label="GIF — Анимация"
             disabled={stage === "working"}
           >
@@ -650,6 +652,7 @@ export default function GiftomatPage() {
             className={`tool-button giftomat-nav-button ${activeTool === "pdf" ? "active" : ""}`}
             onClick={() => switchTool("pdf")}
             aria-pressed={activeTool === "pdf"}
+            aria-current={activeTool === "pdf" ? "page" : undefined}
             aria-label="PDF — Карусель"
             disabled={stage === "working"}
           >
@@ -667,6 +670,7 @@ export default function GiftomatPage() {
             className={`tool-button giftomat-nav-button ${activeTool === "compress" ? "active" : ""}`}
             onClick={() => switchTool("compress")}
             aria-pressed={activeTool === "compress"}
+            aria-current={activeTool === "compress" ? "page" : undefined}
             aria-label="Сжатие — JPG и WebP"
             disabled={stage === "working"}
           >
@@ -684,6 +688,7 @@ export default function GiftomatPage() {
             className={`tool-button giftomat-nav-button ${activeTool === "crop" ? "active" : ""}`}
             onClick={() => switchTool("crop")}
             aria-pressed={activeTool === "crop"}
+            aria-current={activeTool === "crop" ? "page" : undefined}
             aria-label="Обрезка — Точный размер"
             disabled={stage === "working"}
           >
@@ -701,6 +706,7 @@ export default function GiftomatPage() {
             className={`tool-button giftomat-nav-button ${activeTool === "html2pdf" ? "active" : ""}`}
             onClick={() => switchTool("html2pdf")}
             aria-pressed={activeTool === "html2pdf"}
+            aria-current={activeTool === "html2pdf" ? "page" : undefined}
             aria-label="HTML в PDF — Сохранение вёрстки"
             disabled={stage === "working"}
           >

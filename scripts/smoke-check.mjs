@@ -75,3 +75,45 @@ for (const marker of [
   if (!page.includes(marker)) throw new Error(`Missing native download URL: ${marker}`);
 }
 // GIFTOMAT_NATIVE_DOWNLOAD_SMOKE_V1_END
+
+// GIFTOMAT_PRODUCTION_RELEASE_V1_SMOKE_START
+const htmlPanel = readFileSync("app/components/HtmlToPdfPanel.tsx", "utf8");
+const globalCss = readFileSync("app/globals.css", "utf8");
+const serviceWorker = readFileSync("public/sw.js", "utf8");
+const nextConfig = readFileSync("next.config.ts", "utf8");
+
+for (const marker of [
+  'switchTool("gif")',
+  'switchTool("pdf")',
+  'switchTool("compress")',
+  'switchTool("crop")',
+  'switchTool("html2pdf")',
+]) {
+  if (!page.includes(marker)) throw new Error(`Missing navigation flow: ${marker}`);
+}
+
+if (!htmlPanel.includes("event.source !== iframeRef.current?.contentWindow")) {
+  throw new Error("HTML capture messages must be accepted only from the preview iframe");
+}
+if (!htmlPanel.includes('referrerPolicy="no-referrer"')) {
+  throw new Error("HTML preview iframe must suppress referrer data");
+}
+if (!globalCss.includes("GIFTOMAT_PRODUCTION_RELEASE_V1_CSS_START")) {
+  throw new Error("Production navigation CSS is missing");
+}
+if (!globalCss.includes("--nav-active: var(--accent)")) {
+  throw new Error("Navigation active state must use the warm orange accent");
+}
+if (!globalCss.includes("overflow-wrap: anywhere")) {
+  throw new Error("Navigation labels are not protected from overflow");
+}
+if (!serviceWorker.includes('CACHE_VERSION = "giftomat-v2"')) {
+  throw new Error("Service worker cache version was not upgraded");
+}
+if (!serviceWorker.includes('"/html-to-image.js"')) {
+  throw new Error("HTML-to-PDF runtime is missing from the offline shell");
+}
+for (const header of ["X-Content-Type-Options", "X-Frame-Options", "Referrer-Policy", "Permissions-Policy"]) {
+  if (!nextConfig.includes(header)) throw new Error(`Missing production header: ${header}`);
+}
+// GIFTOMAT_PRODUCTION_RELEASE_V1_SMOKE_END
