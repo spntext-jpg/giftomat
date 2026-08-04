@@ -117,3 +117,28 @@ for (const header of ["X-Content-Type-Options", "X-Frame-Options", "Referrer-Pol
   if (!nextConfig.includes(header)) throw new Error(`Missing production header: ${header}`);
 }
 // GIFTOMAT_PRODUCTION_RELEASE_V1_SMOKE_END
+
+// GIFTOMAT_CONTRAST_PRESETS_V2_SMOKE_START
+const contrastPresetCss = readFileSync("app/globals.css", "utf8");
+const expandedPresets = readFileSync("app/lib/presets.ts", "utf8");
+
+for (const marker of [
+  "GIFTOMAT_CONTRAST_PRESETS_V2_CSS_START",
+  "text-shadow:",
+  "rgba(5, 7, 10, .96)",
+]) {
+  if (!contrastPresetCss.includes(marker)) throw new Error(`Missing selected-navigation contrast marker: ${marker}`);
+}
+
+for (const marker of [
+  '"portrait-3-4"',
+  '"social-wide"',
+  '"document-a4"',
+  'id: "ig-photo"',
+  'id: "linkedin-post"',
+  'id: "x-header"',
+  'id: "youtube-banner"',
+]) {
+  if (!expandedPresets.includes(marker)) throw new Error(`Missing expanded preset: ${marker}`);
+}
+// GIFTOMAT_CONTRAST_PRESETS_V2_SMOKE_END

@@ -1,5 +1,12 @@
 export type ToolMode = "gif" | "pdf" | "compress" | "crop" | "html2pdf";
-export type PdfPresetId = "linkedin-portrait" | "square" | "landscape";
+export type PdfPresetId =
+  | "linkedin-portrait"
+  | "portrait-3-4"
+  | "square"
+  | "social-wide"
+  | "landscape"
+  | "story"
+  | "document-a4";
 export type FitMode = "cover" | "contain";
 export type WebOutputFormat = "jpeg" | "webp";
 
@@ -46,6 +53,7 @@ export function buildGifAttempts(
   });
 }
 
+// GIFTOMAT_CONTRAST_PRESETS_V2_PDF_START
 export const PDF_PRESETS: Record<PdfPresetId, Omit<FixedPreset, "id">> = {
   "linkedin-portrait": {
     label: "LinkedIn · 4:5",
@@ -53,27 +61,60 @@ export const PDF_PRESETS: Record<PdfPresetId, Omit<FixedPreset, "id">> = {
     width: 1080,
     height: 1350,
   },
+  "portrait-3-4": {
+    label: "Вертикаль · 3:4",
+    description: "1080 × 1440 px — современный вертикальный документ",
+    width: 1080,
+    height: 1440,
+  },
   square: {
     label: "Квадрат · 1:1",
-    description: "1080 × 1080 px",
+    description: "1080 × 1080 px — универсальная квадратная карусель",
     width: 1080,
     height: 1080,
   },
+  "social-wide": {
+    label: "Широкий · 1.91:1",
+    description: "1200 × 628 px — презентация и social preview",
+    width: 1200,
+    height: 628,
+  },
   landscape: {
     label: "Landscape · 16:9",
-    description: "1920 × 1080 px",
+    description: "1920 × 1080 px — широкоформатная презентация",
     width: 1920,
     height: 1080,
   },
+  story: {
+    label: "Полный экран · 9:16",
+    description: "1080 × 1920 px — вертикальная презентация",
+    width: 1080,
+    height: 1920,
+  },
+  "document-a4": {
+    label: "Документ · A4-пропорции",
+    description: "1240 × 1754 px — страницы с привычным документным соотношением",
+    width: 1240,
+    height: 1754,
+  },
 };
+// GIFTOMAT_CONTRAST_PRESETS_V2_PDF_END
 
 // GIFTOMAT_SPRINT1_V1_CROP_PRESETS
+// GIFTOMAT_CONTRAST_PRESETS_V2_CROP_START
 export const CROP_PRESETS: FixedPreset[] = [
-  { id: "ig-post", label: "Instagram пост", description: "1080 × 1080 px", width: 1080, height: 1080 },
-  { id: "ig-story", label: "Instagram сторис", description: "1080 × 1920 px", width: 1080, height: 1920 },
-  { id: "linkedin-banner", label: "LinkedIn баннер", description: "1584 × 396 px", width: 1584, height: 396 },
-  { id: "youtube-thumb", label: "YouTube превью", description: "1280 × 720 px", width: 1280, height: 720 },
+  { id: "ig-post", label: "Instagram · квадрат", description: "1080 × 1080 px · 1:1", width: 1080, height: 1080 },
+  { id: "ig-portrait", label: "Instagram · портрет", description: "1080 × 1350 px · 4:5", width: 1080, height: 1350 },
+  { id: "ig-photo", label: "Instagram · фото", description: "1080 × 1440 px · 3:4", width: 1080, height: 1440 },
+  { id: "ig-story", label: "Stories / Reels / TikTok", description: "1080 × 1920 px · 9:16", width: 1080, height: 1920 },
+  { id: "linkedin-post", label: "LinkedIn · пост", description: "1200 × 628 px · 1.91:1", width: 1200, height: 628 },
+  { id: "linkedin-banner", label: "LinkedIn · баннер", description: "1584 × 396 px · 4:1", width: 1584, height: 396 },
+  { id: "x-post", label: "X · пост", description: "1600 × 900 px · 16:9", width: 1600, height: 900 },
+  { id: "x-header", label: "X · шапка профиля", description: "1500 × 500 px · 3:1", width: 1500, height: 500 },
+  { id: "youtube-thumb", label: "YouTube · превью", description: "1280 × 720 px · 16:9", width: 1280, height: 720 },
+  { id: "youtube-banner", label: "YouTube · баннер", description: "2560 × 1440 px · 16:9", width: 2560, height: 1440 },
 ];
+// GIFTOMAT_CONTRAST_PRESETS_V2_CROP_END
 
 // GIFTOMAT_SPRINT3_V1_FRAME_DURATION_CYCLE
 export const GIF_FRAME_DURATION_STEPS = [0.3, 0.5, 0.8, 1, 1.5, 2, 3, 5];

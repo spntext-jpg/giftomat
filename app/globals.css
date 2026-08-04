@@ -2387,3 +2387,51 @@ svg { width: 1.25rem; height: 1.25rem; }
   }
 }
 /* GIFTOMAT_PRODUCTION_RELEASE_V1_CSS_END */
+
+/* GIFTOMAT_CONTRAST_PRESETS_V2_CSS_START */
+/*
+ * Keep the warm selected state, but give the label a soft dark keyline.
+ * Multi-directional text-shadow is more legible at 10–13 px than text-stroke
+ * and works consistently in Chromium, Firefox and Safari.
+ */
+.tool-sidebar.giftomat-nav .giftomat-nav-button.active,
+.tool-sidebar.giftomat-nav .giftomat-nav-button[aria-current="page"] {
+  border-color: color-mix(in srgb, var(--accent) 72%, transparent) !important;
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--accent) 27%, var(--surface)),
+    color-mix(in srgb, var(--accent-soft) 10%, var(--surface-strong))
+  ) !important;
+}
+
+.tool-sidebar.giftomat-nav .giftomat-nav-button.active .giftomat-nav-title,
+.tool-sidebar.giftomat-nav .giftomat-nav-button[aria-current="page"] .giftomat-nav-title {
+  color: var(--accent-soft) !important;
+  -webkit-text-fill-color: var(--accent-soft) !important;
+  text-shadow:
+    -.65px -.65px 0 rgba(5, 7, 10, .96),
+     .65px -.65px 0 rgba(5, 7, 10, .96),
+    -.65px  .65px 0 rgba(5, 7, 10, .96),
+     .65px  .65px 0 rgba(5, 7, 10, .96),
+     0 1px 2px rgba(0, 0, 0, .78) !important;
+}
+
+.tool-sidebar.giftomat-nav .giftomat-nav-button.active .giftomat-nav-note,
+.tool-sidebar.giftomat-nav .giftomat-nav-button[aria-current="page"] .giftomat-nav-note {
+  color: #fff3e7 !important;
+  -webkit-text-fill-color: #fff3e7 !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, .86), 0 0 1px rgba(0, 0, 0, .72) !important;
+}
+
+[data-theme="light"] .tool-sidebar.giftomat-nav .giftomat-nav-button.active .giftomat-nav-title,
+[data-theme="light"] .tool-sidebar.giftomat-nav .giftomat-nav-button[aria-current="page"] .giftomat-nav-title {
+  color: #ffb15c !important;
+  -webkit-text-fill-color: #ffb15c !important;
+}
+
+[data-theme="light"] .tool-sidebar.giftomat-nav .giftomat-nav-button.active .giftomat-nav-note,
+[data-theme="light"] .tool-sidebar.giftomat-nav .giftomat-nav-button[aria-current="page"] .giftomat-nav-note {
+  color: #fff8f1 !important;
+  -webkit-text-fill-color: #fff8f1 !important;
+}
+/* GIFTOMAT_CONTRAST_PRESETS_V2_CSS_END */
