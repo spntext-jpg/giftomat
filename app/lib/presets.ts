@@ -1,4 +1,4 @@
-export type ToolMode = "gif" | "pdf" | "compress" | "crop";
+export type ToolMode = "gif" | "pdf" | "compress" | "crop" | "html2pdf";
 export type PdfPresetId = "linkedin-portrait" | "square" | "landscape";
 export type FitMode = "cover" | "contain";
 export type WebOutputFormat = "jpeg" | "webp";

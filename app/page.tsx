@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState, type ChangeEvent, type CSSProperties, type DragEvent, type ReactNode } from "react";
 import CropWorkspace from "./components/CropWorkspace";
 import VideoImportPanel from "./components/VideoImportPanel";
+import HtmlToPdfPanel from "./components/HtmlToPdfPanel";
 import { createDownloadUrl, revokeDownloadUrl } from "./lib/download";
 import { encodeGif } from "./lib/encoder";
 import { looksLikeHeic, resolveImageFile } from "./lib/heic";
@@ -92,6 +93,10 @@ const TOOL_COPY: Record<ToolMode, { title: string; description: string }> = {
     title: "Обрезка баннера",
     description: "Задайте точный размер и выберите нужную область.",
   },
+  html2pdf: {
+    title: "HTML в PDF",
+    description: "Сохраните HTML-документ в PDF с исходной вёрсткой.",
+  },
 };
 
 function createId(): string {
@@ -106,6 +111,7 @@ function ToolIcon({ name }: { name: ToolMode | "upload" | "download" | "trash" |
     pdf: <><path d="M6 2h8l4 4v16H6Z"/><path d="M14 2v5h5"/><path d="M9 13h6M9 17h5"/></>,
     compress: <><path d="m8 3-5 5m0-5v5h5M16 21l5-5m0 5v-5h-5"/><rect x="7" y="7" width="10" height="10" rx="2"/></>,
     crop: <><path d="M7 3v13a5 5 0 0 0 5 5h9"/><path d="M3 7h13a5 5 0 0 1 5 5v9"/><path d="M7 7h10v10H7Z"/></>,
+    html2pdf: <><path d="M6 2h8l4 4v16H6Z"/><path d="M14 2v5h5"/><path d="m9.5 12-2 2 2 2M14.5 12l2 2-2 2"/></>,
     upload: <><path d="M12 16V3m0 0L7 8m5-5 5 5"/><path d="M4 15v5h16v-5"/></>,
     download: <><path d="M12 3v13m0 0 5-5m-5 5-5-5"/><path d="M4 19v2h16v-2"/></>,
     trash: <><path d="M4 7h16M9 7V4h6v3M7 7l1 14h8l1-14"/></>,
@@ -689,6 +695,23 @@ export default function GiftomatPage() {
               <div className="giftomat-nav-note">Точный размер</div>
             </div>
           </button>
+
+          <button
+            type="button"
+            className={`tool-button giftomat-nav-button ${activeTool === "html2pdf" ? "active" : ""}`}
+            onClick={() => switchTool("html2pdf")}
+            aria-pressed={activeTool === "html2pdf"}
+            aria-label="HTML в PDF — Сохранение вёрстки"
+            disabled={stage === "working"}
+          >
+            <span className="tool-icon giftomat-nav-icon" aria-hidden="true">
+              <ToolIcon name="html2pdf" />
+            </span>
+            <div className="giftomat-nav-copy">
+              <div className="giftomat-nav-title">HTML → PDF</div>
+              <div className="giftomat-nav-note">Сохранение вёрстки</div>
+            </div>
+          </button>
         </aside>
 
         <main className="studio-layout">
@@ -710,6 +733,8 @@ export default function GiftomatPage() {
               }}
               onClose={() => setVideoImportOpen(false)}
             />
+          ) : activeTool === "html2pdf" ? (
+            <HtmlToPdfPanel disabled={stage === "working"} />
           ) : (
             <>
           <section
