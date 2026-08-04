@@ -594,7 +594,7 @@ export default function GiftomatPage() {
           </div>
           <div>
             <strong>Гифтомат</strong>
-            <span>От Павлика с Прибалтики</span>
+            <span>Я — гифтомат, ты мой фанат, бриллиант на тысячу карат</span>
           </div>
         </div>
         <div className="privacy-pill">
