@@ -314,15 +314,20 @@ export default function HtmlToPdfPanel({ disabled = false }: HtmlToPdfPanelProps
                   <span>{formatBytes(result.size)}</span>
                 </div>
               </div>
-              <a
+              <button
+                type="button"
                 className="download-button"
-                href={result.downloadUrl}
-                download={result.name}
-                target="_blank"
-                rel="noopener noreferrer"
+                onClick={() => {
+                  const link = document.createElement("a");
+                  link.href = result.downloadUrl;
+                  link.download = result.name;
+                  document.body.appendChild(link);
+                  link.click();
+                  document.body.removeChild(link);
+                }}
               >
                 Скачать файл
-              </a>
+              </button>
             </div>
           )}
         </div>
