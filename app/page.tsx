@@ -993,16 +993,22 @@ export default function GiftomatPage() {
                       </div>
                     )}
                   </div>
-                  <a
+                  {/* GIFTOMAT_SPRINT7_V1_DOWNLOAD_FIX */}
+                  <button
+                    type="button"
                     className="download-button"
-                    href={result.downloadUrl}
-                    download={result.fileName}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                    onClick={() => {
+                      const link = document.createElement("a");
+                      link.href = result.downloadUrl;
+                      link.download = result.fileName;
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                    }}
                   >
                     <ToolIcon name="download" />
                     Скачать
-                  </a>
+                  </button>
                 </div>
               )}
             </div>

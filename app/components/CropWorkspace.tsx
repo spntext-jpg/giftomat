@@ -480,15 +480,21 @@ export default function CropWorkspace({
                   {usedAsSource ? "✓ Добавлено в общий список" : "Использовать в GIF / PDF / Compress"}
                 </button>
               </div>
-              <a
+              {/* GIFTOMAT_SPRINT7_V1_DOWNLOAD_FIX */}
+              <button
+                type="button"
                 className="download-button"
-                href={result.downloadUrl}
-                download={result.name}
-                target="_blank"
-                rel="noopener noreferrer"
+                onClick={() => {
+                  const link = document.createElement("a");
+                  link.href = result.downloadUrl;
+                  link.download = result.name;
+                  document.body.appendChild(link);
+                  link.click();
+                  document.body.removeChild(link);
+                }}
               >
                 Скачать файл
-              </a>
+              </button>
             </div>
           )}
           {batchMode && batchResult && (

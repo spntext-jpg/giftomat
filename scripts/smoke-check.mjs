@@ -61,11 +61,14 @@ if (!downloadModule.includes("createDownloadUrl") || !downloadModule.includes("U
 if (page.includes("downloadBlob(") || cropWorkspace.includes("downloadBlob(")) {
   throw new Error("Legacy programmatic download call remains");
 }
-if (!/<a[\s\S]*?className="download-button"[\s\S]*?download=\{result\.fileName\}/m.test(page)) {
-  throw new Error("Main GIF/PDF/compression result must use a native download link");
+// GIFTOMAT_SPRINT7_V1_DOWNLOAD_FIX: main and crop downloads now use a programmatic anchor
+// (created, clicked, and removed) instead of a native <a download target="_blank">
+// link, matching the reliable pattern already used in HtmlToPdfPanel.
+if (!/className="download-button"[\s\S]*?onClick=\{[\s\S]*?link\.download = result\.fileName/m.test(page)) {
+  throw new Error("Main GIF/PDF/compression result must use the programmatic download button");
 }
-if (!/<a[\s\S]*?className="download-button"[\s\S]*?download=\{result\.name\}/m.test(cropWorkspace)) {
-  throw new Error("Crop result must use a native download link");
+if (!/className="download-button"[\s\S]*?onClick=\{[\s\S]*?link\.download = result\.name/m.test(cropWorkspace)) {
+  throw new Error("Crop result must use the programmatic download button");
 }
 for (const marker of [
   "const downloadUrl = createDownloadUrl(finalBlob)",
@@ -113,8 +116,13 @@ if (!serviceWorker.includes('CACHE_VERSION = "giftomat-v2"')) {
 if (!serviceWorker.includes('"/html-to-image.js"')) {
   throw new Error("HTML-to-PDF runtime is missing from the offline shell");
 }
-for (const header of ["X-Content-Type-Options", "X-Frame-Options", "Referrer-Policy", "Permissions-Policy"]) {
+// GIFTOMAT_SPRINT7_V1_DOWNLOAD_FIX: X-Frame-Options is superseded by the CSP frame-ancestors
+// directive; accept either as valid clickjacking protection.
+for (const header of ["X-Content-Type-Options", "Referrer-Policy", "Permissions-Policy"]) {
   if (!nextConfig.includes(header)) throw new Error(`Missing production header: ${header}`);
+}
+if (!nextConfig.includes("X-Frame-Options") && !nextConfig.includes("frame-ancestors")) {
+  throw new Error("Missing clickjacking protection: expected X-Frame-Options or CSP frame-ancestors");
 }
 // GIFTOMAT_PRODUCTION_RELEASE_V1_SMOKE_END
 
@@ -122,12 +130,16 @@ for (const header of ["X-Content-Type-Options", "X-Frame-Options", "Referrer-Pol
 const contrastPresetCss = readFileSync("app/globals.css", "utf8");
 const expandedPresets = readFileSync("app/lib/presets.ts", "utf8");
 
+// GIFTOMAT_SPRINT7_V1_DOWNLOAD_FIX: the text-shadow/rgba(5, 7, 10, .96) hack was intentionally
+// removed in favor of WCAG AA-compliant solid colors for the active nav label.
 for (const marker of [
   "GIFTOMAT_CONTRAST_PRESETS_V2_CSS_START",
-  "text-shadow:",
-  "rgba(5, 7, 10, .96)",
+  "--accent-soft",
 ]) {
   if (!contrastPresetCss.includes(marker)) throw new Error(`Missing selected-navigation contrast marker: ${marker}`);
+}
+if (contrastPresetCss.includes("text-shadow:") && contrastPresetCss.includes("rgba(5, 7, 10, .96)")) {
+  throw new Error("Obsolete text-shadow contrast hack should not be reintroduced");
 }
 
 for (const marker of [
