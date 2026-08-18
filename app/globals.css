@@ -3,47 +3,91 @@
 @tailwind utilities;
 
 :root {
-  --bg-page: #111820;
-  --bg-deep: #0b1118;
-  --surface: rgba(22, 31, 41, 0.88);
-  --surface-strong: rgba(17, 24, 32, 0.96);
-  --surface-soft: rgba(255, 255, 255, 0.055);
-  --surface-hover: rgba(255, 255, 255, 0.09);
-  --text-primary: #f7fafc;
-  --text-secondary: #c4d0da;
-  --text-muted: #8d9cab;
-  --border: rgba(220, 236, 248, 0.12);
-  --border-strong: rgba(220, 236, 248, 0.22);
-  --primary: #00ace3;
-  --primary-hover: #009bcf;
-  --primary-active: #008fbe;
-  --blue: #409eef;
-  --blue-dark: #0066a1;
-  --cyan: #2fc7f7;
-  --accent: #ff9f43;
-  --accent-soft: #ffc078;
-  --success: #37c976;
-  --warning: #ffb020;
-  --danger: #ff5c65;
-  --card-shadow: 0 1px 2px rgba(0, 0, 0, 0.24), 0 10px 22px -8px rgba(0, 0, 0, 0.35);
-  --shadow: 0 2px 4px rgba(0, 0, 0, 0.18), 0 30px 60px -20px rgba(0, 0, 0, 0.45), 0 12px 28px -12px rgba(0, 0, 0, 0.32);
-  --glass-blur: 26px;
+  /* GIFTOMAT_AUGUST_DS_V1: August primitive tokens (canonical palette, §4.1). */
+  --august-ink: #171927;
+  --august-muted: #697084;
+  --august-canvas: #F7F8FC;
+  --august-surface: #FFFFFF;
+  --august-soft: #F4F5FA;
+  --august-accent: #6E5CF6;
+  --august-accent-dark: #5140DC;
+  --august-growth: #D7FF61;
+  --august-navy: #15172A;
+  --august-navy-raised: #181A31;
+  --august-dark-secondary: #BEC3D4;
+  --august-border: rgba(28, 31, 49, .11);
+  --august-border-strong: rgba(28, 31, 49, .18);
+  --august-border-dark: rgba(255, 255, 255, .10);
+  --august-focus-outer: rgba(110, 92, 246, .34);
+  --august-overlay: rgba(13, 15, 27, .56);
+
+  /* August status palette (§4.3). */
+  --august-success-surface: #DAF6DC;
+  --august-success-text: #276131;
+  --august-warning-surface: #FFF0C9;
+  --august-warning-text: #7B5813;
+  --august-danger-surface: #FFF6F6;
+  --august-danger-text: #A43F3F;
+  --august-accent-surface: #EEEAFF;
+  --august-accent-text: #5D4BD5;
+  --august-growth-surface: #E7FF9D;
+  --august-growth-text: #31410C;
+
+  /* GIFTOMAT_AUGUST_DS_V1: Гифтомат semantic compatibility layer (§39) —
+     существующие переменные, на которые ссылаются все 107 компонентных
+     классов, перематываются на August-роли. Разметка не меняется. */
+  --bg-page: var(--august-canvas);
+  --bg-deep: var(--august-canvas);
+  --surface: var(--august-surface);
+  --surface-strong: var(--august-surface);
+  --surface-soft: var(--august-soft);
+  --surface-hover: color-mix(in srgb, var(--august-soft) 60%, var(--august-accent) 6%);
+  --text-primary: var(--august-ink);
+  --text-secondary: var(--august-muted);
+  --text-muted: var(--august-muted);
+  --border: var(--august-border);
+  --border-strong: var(--august-border-strong);
+  --primary: var(--august-accent);
+  --primary-hover: var(--august-accent-dark);
+  --primary-active: var(--august-accent-dark);
+  --blue: var(--august-accent);
+  --blue-dark: var(--august-accent-dark);
+  --cyan: var(--august-accent);
+  --accent: var(--august-growth);
+  --accent-soft: color-mix(in srgb, var(--august-growth) 55%, white);
+  --success: #2E9E52;
+  --warning: #B8860B;
+  --danger: #C4453F;
+  --card-shadow: 0 14px 34px rgba(27, 30, 48, .08);
+  --shadow: 0 24px 60px rgba(28, 31, 49, .15);
+  --glass-blur: 14px;
+
+  /* August navigation dark-anchor tokens (§17.1, sidebar stays Navy). */
+  --nav-anchor-bg: var(--august-navy);
+  --nav-anchor-raised: var(--august-navy-raised);
+  --nav-anchor-border: var(--august-border-dark);
+  --nav-anchor-text: #ffffff;
+  --nav-anchor-text-secondary: var(--august-dark-secondary);
 }
 
 [data-theme="light"] {
-  --bg-page: #eef6fb;
-  --bg-deep: #e4f0f7;
-  --surface: rgba(255, 255, 255, 0.9);
-  --surface-strong: rgba(255, 255, 255, 0.98);
-  --surface-soft: rgba(20, 112, 174, 0.05);
-  --surface-hover: rgba(20, 112, 174, 0.085);
-  --text-primary: #17364d;
-  --text-secondary: #526f84;
-  --text-muted: #768c9d;
-  --border: rgba(18, 89, 132, 0.11);
-  --border-strong: rgba(18, 89, 132, 0.2);
-  --card-shadow: 0 1px 2px rgba(23, 54, 77, 0.06), 0 10px 22px -10px rgba(23, 54, 77, 0.16);
-  --shadow: 0 2px 4px rgba(23, 54, 77, 0.05), 0 28px 56px -20px rgba(36, 91, 126, 0.16), 0 12px 26px -12px rgba(36, 91, 126, 0.12);
+  /* GIFTOMAT_AUGUST_DS_V1: August is light-by-default, so the explicit
+     "light" theme uses the canonical Canvas/Surface pairing at full
+     strength (slightly brighter soft/hover states than :root's own
+     August mapping keep the theme toggle visibly meaningful). */
+  --bg-page: var(--august-canvas);
+  --bg-deep: var(--august-canvas);
+  --surface: var(--august-surface);
+  --surface-strong: var(--august-surface);
+  --surface-soft: var(--august-soft);
+  --surface-hover: color-mix(in srgb, var(--august-soft) 50%, var(--august-accent) 8%);
+  --text-primary: var(--august-ink);
+  --text-secondary: var(--august-muted);
+  --text-muted: var(--august-muted);
+  --border: var(--august-border);
+  --border-strong: var(--august-border-strong);
+  --card-shadow: 0 14px 34px rgba(27, 30, 48, .08);
+  --shadow: 0 24px 60px rgba(28, 31, 49, .15);
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -51,16 +95,23 @@ html, body { margin: 0; min-height: 100%; overflow-x: hidden; overscroll-behavio
 body {
   background: var(--bg-page);
   color: var(--text-primary);
-  font-family: var(--font-sans, system-ui), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: var(--font-sans, "Inter Variable"), Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-feature-settings: "cv11" 1, "ss01" 1, "cv05" 1;
+  /* GIFTOMAT_AUGUST_DS_V1: August type system, §6.1. */
+  font-optical-sizing: auto;
+  font-synthesis: none;
+  font-variant-numeric: tabular-nums;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
 button, input, select { font: inherit; }
 button { color: inherit; }
-button:focus-visible, input:focus-visible, select:focus-visible {
-  outline: 3px solid color-mix(in srgb, var(--primary) 64%, transparent);
-  outline-offset: 3px;
+/* GIFTOMAT_AUGUST_DS_V1: August two-stage focus contract, §15. */
+button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, a:focus-visible {
+  outline: 2px solid var(--august-accent);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px var(--august-focus-outer);
+  border-radius: 4px;
 }
 svg { width: 1.25rem; height: 1.25rem; }
 
@@ -71,11 +122,13 @@ svg { width: 1.25rem; height: 1.25rem; }
   height: 100dvh;
   padding: 14px;
   overflow: hidden;
+  /* GIFTOMAT_AUGUST_DS_V1: August Canvas shell (§8, §46) — light workspace,
+     the sidebar (Navy) is the single stable dark anchor. Decorative glows
+     use August accent/growth at alpha < .30 per gradient discipline §5. */
   background:
-    radial-gradient(circle at 18% 12%, rgba(47, 199, 247, 0.18), transparent 34%),
-    radial-gradient(circle at 82% 86%, rgba(64, 158, 239, 0.14), transparent 36%),
-    radial-gradient(circle at 65% 10%, rgba(255, 159, 67, 0.12), transparent 24%),
-    linear-gradient(145deg, var(--bg-deep), var(--bg-page));
+    radial-gradient(circle at 18% 0%, rgba(110, 92, 246, .10), transparent 38%),
+    radial-gradient(circle at 86% 84%, rgba(215, 255, 97, .09), transparent 40%),
+    var(--august-canvas);
 }
 
 .ambient {
@@ -86,8 +139,9 @@ svg { width: 1.25rem; height: 1.25rem; }
   pointer-events: none;
   opacity: .5;
 }
-.ambient-one { width: 240px; height: 240px; top: -110px; right: 8%; background: rgba(255, 159, 67, .16); }
-.ambient-two { width: 320px; height: 320px; bottom: -170px; left: 24%; background: rgba(47, 199, 247, .16); }
+/* GIFTOMAT_AUGUST_DS_V1: ambient glows remapped to August accent/growth. */
+.ambient-one { width: 240px; height: 240px; top: -110px; right: 8%; background: rgba(110, 92, 246, .12); }
+.ambient-two { width: 320px; height: 320px; bottom: -170px; left: 24%; background: rgba(215, 255, 97, .14); }
 
 .glass-panel {
   border: 1px solid var(--border);
@@ -193,6 +247,9 @@ svg { width: 1.25rem; height: 1.25rem; }
   grid-template-columns: 82px minmax(0, 1fr);
   gap: 14px;
 }
+/* GIFTOMAT_AUGUST_DS_V1: desktop sidebar is Giftomat's one stable dark
+   anchor (August §17.1, §46). Navy surface, independent of the
+   light/dark theme toggle, matching August's Amado reference shell. */
 .tool-sidebar {
   min-height: 0;
   border-radius: 16px;
@@ -200,7 +257,14 @@ svg { width: 1.25rem; height: 1.25rem; }
   display: flex;
   flex-direction: column;
   gap: 8px;
+  background:
+    radial-gradient(circle at 20% 0%, rgba(110, 92, 246, .16), transparent 42%),
+    linear-gradient(180deg, var(--nav-anchor-raised) 0%, var(--nav-anchor-bg) 100%);
+  border: 1px solid var(--nav-anchor-border);
+  color: var(--nav-anchor-text);
 }
+.tool-sidebar .tool-icon { color: var(--nav-anchor-text-secondary); background: rgba(255, 255, 255, .06); }
+.tool-sidebar .sidebar-note { color: var(--nav-anchor-text-secondary); }
 .sidebar-label { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 .tool-button {
   width: 100%; min-height: 56px; padding: 8px;
@@ -216,13 +280,19 @@ svg { width: 1.25rem; height: 1.25rem; }
   -webkit-tap-highlight-color: transparent;
 }
 .tool-button:hover { background: var(--surface-hover); }
-.tool-button.active { background: linear-gradient(135deg, rgba(64, 158, 239, .25), rgba(47, 199, 247, .11)); border-color: rgba(47, 199, 247, .32); }
+/* GIFTOMAT_AUGUST_DS_V1: active nav destination = light Surface item on the
+   Navy anchor, August §17.1. */
+.tool-button.active { background: var(--august-surface); border-color: var(--august-surface); box-shadow: 0 8px 20px rgba(0, 0, 0, .18); }
+.tool-button.active .tool-title,
+.tool-button.active .giftomat-nav-title,
+.tool-button.active .tool-note,
+.tool-button.active .giftomat-nav-note { color: var(--august-ink) !important; -webkit-text-fill-color: var(--august-ink) !important; }
 .tool-icon {
   width: 40px; height: 40px; flex: 0 0 auto;
   border-radius: 12px; display: grid; place-items: center;
   background: var(--surface-soft); color: var(--cyan);
 }
-.tool-button.active .tool-icon { background: var(--blue); color: white; box-shadow: 0 9px 24px rgba(64, 158, 239, .3); }
+.tool-button.active .tool-icon { background: var(--august-accent); color: white; box-shadow: 0 9px 24px rgba(110, 92, 246, .3); }
 .tool-button > span:last-child { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 .sidebar-spacer { flex: 1; }
 .sidebar-note { display: flex; align-items: center; justify-content: center; padding: 10px; color: var(--text-muted); }
@@ -259,14 +329,14 @@ svg { width: 1.25rem; height: 1.25rem; }
   gap: 8px; cursor: pointer;
   transition: background .2s ease, border-color .2s ease, transform .2s ease;
 }
-.empty-dropzone:hover { background: var(--surface-hover); border-color: var(--cyan); }
+.empty-dropzone:hover { background: var(--surface-hover); border-color: var(--august-accent); }
 .empty-dropzone strong { margin-top: 6px; font-size: clamp(16px, 2vw, 22px); }
 .empty-dropzone span { color: var(--text-secondary); font-size: 13px; }
 .empty-dropzone em { color: var(--text-muted); font-size: 10px; font-style: normal; margin-top: 8px; }
 .upload-orb {
   width: 68px; height: 68px; display: grid; place-items: center; border-radius: 24px;
-  color: #092b44; background: linear-gradient(145deg, var(--cyan), #bfefff);
-  box-shadow: 0 18px 50px rgba(47, 199, 247, .25);
+  color: #ffffff; background: linear-gradient(145deg, var(--august-accent), var(--august-accent-dark));
+  box-shadow: 0 18px 50px rgba(110, 92, 246, .25);
 }
 .upload-orb svg { width: 28px; height: 28px; }
 
@@ -290,7 +360,9 @@ svg { width: 1.25rem; height: 1.25rem; }
     radial-gradient(circle at 50% 16%, rgba(255,255,255,.07), transparent 30%);
   pointer-events: none;
 }
-.preview-stage.result-mode { background: linear-gradient(180deg, rgba(64,158,239,.16), rgba(8,27,48,.34)); }
+/* GIFTOMAT_AUGUST_DS_V3: last remaining old-blue drift — result preview
+   backdrop tint remapped to August accent. */
+.preview-stage.result-mode { background: linear-gradient(180deg, rgba(110,92,246,.14), rgba(8,27,48,.34)); }
 .preview-media-shell {
   position: relative;
   z-index: 1;
@@ -342,14 +414,14 @@ svg { width: 1.25rem; height: 1.25rem; }
 
 .frame-strip { min-width: 0; display: flex; gap: 9px; overflow-x: auto; overflow-y: hidden; padding: 2px 2px 5px; scrollbar-width: thin; }
 .frame-card { position: relative; flex: 0 0 78px; height: 78px; border-radius: 12px; border: 1px solid var(--border); overflow: hidden; background: var(--surface-soft); }
-.frame-card.selected { border-color: var(--cyan); box-shadow: 0 0 0 2px rgba(47, 199, 247, .16); }
+.frame-card.selected { border-color: var(--august-accent); box-shadow: 0 0 0 2px rgba(110, 92, 246, .16); }
 .frame-select { width: 100%; height: 100%; padding: 0; border: 0; background: transparent; cursor: pointer; }
 .frame-select img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .frame-select span { position: absolute; left: 5px; bottom: 5px; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 7px; display: grid; place-items: center; background: rgba(0, 14, 26, .72); color: white; font-size: 9px; font-weight: 800; }
 .frame-delete { position: absolute; top: 5px; right: 5px; width: 21px; height: 21px; padding: 0; border: 0; border-radius: 8px; background: rgba(0, 14, 26, .72); color: white; cursor: pointer; opacity: 0; transition: opacity .15s ease; }
 .frame-card:hover .frame-delete, .frame-delete:focus-visible { opacity: 1; }
 .add-frame-card { flex: 0 0 78px; height: 78px; border-radius: 12px; border: 1px dashed var(--border-strong); background: var(--surface-soft); color: var(--text-muted); cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 9px; font-weight: 700; }
-.add-frame-card:hover { color: var(--cyan); border-color: var(--cyan); }
+.add-frame-card:hover { color: var(--august-accent); border-color: var(--august-accent); }
 
 .control-panel { padding: 20px; display: flex; flex-direction: column; }
 .control-heading { padding: 2px 2px 14px; }
@@ -367,28 +439,31 @@ svg { width: 1.25rem; height: 1.25rem; }
   transition: background .16s ease, border-color .16s ease, transform .16s ease;
 }
 .option-card:hover { background: var(--surface-hover); transform: translateY(-1px); }
-.option-card.selected { border-color: rgba(47, 199, 247, .52); background: rgba(64, 158, 239, .15); }
+.option-card.selected { border-color: rgba(110, 92, 246, .52); background: rgba(110, 92, 246, .10); }
 .option-card strong, .option-card small { display: block; }
 .option-card strong { font-size: 12px; }
 .option-card small { margin-top: 3px; color: var(--text-muted); font-size: 9px; line-height: 1.35; }
 .option-card i { width: 14px; height: 14px; flex: 0 0 auto; border-radius: 50%; border: 2px solid var(--border-strong); margin-left: 10px; }
-.option-card.selected i { border: 4px solid var(--cyan); background: white; }
+.option-card.selected i { border: 4px solid var(--august-accent); background: white; }
 .segmented-control { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface-soft); }
 .segmented-control button { min-height: 34px; border: 0; border-radius: 8px; background: transparent; color: var(--text-muted); cursor: pointer; font-size: 10px; font-weight: 700; }
 .segmented-control button.active { background: var(--surface-strong); color: var(--text-primary); box-shadow: 0 5px 16px rgba(0,0,0,.12); }
-.zephyr-range { width: 100%; height: 6px; margin: 3px 0 0; appearance: none; border-radius: 999px; background: linear-gradient(90deg, var(--blue), var(--cyan)); cursor: pointer; }
-.zephyr-range::-webkit-slider-thumb { appearance: none; width: 20px; height: 20px; border-radius: 50%; background: var(--accent); border: 3px solid var(--surface-strong); box-shadow: 0 5px 16px rgba(255, 159, 67, .24); }
-.zephyr-range::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: var(--accent); border: 3px solid var(--surface-strong); }
+.zephyr-range { width: 100%; height: 6px; margin: 3px 0 0; appearance: none; border-radius: 999px; background: linear-gradient(90deg, var(--august-accent-dark), var(--august-accent)); cursor: pointer; }
+.zephyr-range::-webkit-slider-thumb { appearance: none; width: 20px; height: 20px; border-radius: 50%; background: var(--august-accent); border: 3px solid var(--surface-strong); box-shadow: 0 5px 16px rgba(110, 92, 246, .24); }
+.zephyr-range::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: var(--august-accent); border: 3px solid var(--surface-strong); }
 .range-labels { display: flex; justify-content: space-between; color: var(--text-muted); font-size: 8px; margin-top: 7px; }
 .zephyr-select { width: 100%; min-height: 40px; padding: 0 11px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface-soft); color: var(--text-primary); font-size: 11px; }
 .zephyr-select option { background: var(--bg-deep); color: var(--text-primary); }
 .info-card, .error-card, .result-card { border-radius: 16px; border: 1px solid var(--border); padding: 12px; }
-.info-card { background: linear-gradient(135deg, rgba(47,199,247,.09), var(--surface-soft)); }
-.info-card strong { font-size: 11px; color: var(--cyan); }
+.info-card { background: linear-gradient(135deg, rgba(110, 92, 246, .08), var(--surface-soft)); }
+.info-card strong { font-size: 11px; color: var(--august-accent-dark); }
 .info-card p { margin: 5px 0 0; color: var(--text-muted); font-size: 9px; line-height: 1.55; }
-.error-card { margin-bottom: 12px; color: #ffb1b6; background: color-mix(in srgb, var(--danger) 12%, transparent); border-color: color-mix(in srgb, var(--danger) 34%, transparent); font-size: 10px; line-height: 1.45; }
+/* GIFTOMAT_AUGUST_DS_V2: #ffb1b6 was tuned for the old dark surface; on the
+   August light Canvas/Surface it fails contrast (§37.6). Use the
+   August danger status text token instead (§4.3). */
+.error-card { margin-bottom: 12px; color: var(--august-danger-text); background: color-mix(in srgb, var(--danger) 12%, transparent); border-color: color-mix(in srgb, var(--danger) 34%, transparent); font-size: 10px; line-height: 1.45; }
 .result-card { display: grid; grid-template-columns: 32px 1fr; gap: 9px; background: color-mix(in srgb, var(--success) 9%, transparent); border-color: color-mix(in srgb, var(--success) 28%, transparent); }
-.result-check { width: 30px; height: 30px; border-radius: 10px; display: grid; place-items: center; background: var(--success); color: #082916; font-weight: 900; }
+.result-check { width: 30px; height: 30px; border-radius: 10px; display: grid; place-items: center; background: var(--august-success-surface); color: var(--august-success-text); font-weight: 900; }
 .result-card strong { font-size: 12px; }
 .result-meta { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
 .result-meta span { padding: 4px 6px; border-radius: 7px; color: var(--text-secondary); background: var(--surface-soft); font-size: 8px; }
@@ -414,13 +489,16 @@ svg { width: 1.25rem; height: 1.25rem; }
   padding: 0 11px;
   color: var(--text-primary);
 }
-.download-button { grid-column: 1 / -1; min-height: 40px; border: 0; border-radius: 12px; background: var(--primary); color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 7px; font-size: 11px; font-weight: 900; text-decoration: none; box-shadow: 0 8px 20px rgba(0, 172, 227, .22); }
+.download-button { grid-column: 1 / -1; min-height: 40px; border: 0; border-radius: 13px; background: var(--primary); color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 7px; font-size: 11px; font-weight: 900; text-decoration: none; box-shadow: 0 8px 22px rgba(110, 92, 246, .24); }
 .download-button:hover { background: var(--primary-hover); }
 .download-button:active { background: var(--primary-active); transform: scale(.98); }
 .download-button svg { width: 16px; height: 16px; }
 .control-footer { padding-top: 13px; border-top: 1px solid var(--border); }
-.primary-button { width: 100%; min-height: 48px; border: 0; border-radius: 12px; padding: 0 15px; background: var(--primary); color: white; box-shadow: 0 10px 24px rgba(0, 172, 227, .24); cursor: pointer; font-size: 12px; font-weight: 900; display: flex; align-items: center; justify-content: center; gap: 9px; transition: transform .14s ease, background .14s ease, box-shadow .14s ease, opacity .14s ease; }
-.primary-button:not(:disabled):hover { background: var(--primary-hover); box-shadow: 0 12px 28px rgba(0, 172, 227, .3); }
+/* GIFTOMAT_AUGUST_DS_V1: August primary button contract, §13.1 (>=44px, radius 13, accent + shadow). */
+.primary-button { width: 100%; min-height: 48px; border: 0; border-radius: 13px; padding: 0 15px; background: var(--primary); color: white; box-shadow: 0 8px 22px rgba(110, 92, 246, .24); cursor: pointer; font-size: 12px; font-weight: 900; display: flex; align-items: center; justify-content: center; gap: 9px; transition: transform .14s ease, background .14s ease, box-shadow .14s ease, opacity .14s ease; }
+/* GIFTOMAT_AUGUST_DS_V3: hover shadow was missed in the DS_V1 button pass —
+   base/:active were already August accent, :hover still read old cyan. */
+.primary-button:not(:disabled):hover { background: var(--primary-hover); box-shadow: 0 12px 28px rgba(110, 92, 246, .3); }
 .primary-button:not(:disabled):active { background: var(--primary-active); transform: scale(.98); }
 .primary-button:disabled { cursor: not-allowed; opacity: .42; box-shadow: none; }
 .control-footer > span { display: block; margin-top: 7px; text-align: center; color: var(--text-muted); font-size: 8px; }
@@ -791,8 +869,10 @@ svg { width: 1.25rem; height: 1.25rem; }
   line-height: 1.5;
 }
 
+/* GIFTOMAT_AUGUST_DS_V4: August 44px minimum for primary actions (§13.1) — the
+   download CTA is reachable on every viewport, not mobile-only. */
 .download-button {
-  min-height: 42px;
+  min-height: 44px;
   margin-top: 2px;
   border-radius: 12px;
 }
@@ -1010,13 +1090,13 @@ svg { width: 1.25rem; height: 1.25rem; }
 .empty-dropzone { min-height: clamp(220px, 36vh, 340px); }
 .frame-strip { gap: 12px; padding-top: 5px; }
 .frame-card, .add-frame-card { transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease; }
-.frame-card:hover, .add-frame-card:hover { transform: translateY(-2px); box-shadow: 0 14px 32px rgba(64,158,239,.18); }
+.frame-card:hover, .add-frame-card:hover { transform: translateY(-2px); box-shadow: 0 14px 32px rgba(110,92,246,.18); }
 .info-card p, .control-heading p, .option-card small { font-size: 11px; line-height: 1.55; }
 .info-card strong, .option-card strong { font-size: 12px; }
 
 .crop-canvas-panel { min-width: 0; }
 .crop-dropzone { min-height: clamp(220px, 38vh, 360px); }
-.crop-upload-symbol { width: 64px; height: 64px; display: grid; place-items: center; border-radius: 22px; background: linear-gradient(145deg,var(--blue),var(--cyan)); color: #fff; font-size: 30px; box-shadow: 0 18px 42px rgba(64,158,239,.25); }
+.crop-upload-symbol { width: 64px; height: 64px; display: grid; place-items: center; border-radius: 22px; background: linear-gradient(145deg, var(--august-accent), var(--august-accent-dark)); color: #fff; font-size: 30px; box-shadow: 0 18px 42px rgba(110, 92, 246, .25); }
 .crop-editor-shell { flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 8px 0 2px; }
 .crop-stage { position: relative; width: min(100%, 980px); max-height: calc(100% - 42px); display: grid; place-items: center; overflow: hidden; border-radius: 22px; border: 1px solid var(--border); background: #101923; box-shadow: inset 0 0 0 1px rgba(255,255,255,.03), 0 20px 50px rgba(0,0,0,.18); }
 .crop-preview-canvas { width: 100%; height: 100%; max-width: 100%; max-height: 100%; display: block; object-fit: contain; cursor: grab; touch-action: none; user-select: none; }
@@ -1030,7 +1110,7 @@ svg { width: 1.25rem; height: 1.25rem; }
 .crop-setting-group { margin-bottom: 20px; }
 .crop-info-card { margin-top: 2px; }
 .crop-result-card { margin-top: 14px; }
-.tool-button:hover, .option-card:hover, .secondary-button:hover, .primary-button:not(:disabled):hover { box-shadow: 0 14px 34px rgba(64,158,239,.16); }
+.tool-button:hover, .option-card:hover, .secondary-button:hover, .primary-button:not(:disabled):hover { box-shadow: 0 14px 34px rgba(110,92,246,.16); }
 
 @media (max-width: 980px) {
   .crop-stage { width: min(100%, 760px); }
@@ -1116,11 +1196,11 @@ svg { width: 1.25rem; height: 1.25rem; }
 
 .tool-button:hover {
   transform: translateY(-2px) !important;
-  box-shadow: 0 14px 34px rgba(64, 158, 239, .18) !important;
+  box-shadow: 0 14px 34px rgba(110, 92, 246, .18) !important;
 }
 
 .tool-button.active {
-  box-shadow: 0 16px 38px rgba(64, 158, 239, .22) !important;
+  box-shadow: 0 16px 38px rgba(110, 92, 246, .22) !important;
 }
 
 .studio-layout {
@@ -1161,7 +1241,7 @@ svg { width: 1.25rem; height: 1.25rem; }
 .frame-card:hover,
 .add-frame-card:hover {
   transform: translateY(-3px) !important;
-  box-shadow: 0 16px 34px rgba(64, 158, 239, .20) !important;
+  box-shadow: 0 16px 34px rgba(110, 92, 246, .20) !important;
 }
 
 .option-stack {
@@ -1177,7 +1257,7 @@ svg { width: 1.25rem; height: 1.25rem; }
 .option-card:hover,
 .info-card:hover,
 .result-card:hover {
-  box-shadow: 0 14px 34px rgba(64, 158, 239, .14) !important;
+  box-shadow: 0 14px 34px rgba(110, 92, 246, .14) !important;
 }
 
 .crop-size-grid {
@@ -1520,16 +1600,16 @@ svg { width: 1.25rem; height: 1.25rem; }
 
 .crop-ratio-link:not(:disabled):hover {
   transform: translateY(-1px);
-  color: var(--cyan);
+  color: var(--august-accent);
   background: var(--surface-hover);
-  border-color: color-mix(in srgb, var(--cyan) 42%, var(--border));
+  border-color: color-mix(in srgb, var(--august-accent) 42%, var(--border));
 }
 
 .crop-ratio-link.active {
   color: #ffffff;
   background: var(--primary);
   border-color: var(--primary);
-  box-shadow: 0 8px 20px rgba(0, 172, 227, .22);
+  box-shadow: 0 8px 20px rgba(110, 92, 246, .22);
 }
 
 .crop-ratio-link:disabled {
@@ -1548,7 +1628,7 @@ svg { width: 1.25rem; height: 1.25rem; }
 }
 
 .crop-size-helper.active {
-  color: var(--cyan);
+  color: var(--august-accent);
 }
 
 .compression-info-card {
@@ -1603,7 +1683,7 @@ svg { width: 1.25rem; height: 1.25rem; }
 }
 
 .pdf-preset-select:hover {
-  border-color: color-mix(in srgb, var(--cyan) 30%, var(--border));
+  border-color: color-mix(in srgb, var(--august-accent) 30%, var(--border));
   background:
     linear-gradient(
       145deg,
@@ -1613,10 +1693,10 @@ svg { width: 1.25rem; height: 1.25rem; }
 }
 
 .pdf-preset-select:focus-within {
-  border-color: color-mix(in srgb, var(--cyan) 68%, var(--border));
+  border-color: color-mix(in srgb, var(--august-accent) 68%, var(--border));
   box-shadow:
     0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent),
-    0 10px 26px rgba(0, 172, 227, .12),
+    0 10px 26px rgba(110, 92, 246, .12),
     inset 0 1px 0 rgba(255, 255, 255, .07);
 }
 
@@ -1632,7 +1712,7 @@ svg { width: 1.25rem; height: 1.25rem; }
   left: 14px;
   width: 18px;
   height: 18px;
-  color: var(--cyan);
+  color: var(--august-accent);
 }
 
 .pdf-preset-chevron {
@@ -1644,7 +1724,7 @@ svg { width: 1.25rem; height: 1.25rem; }
 }
 
 .pdf-preset-select:focus-within .pdf-preset-chevron {
-  color: var(--cyan);
+  color: var(--august-accent);
   transform: translateY(1px);
 }
 
@@ -1854,13 +1934,15 @@ svg { width: 1.25rem; height: 1.25rem; }
 }
 
 @media (max-width: 980px) {
+  /* GIFTOMAT_AUGUST_DS_V4: August 44px minimum touch target (§17.2) — this
+     opens the entire mobile nav, mobile-only change. */
   .mobile-nav-toggle {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    width: 38px;
-    height: 38px;
+    width: 44px;
+    height: 44px;
     padding: 0;
     border-radius: 999px;
     border: 1px solid var(--border);
@@ -1878,6 +1960,14 @@ svg { width: 1.25rem; height: 1.25rem; }
     display: block;
     width: 16px;
     height: 12px;
+  }
+
+  /* GIFTOMAT_AUGUST_DS_V4: August 44px minimum touch target (§13.1) — .icon-button
+     is used for actions reachable on mobile (clear all, close panel).
+     Desktop density (36px) is unaffected, this is mobile-only. */
+  .icon-button {
+    width: 44px;
+    height: 44px;
   }
 
   .mobile-nav-toggle-icon span {
@@ -1902,6 +1992,12 @@ svg { width: 1.25rem; height: 1.25rem; }
     animation: giftomat-drawer-fade .18s ease both;
   }
 
+  /* GIFTOMAT_AUGUST_DS_V2: August mobile-nav visual contract (§17.3) — dark
+     glass surface with backdrop blur and safe-area awareness. The
+     drawer interaction model (slide-in from the edge) is unchanged;
+     only its surface treatment is brought in line with August. A
+     floating bottom nav bar (August's preferred pattern for exactly
+     5 destinations) is a deferred follow-up — see module docstring. */
   .tool-sidebar.giftomat-nav {
     position: fixed !important;
     top: 0 !important;
@@ -1915,9 +2011,13 @@ svg { width: 1.25rem; height: 1.25rem; }
     overflow-y: auto !important;
     overflow-x: hidden !important;
     border-radius: 0 20px 20px 0 !important;
-    padding: calc(env(safe-area-inset-top, 0px) + 18px) 15px 18px !important;
+    padding: calc(env(safe-area-inset-top, 0px) + 18px) 15px calc(env(safe-area-inset-bottom, 0px) + 18px) !important;
     gap: 10px !important;
     margin-bottom: 0 !important;
+    background: linear-gradient(180deg, var(--nav-anchor-raised) 0%, var(--nav-anchor-bg) 100%) !important;
+    backdrop-filter: blur(18px) saturate(140%) !important;
+    -webkit-backdrop-filter: blur(18px) saturate(140%) !important;
+    border-right: 1px solid var(--nav-anchor-border) !important;
     transform: translateX(-105%) !important;
     transition: transform .28s cubic-bezier(.22, 1, .36, 1) !important;
   }
@@ -1939,17 +2039,19 @@ svg { width: 1.25rem; height: 1.25rem; }
     margin: 0 !important;
     border-radius: 14px !important;
     overflow: visible !important;
-    color: #f8fbff !important;
-    -webkit-text-fill-color: #f8fbff !important;
+    color: var(--nav-anchor-text) !important;
+    -webkit-text-fill-color: var(--nav-anchor-text) !important;
     font-size: 13px !important;
     opacity: 1 !important;
     visibility: visible !important;
     transform: none;
   }
 
+  /* GIFTOMAT_AUGUST_DS_V1: sidebar is Navy in both themes (§46 dark-anchor
+     rule), so nav text stays light-on-dark regardless of data-theme. */
   [data-theme="light"] .tool-sidebar.giftomat-nav .giftomat-nav-button {
-    color: #12324b !important;
-    -webkit-text-fill-color: #12324b !important;
+    color: var(--nav-anchor-text) !important;
+    -webkit-text-fill-color: var(--nav-anchor-text) !important;
   }
 
   .tool-sidebar.giftomat-nav .giftomat-nav-icon {
@@ -1999,13 +2101,13 @@ svg { width: 1.25rem; height: 1.25rem; }
   .tool-sidebar.giftomat-nav .giftomat-nav-note {
     font-size: 10px !important;
     font-weight: 600 !important;
-    color: #a9bed0 !important;
-    -webkit-text-fill-color: #a9bed0 !important;
+    color: var(--nav-anchor-text-secondary) !important;
+    -webkit-text-fill-color: var(--nav-anchor-text-secondary) !important;
   }
 
   [data-theme="light"] .tool-sidebar.giftomat-nav .giftomat-nav-note {
-    color: #617f95 !important;
-    -webkit-text-fill-color: #617f95 !important;
+    color: var(--nav-anchor-text-secondary) !important;
+    -webkit-text-fill-color: var(--nav-anchor-text-secondary) !important;
   }
 }
 
@@ -2108,9 +2210,12 @@ svg { width: 1.25rem; height: 1.25rem; }
 
 /* GIFTOMAT_PRODUCTION_RELEASE_V1_CSS_START */
 /* Final production navigation. The warm orange state mirrors the frame-delay range accent. */
+/* GIFTOMAT_AUGUST_DS_V1: nav selection uses August accent purple (§62 Amado
+   action semantics: "Selected interactive state" = purple), not Growth
+   Lime, per the §47 AI lime rule (lime is for progress/insight only). */
 .tool-sidebar.giftomat-nav {
-  --nav-active: var(--accent);
-  --nav-active-soft: var(--accent-soft);
+  --nav-active: var(--august-accent);
+  --nav-active-soft: color-mix(in srgb, var(--august-accent) 55%, white);
   min-width: 0;
 }
 
@@ -2137,23 +2242,23 @@ svg { width: 1.25rem; height: 1.25rem; }
 .tool-sidebar.giftomat-nav .giftomat-nav-button[aria-current="page"] {
   border-color: color-mix(in srgb, var(--nav-active) 68%, transparent) !important;
   background: linear-gradient(135deg, color-mix(in srgb, var(--nav-active) 24%, var(--surface)), color-mix(in srgb, var(--nav-active-soft) 8%, var(--surface-strong))) !important;
-  box-shadow: 0 14px 30px rgba(255, 159, 67, .18), inset 0 1px 0 rgba(255, 224, 191, .16) !important;
+  box-shadow: 0 14px 30px rgba(110, 92, 246, .22), inset 0 1px 0 rgba(255, 255, 255, .16) !important;
 }
 
 .tool-sidebar.giftomat-nav .giftomat-nav-icon {
-  color: var(--cyan) !important;
-  background: color-mix(in srgb, var(--surface-soft) 88%, var(--cyan) 12%) !important;
-  border: 1px solid color-mix(in srgb, var(--border) 78%, var(--cyan) 22%) !important;
+  color: var(--nav-anchor-text-secondary) !important;
+  background: rgba(255, 255, 255, .06) !important;
+  border: 1px solid var(--nav-anchor-border) !important;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, .06) !important;
   transition: color .18s ease, background .18s ease, border-color .18s ease, box-shadow .18s ease, transform .18s ease !important;
 }
 
 .tool-sidebar.giftomat-nav .giftomat-nav-button.active .giftomat-nav-icon,
 .tool-sidebar.giftomat-nav .giftomat-nav-button[aria-current="page"] .giftomat-nav-icon {
-  color: #321804 !important;
-  background: linear-gradient(135deg, var(--nav-active-soft), var(--nav-active)) !important;
-  border-color: rgba(255, 224, 191, .48) !important;
-  box-shadow: 0 9px 22px rgba(255, 159, 67, .28), inset 0 1px 0 rgba(255, 255, 255, .38) !important;
+  color: #ffffff !important;
+  background: linear-gradient(135deg, var(--nav-active), var(--august-accent-dark)) !important;
+  border-color: rgba(255, 255, 255, .3) !important;
+  box-shadow: 0 9px 22px rgba(110, 92, 246, .32), inset 0 1px 0 rgba(255, 255, 255, .28) !important;
   transform: scale(1.03);
 }
 
@@ -2194,16 +2299,19 @@ svg { width: 1.25rem; height: 1.25rem; }
     padding: 22px !important;
   }
 
+  /* GIFTOMAT_AUGUST_DS_V2: August compact-desktop sidebar contract is 230px
+     (§8.2/§17.1). Full 280px desktop width is deferred — see this
+     patch's module docstring. */
   .app-body {
-    grid-template-columns: 190px minmax(0, 1fr) !important;
+    grid-template-columns: 230px minmax(0, 1fr) !important;
     gap: 24px !important;
     padding-top: 20px !important;
   }
 
   .tool-sidebar.giftomat-nav {
-    width: 190px !important;
-    min-width: 190px !important;
-    padding: 12px !important;
+    width: 230px !important;
+    min-width: 230px !important;
+    padding: 14px !important;
     gap: 11px !important;
     overflow: hidden !important;
     align-items: stretch !important;
@@ -2408,36 +2516,36 @@ svg { width: 1.25rem; height: 1.25rem; }
  */
 .tool-sidebar.giftomat-nav .giftomat-nav-button.active,
 .tool-sidebar.giftomat-nav .giftomat-nav-button[aria-current="page"] {
-  border-color: color-mix(in srgb, var(--accent) 72%, transparent) !important;
+  border-color: color-mix(in srgb, var(--nav-active) 72%, transparent) !important;
   background: linear-gradient(
     135deg,
-    color-mix(in srgb, var(--accent) 27%, var(--surface)),
-    color-mix(in srgb, var(--accent-soft) 10%, var(--surface-strong))
+    color-mix(in srgb, var(--nav-active) 27%, var(--surface)),
+    color-mix(in srgb, var(--nav-active-soft) 10%, var(--surface-strong))
   ) !important;
 }
 
 .tool-sidebar.giftomat-nav .giftomat-nav-button.active .giftomat-nav-title,
 .tool-sidebar.giftomat-nav .giftomat-nav-button[aria-current="page"] .giftomat-nav-title {
-  color: var(--accent-soft) !important;
-  -webkit-text-fill-color: var(--accent-soft) !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
 }
 
 .tool-sidebar.giftomat-nav .giftomat-nav-button.active .giftomat-nav-note,
 .tool-sidebar.giftomat-nav .giftomat-nav-button[aria-current="page"] .giftomat-nav-note {
-  color: #fff3e7 !important;
-  -webkit-text-fill-color: #fff3e7 !important;
+  color: var(--nav-anchor-text-secondary) !important;
+  -webkit-text-fill-color: var(--nav-anchor-text-secondary) !important;
 }
 
 [data-theme="light"] .tool-sidebar.giftomat-nav .giftomat-nav-button.active .giftomat-nav-title,
 [data-theme="light"] .tool-sidebar.giftomat-nav .giftomat-nav-button[aria-current="page"] .giftomat-nav-title {
-  color: #733c0a !important;
-  -webkit-text-fill-color: #733c0a !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
 }
 
 [data-theme="light"] .tool-sidebar.giftomat-nav .giftomat-nav-button.active .giftomat-nav-note,
 [data-theme="light"] .tool-sidebar.giftomat-nav .giftomat-nav-button[aria-current="page"] .giftomat-nav-note {
-  color: #8f5522 !important;
-  -webkit-text-fill-color: #8f5522 !important;
+  color: var(--nav-anchor-text-secondary) !important;
+  -webkit-text-fill-color: var(--nav-anchor-text-secondary) !important;
 }
 /* GIFTOMAT_CONTRAST_PRESETS_V2_CSS_END */
 /* GIFTOMAT_NAV_SELECTION_FIX_V1_CSS_START */
