@@ -34,7 +34,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="ru" className={inter.variable}>
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-        <meta name="theme-color" content="#15172A" media="(prefers-color-scheme: dark)" />
+        <meta name="theme-color" content="#151728" media="(prefers-color-scheme: dark)" />
         <meta name="theme-color" content="#F7F8FC" media="(prefers-color-scheme: light)" />
       </head>
       <body>

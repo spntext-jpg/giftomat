@@ -12,29 +12,33 @@ Giftomat is a browser-local media studio. Preserve user privacy and keep image, 
 4. Do not commit one-off patch/migration scripts.
 5. Every behavior change needs a verifiable outcome and should extend tests when practical.
 
-## August Design System
+## August v3 — Dark Workbench
 
-August is the only UI design system for this repository.
+August v3 is the only UI design system for this repository. The complete contract lives in `design.md`.
+
+Core roles:
 
 - Canvas: `#F7F8FC`
 - Surface: `#FFFFFF`
-- Ink: `#171927`
-- Muted: `#697084`
-- Action/selection: August Purple `#6E5CF6`
-- Dark anchor: Navy `#15172A`
-- Growth Lime `#D7FF61` is reserved for semantic growth/progress accents, not generic selection.
-- Typography: self-hosted Inter Variable.
+- Ink/Navy: `#151728`
+- Lime Primary: `#DFFF6A` with Ink text
+- Purple Interaction: `#6E5CF6` for focus and secondary selection
+- Dark Workbench: Navy media/canvas surfaces
+- Active navigation: White Surface + Ink text + Lime icon tile
+- Typography: self-hosted Inter Variable
 
-The workspace stays light. The Navy sidebar is the stable dark anchor; do not reintroduce a fake OS-driven dark theme without a complete token contract.
+Lime is a filled action/brand surface, not low-contrast foreground text on White/Canvas. Never use White text on Lime. Purple must not compete with Lime as the default primary CTA.
 
 ### CSS rules
 
 - `app/globals.css` is canonical. Edit existing component rules instead of appending versioned override blocks.
-- Use semantic CSS custom properties for shared colors and surfaces.
+- Use the semantic roles defined in `design.md`; do not reintroduce ambiguous generic accent tokens.
 - Avoid `!important`; fix specificity or rule order instead.
+- Keep the sidebar and media workbench Navy; controls stay White.
+- Sidebar `:active` states must explicitly preserve readable title/note colors, including `-webkit-text-fill-color`.
 - Keep responsive behavior explicit at the existing compact/mobile breakpoints.
 - Mobile/touch actions must remain at least 44×44 px where practical.
-- Preserve visible `:focus-visible` states and `prefers-reduced-motion`.
+- Preserve visible Purple `:focus-visible` states and `prefers-reduced-motion`.
 - Do not reintroduce Tailwind unless the product deliberately adopts it again.
 
 ## React and TypeScript

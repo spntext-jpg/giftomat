@@ -29,18 +29,22 @@ Giftomat не имеет серверного media-processing pipeline. Canvas,
 
 ## Дизайн-система
 
-Интерфейс использует **August Design System**:
+Интерфейс использует **August v3 — Dark Workbench**:
 
-- светлый Canvas `#F7F8FC` и Surface `#FFFFFF`;
-- постоянный Navy sidebar `#15172A` как единственный dark anchor;
-- August Purple `#6E5CF6` для action/selection;
-- Growth Lime используется только как смысловой акцент, а не как общий selected-state;
+- светлый Canvas `#F7F8FC`;
+- Navy `#151728` для sidebar и media workbench;
+- Lime `#DFFF6A` как filled primary/brand accent с Ink-текстом;
+- Purple `#6E5CF6` для focus и secondary selection;
+- White Surface для controls и active navigation;
+- тёмный hero/header над белой панелью настроек;
 - Inter Variable локально из `app/fonts/`;
 - touch targets от 44 px на compact viewport;
 - `prefers-reduced-motion` поддерживается;
-- стили находятся в одном каноническом `app/globals.css` без миграционных override-слоёв и без `!important`.
+- стили находятся в одном каноническом `app/globals.css` без `!important` и migration override layers.
 
-Tailwind намеренно не используется: текущий интерфейс построен на небольшом наборе стабильных semantic/component classes и CSS custom properties.
+Ключевое правило контраста: **Lime не используется как обычный foreground на White/Canvas**. Primary actions используют Lime background + Ink text. Полный контракт находится в [`design.md`](./design.md).
+
+Tailwind намеренно не используется: интерфейс построен на semantic/component classes и CSS custom properties.
 
 ## Локальная разработка
 

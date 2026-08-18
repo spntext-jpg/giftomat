@@ -197,8 +197,9 @@ export default function VideoImportPanel({ disabled = false, maxFrames, onExtrac
       </section>
 
       <aside className="control-panel video-control-panel glass-panel">
-        <div className="video-import-header">
+        <div className="control-heading video-import-header">
           <div>
+            <span className="eyebrow">Видео → GIF</span>
             <h1>Кадры из видео</h1>
             <p>Выберите отрезок и количество кадров — они добавятся в общий список рядом с остальными.</p>
           </div>

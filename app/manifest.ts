@@ -10,7 +10,7 @@ export default function manifest(): MetadataRoute.Manifest {
     scope: "/",
     display: "standalone",
     background_color: "#F7F8FC",
-    theme_color: "#15172A",
+    theme_color: "#151728",
     icons: [
       {
         src: "/giftomat-favicon-stack-v4.png?v=20260728-v4",

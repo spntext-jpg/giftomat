@@ -15,6 +15,7 @@ const requiredFiles = [
   "app/lib/video.ts",
   "app/lib/zip.ts",
   "app/globals.css",
+  "design.md",
   "public/gif.js",
   "public/gif.worker.js",
   "public/html-to-image.js",
@@ -36,11 +37,13 @@ const presets = read("app/lib/presets.ts");
 const video = read("app/lib/video.ts");
 const globalCss = read("app/globals.css");
 const layout = read("app/layout.tsx");
+const manifest = read("app/manifest.ts");
 const serviceWorker = read("public/sw.js");
 const nextConfig = read("next.config.ts");
 const packageJson = JSON.parse(read("package.json"));
 const packageLock = JSON.parse(read("package-lock.json"));
 const readme = read("README.md");
+const design = read("design.md");
 
 // Core product flows.
 for (const marker of ["generateGif", "generatePdf", "compressImages", "buildGifAttempts"]) {
@@ -97,12 +100,45 @@ for (const file of ["app/page.tsx", "app/lib/pdf.ts", "app/lib/zip.ts"]) {
   if (/function\s+copyToArrayBuffer\s*\(/.test(source)) throw new Error(`Duplicate copyToArrayBuffer remains in ${file}`);
 }
 
-// August Design System is canonical, not a migration layer.
-for (const token of ["--august-canvas: #F7F8FC", "--august-accent: #6E5CF6", "--august-navy: #15172A"]) {
-  if (!globalCss.includes(token)) throw new Error(`Missing August token: ${token}`);
+// August v3 — Dark Workbench design contract.
+for (const token of [
+  "--august-canvas: #F7F8FC",
+  "--august-lime: #DFFF6A",
+  "--august-purple: #6E5CF6",
+  "--august-navy: #151728",
+  "--primary: var(--august-lime)",
+  "--primary-ink: var(--august-lime-ink)",
+]) {
+  if (!globalCss.includes(token)) throw new Error(`Missing August v3 token/role: ${token}`);
 }
-if (!globalCss.includes("background: var(--august-surface);") || !globalCss.includes("color: var(--august-ink);")) {
-  throw new Error("Active navigation must use August Surface/Ink");
+for (const obsolete of ["--august-accent", "--august-growth", "var(--accent)", "var(--cyan)"]) {
+  if (globalCss.includes(obsolete)) throw new Error(`Ambiguous pre-v3 design token remains: ${obsolete}`);
+}
+if (!/\.primary-button \{[\s\S]*?background: var\(--primary\);[\s\S]*?color: var\(--primary-ink\)/m.test(globalCss)) {
+  throw new Error("Primary action must use Lime background with Ink text");
+}
+if (!/\.download-button \{[\s\S]*?background: var\(--primary\);[\s\S]*?color: var\(--primary-ink\)/m.test(globalCss)) {
+  throw new Error("Download action must use Lime background with Ink text");
+}
+if (!/\.canvas-panel \{[\s\S]*?var\(--august-navy-raised\)[\s\S]*?var\(--august-navy\)/m.test(globalCss)) {
+  throw new Error("Media canvas must use the Dark Workbench Navy surface");
+}
+if (!/\.control-heading \{[\s\S]*?var\(--august-navy-raised\)[\s\S]*?var\(--august-navy\)/m.test(globalCss)) {
+  throw new Error("Control heading must use the dark hero surface");
+}
+if (!/\.control-heading \.eyebrow \{[\s\S]*?background: var\(--august-lime\);[\s\S]*?color: var\(--august-lime-ink\)/m.test(globalCss)) {
+  throw new Error("Dark hero eyebrow must be Lime with Ink text");
+}
+if (!/\.giftomat-nav-button\.active,[\s\S]*?background: var\(--august-surface\)/m.test(globalCss) ||
+    !globalCss.includes("-webkit-text-fill-color: var(--august-ink);")) {
+  throw new Error("Active navigation must preserve White/Ink contrast");
+}
+if (!globalCss.includes('.giftomat-nav-button:not(.active):not([aria-current="page"]):active') ||
+    !globalCss.includes("-webkit-text-fill-color: #FFFFFF;")) {
+  throw new Error("Pressed inactive navigation must keep readable text");
+}
+if (!globalCss.includes('.giftomat-nav-button:not(.active):not([aria-current="page"]):hover:not(:disabled)')) {
+  throw new Error("Inactive nav hover must not override the White active navigation card");
 }
 if (!globalCss.includes("overflow-wrap: anywhere") || !globalCss.includes("@media (prefers-reduced-motion: reduce)")) {
   throw new Error("Responsive/accessibility CSS contracts are incomplete");
@@ -117,6 +153,13 @@ if (page.includes('matchMedia("(prefers-color-scheme: light)")') || layout.inclu
 if (page.includes("aria-pressed={activeTool")) throw new Error("Navigation destinations expose redundant aria-pressed state");
 if (!page.includes("setImages((current) => current.map((image) => replacements.get(image.id) ?? image));")) {
   throw new Error("replaceImages must keep its state updater pure");
+}
+if (!design.includes("August v3 — Dark Workbench") || !design.includes("Lime — поверхность, а не текст на белом")) {
+  throw new Error("design.md is missing the canonical August v3 contrast contract");
+}
+
+if (!manifest.includes('theme_color: "#151728"') || !layout.includes('content="#151728"')) {
+  throw new Error("PWA/browser theme color must match August v3 Navy");
 }
 
 // PWA/security contracts.
@@ -164,8 +207,8 @@ for (const historicalPrefix of [
 for (const file of ["tailwind.config.ts", "postcss.config.mjs", "apply_august_design_system.py", "fix_download_buttons_and_smoke.py"]) {
   if (existsSync(file)) throw new Error(`Obsolete repository artifact remains: ${file}`);
 }
-if (!readme.includes("August Design System") || !readme.includes("npm run verify")) {
-  throw new Error("README is not synchronized with the current product/quality contract");
+if (!readme.includes("August v3") || !readme.includes("design.md") || !readme.includes("npm run verify")) {
+  throw new Error("README is not synchronized with the current product/design/quality contract");
 }
 
 console.log("Smoke check passed: canonical Giftomat product, design, security and cleanup contracts are present.");
