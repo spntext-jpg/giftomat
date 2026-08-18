@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { createDownloadUrl, revokeDownloadUrl } from "../lib/download";
+import { createDownloadUrl, revokeDownloadUrl, triggerDownload } from "../lib/download";
 import {
   buildCapturePreviewDocument,
   computePageSlices,
@@ -26,9 +26,6 @@ interface CaptureMessage {
 
 const DEFAULT_PIXEL_RATIO = 2;
 const CAPTURE_TIMEOUT_MS = 20000;
-
-// GIFTOMAT_HTML2PDF_V1_PANEL
-// GIFTOMAT_PRODUCTION_RELEASE_V1_HTML_PANEL
 export default function HtmlToPdfPanel({ disabled = false }: HtmlToPdfPanelProps) {
   const [htmlSource, setHtmlSource] = useState("");
   const [sourceFileName, setSourceFileName] = useState("document");
@@ -317,14 +314,7 @@ export default function HtmlToPdfPanel({ disabled = false }: HtmlToPdfPanelProps
               <button
                 type="button"
                 className="download-button"
-                onClick={() => {
-                  const link = document.createElement("a");
-                  link.href = result.downloadUrl;
-                  link.download = result.name;
-                  document.body.appendChild(link);
-                  link.click();
-                  document.body.removeChild(link);
-                }}
+                onClick={() => triggerDownload(result.downloadUrl, result.name)}
               >
                 Скачать файл
               </button>

@@ -1,8 +1,6 @@
 "use client";
 
 import { useEffect } from "react";
-
-// GIFTOMAT_SPRINT4_V1_SW_REGISTER
 export default function ServiceWorkerRegister() {
   useEffect(() => {
     if (typeof window === "undefined") return;

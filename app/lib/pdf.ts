@@ -1,3 +1,5 @@
+import { concatBytes, copyToArrayBuffer } from "./binary.ts";
+
 export interface JpegPdfPage {
   bytes: Uint8Array;
   pixelWidth: number;
@@ -6,25 +8,8 @@ export interface JpegPdfPage {
 
 const encoder = new TextEncoder();
 
-function copyToArrayBuffer(bytes: Uint8Array): ArrayBuffer {
-  const buffer = new ArrayBuffer(bytes.byteLength);
-  new Uint8Array(buffer).set(bytes);
-  return buffer;
-}
-
 function text(value: string): Uint8Array {
   return encoder.encode(value);
-}
-
-function concat(chunks: Uint8Array[]): Uint8Array {
-  const total = chunks.reduce((sum, chunk) => sum + chunk.length, 0);
-  const output = new Uint8Array(total);
-  let offset = 0;
-  for (const chunk of chunks) {
-    output.set(chunk, offset);
-    offset += chunk.length;
-  }
-  return output;
 }
 
 export function buildImagePdf(
@@ -51,7 +36,7 @@ export function buildImagePdf(
       `/Resources << /XObject << /Im0 ${imageId} 0 R >> >> /Contents ${contentId} 0 R >>`
     );
 
-    objects[imageId] = concat([
+    objects[imageId] = concatBytes([
       text(
         `<< /Type /XObject /Subtype /Image /Width ${page.pixelWidth} /Height ${page.pixelHeight} ` +
         `/ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${page.bytes.length} >>\nstream\n`
@@ -74,7 +59,7 @@ export function buildImagePdf(
 
   for (let id = 1; id <= objectCount; id += 1) {
     offsets[id] = currentOffset;
-    const chunk = concat([text(`${id} 0 obj\n`), objects[id], text("\nendobj\n")]);
+    const chunk = concatBytes([text(`${id} 0 obj\n`), objects[id], text("\nendobj\n")]);
     chunks.push(chunk);
     currentOffset += chunk.length;
   }
@@ -92,5 +77,5 @@ export function buildImagePdf(
     )
   );
 
-  return new Blob([copyToArrayBuffer(concat(chunks))], { type: "application/pdf" });
+  return new Blob([copyToArrayBuffer(concatBytes(chunks))], { type: "application/pdf" });
 }

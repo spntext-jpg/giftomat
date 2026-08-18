@@ -1,9 +1,5 @@
 declare const GIF: any;
 
-export interface GifEncodeOptions {
-  quality?: number;
-  onProgress?: (pct: number) => void;
-}
 
 export function encodeGif(
   frames: ImageData[],
@@ -43,8 +39,6 @@ export function encodeGif(
     // Минимальный повтор первого реального кадра сохраняет проверенный фикс
     // начального белого кадра, но без промежуточных canvas-копий.
     gif.addFrame(frames[0], { delay: 1, copy: true });
-
-    // GIFTOMAT_SPRINT3_V1_ENCODER
     frames.forEach((frame, index) => {
       const delayMs = delaysMs[index] ?? delaysMs[0] ?? 1000;
       gif.addFrame(frame, {

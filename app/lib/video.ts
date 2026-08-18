@@ -1,4 +1,3 @@
-// GIFTOMAT_VIDEO_GIF_V1_LIB
 export function fitWithinMaxDimension(
   width: number,
   height: number,
@@ -13,8 +12,6 @@ export function fitWithinMaxDimension(
     height: Math.max(1, Math.round(height * scale)),
   };
 }
-
-// GIFTOMAT_AUGUST_AUDIT_V5: normalize the requested slice before seeking. This guarantees
 // 0 <= start <= end <= duration and reserves a small non-zero span when
 // duration allows it.
 export function normalizeExtractionRange(

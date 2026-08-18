@@ -1,7 +1,6 @@
-// GIFTOMAT_PRODUCTION_RELEASE_V1_SW
-// Static Next.js chunks are immutable. Public runtime assets use stale-while-revalidate,
-// so an installed PWA opens immediately but still receives the next production revision.
-const CACHE_VERSION = "giftomat-v2";
+// Static Next.js chunks are immutable. Public runtime assets use stale-while-revalidate
+// so the installed PWA opens quickly while receiving new production revisions.
+const CACHE_VERSION = "giftomat-v4-cleanup";
 
 const APP_SHELL = [
   "/",
@@ -59,9 +58,7 @@ self.addEventListener("fetch", (event) => {
   if (request.mode === "navigate") {
     const network = fetchAndCache(request);
     event.waitUntil(network.then(() => undefined).catch(() => undefined));
-    event.respondWith(
-      network.catch(() => caches.match(request).then((cached) => cached || caches.match("/")))
-    );
+    event.respondWith(network.catch(() => caches.match(request).then((cached) => cached || caches.match("/"))));
     return;
   }
 

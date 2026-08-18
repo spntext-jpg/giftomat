@@ -134,20 +134,3 @@ export async function imageToJpegBlob(
     background: options.background ?? "#ffffff",
   });
 }
-
-export function fitWithin(
-  width: number,
-  height: number,
-  maxEdge: number | null
-): { width: number; height: number } {
-  const safeWidth = Math.max(1, width);
-  const safeHeight = Math.max(1, height);
-  if (!maxEdge || Math.max(safeWidth, safeHeight) <= maxEdge) {
-    return { width: safeWidth, height: safeHeight };
-  }
-  const scale = maxEdge / Math.max(safeWidth, safeHeight);
-  return {
-    width: Math.max(1, Math.round(safeWidth * scale)),
-    height: Math.max(1, Math.round(safeHeight * scale)),
-  };
-}

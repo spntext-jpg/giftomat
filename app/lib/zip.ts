@@ -1,15 +1,11 @@
+import { concatBytes, copyToArrayBuffer } from "./binary.ts";
+
 export interface ZipEntry {
   name: string;
   data: Uint8Array;
 }
 
 const encoder = new TextEncoder();
-
-function copyToArrayBuffer(bytes: Uint8Array): ArrayBuffer {
-  const buffer = new ArrayBuffer(bytes.byteLength);
-  new Uint8Array(buffer).set(bytes);
-  return buffer;
-}
 
 function crc32(data: Uint8Array): number {
   let crc = 0xffffffff;
@@ -28,17 +24,6 @@ function writeUint16(view: DataView, offset: number, value: number): void {
 
 function writeUint32(view: DataView, offset: number, value: number): void {
   view.setUint32(offset, value >>> 0, true);
-}
-
-function concat(chunks: Uint8Array[]): Uint8Array {
-  const total = chunks.reduce((sum, chunk) => sum + chunk.length, 0);
-  const output = new Uint8Array(total);
-  let offset = 0;
-  for (const chunk of chunks) {
-    output.set(chunk, offset);
-    offset += chunk.length;
-  }
-  return output;
 }
 
 export function buildStoredZip(entries: ZipEntry[]): Blob {
@@ -92,7 +77,7 @@ export function buildStoredZip(entries: ZipEntry[]): Blob {
     localOffset += localHeader.length + name.length + entry.data.length;
   }
 
-  const centralDirectory = concat(centralChunks);
+  const centralDirectory = concatBytes(centralChunks);
   const end = new Uint8Array(22);
   const endView = new DataView(end.buffer);
   writeUint32(endView, 0, 0x06054b50);
@@ -104,5 +89,5 @@ export function buildStoredZip(entries: ZipEntry[]): Blob {
   writeUint32(endView, 16, localOffset);
   writeUint16(endView, 20, 0);
 
-  return new Blob([copyToArrayBuffer(concat([...localChunks, centralDirectory, end]))], { type: "application/zip" });
+  return new Blob([copyToArrayBuffer(concatBytes([...localChunks, centralDirectory, end]))], { type: "application/zip" });
 }

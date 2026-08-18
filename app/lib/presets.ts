@@ -52,8 +52,6 @@ export function buildGifAttempts(
     };
   });
 }
-
-// GIFTOMAT_CONTRAST_PRESETS_V2_PDF_START
 export const PDF_PRESETS: Record<PdfPresetId, Omit<FixedPreset, "id">> = {
   "linkedin-portrait": {
     label: "LinkedIn · 4:5",
@@ -98,10 +96,6 @@ export const PDF_PRESETS: Record<PdfPresetId, Omit<FixedPreset, "id">> = {
     height: 1754,
   },
 };
-// GIFTOMAT_CONTRAST_PRESETS_V2_PDF_END
-
-// GIFTOMAT_SPRINT1_V1_CROP_PRESETS
-// GIFTOMAT_CONTRAST_PRESETS_V2_CROP_START
 export const CROP_PRESETS: FixedPreset[] = [
   { id: "ig-post", label: "Instagram · квадрат", description: "1080 × 1080 px · 1:1", width: 1080, height: 1080 },
   { id: "ig-portrait", label: "Instagram · портрет", description: "1080 × 1350 px · 4:5", width: 1080, height: 1350 },
@@ -114,9 +108,6 @@ export const CROP_PRESETS: FixedPreset[] = [
   { id: "youtube-thumb", label: "YouTube · превью", description: "1280 × 720 px · 16:9", width: 1280, height: 720 },
   { id: "youtube-banner", label: "YouTube · баннер", description: "2560 × 1440 px · 16:9", width: 2560, height: 1440 },
 ];
-// GIFTOMAT_CONTRAST_PRESETS_V2_CROP_END
-
-// GIFTOMAT_SPRINT3_V1_FRAME_DURATION_CYCLE
 export const GIF_FRAME_DURATION_STEPS = [0.3, 0.5, 0.8, 1, 1.5, 2, 3, 5];
 
 export function getNextFrameDuration(
@@ -129,15 +120,9 @@ export function getNextFrameDuration(
   return steps[index + 1];
 }
 
-export const X_GIF_WEB_MAX_BYTES = 15 * 1024 * 1024;
-export const X_GIF_WEB_TARGET_BYTES = Math.floor(14.5 * 1024 * 1024);
-export const X_GIF_MOBILE_MAX_BYTES = 5 * 1024 * 1024;
 export const LINKEDIN_PDF_MAX_BYTES = 100 * 1024 * 1024;
 export const LINKEDIN_PDF_TARGET_BYTES = 95 * 1024 * 1024;
 
-export function clamp(value: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, value));
-}
 
 export function formatBytes(bytes: number): string {
   if (!Number.isFinite(bytes) || bytes <= 0) return "0 Б";

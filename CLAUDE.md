@@ -1,72 +1,56 @@
-# CLAUDE.md – Project Design & Engineering Guidelines
+# Giftomat — Engineering Guidelines
 
-## Core Principles
-1. **Think Before Coding**
-   - State assumptions explicitly.
-   - Ask questions if requirements are unclear.
-   - Propose alternatives before implementing.
+## Product contract
 
-2. **Simplicity First**
-   - Write the minimal necessary code.
-   - Avoid over-engineering or "future-proofing."
-   - Prefer 50 lines over 200 if functionally equivalent.
+Giftomat is a browser-local media studio. Preserve user privacy and keep image, video, HTML, GIF, PDF, Crop and ZIP processing client-side unless a task explicitly changes the architecture.
 
-3. **Surgical Changes**
-   - Modify **only** the code needed to solve the task.
-   - Do not refactor unrelated code or change formatting.
+## Change discipline
 
-4. **Goal-Driven Execution**
-   - Every task must have a verifiable outcome (e.g., "Make the button 20% larger and centered").
-   - Changes must be testable.
+1. Make surgical changes. Do not refactor unrelated code.
+2. Protect the working GIF pipeline. Do not modify `public/gif.js`, `public/gif.worker.js`, or encoder behavior as part of unrelated work.
+3. Prefer one canonical implementation over compatibility layers, duplicate helpers, or migration shims.
+4. Do not commit one-off patch/migration scripts.
+5. Every behavior change needs a verifiable outcome and should extend tests when practical.
 
----
+## August Design System
 
-## UI/UX Rules
-### Design System
-- **Material Design 3 Expressive** (rounded corners, soft shadows, dynamic color).
-- **Brand Palette:**
-  - Bright Azure (#00AAFF) – Primary
-  - Atlantis Green (#97CF26) – Secondary
-  - Light Red (#FF6163) – CTA
-  - Violet Punk (#A169F7) – Accent
-  - African Turquoise (#000000) – Text/Contrast
+August is the only UI design system for this repository.
 
-### Visual Language
-- **"Ball Attraction" Metaphor** – Dynamic spheres as key elements.
-- **"Collider" Aesthetic** – Orbiting UI elements for cohesion.
-- **Typography:** Modern sans-serif (high readability on all devices).
+- Canvas: `#F7F8FC`
+- Surface: `#FFFFFF`
+- Ink: `#171927`
+- Muted: `#697084`
+- Action/selection: August Purple `#6E5CF6`
+- Dark anchor: Navy `#15172A`
+- Growth Lime `#D7FF61` is reserved for semantic growth/progress accents, not generic selection.
+- Typography: self-hosted Inter Variable.
 
-### Accessibility
-- **WCAG-compliant contrast** (test with [WebAIM Contrast Checker](https://webaim.org/resources/contrastchecker/)).
-- **Platform-aware controls** (desktop vs. mobile interactions).
+The workspace stays light. The Navy sidebar is the stable dark anchor; do not reintroduce a fake OS-driven dark theme without a complete token contract.
 
----
+### CSS rules
 
-## Codebase Rules
-### CSS/Styling
-- Use **CSS variables** for colors and spacing.
-- Prefer **utility classes** (e.g., Tailwind) for consistency.
-- **Dark mode:** Ensure all text is readable (no black-on-black).
+- `app/globals.css` is canonical. Edit existing component rules instead of appending versioned override blocks.
+- Use semantic CSS custom properties for shared colors and surfaces.
+- Avoid `!important`; fix specificity or rule order instead.
+- Keep responsive behavior explicit at the existing compact/mobile breakpoints.
+- Mobile/touch actions must remain at least 44×44 px where practical.
+- Preserve visible `:focus-visible` states and `prefers-reduced-motion`.
+- Do not reintroduce Tailwind unless the product deliberately adopts it again.
 
-### React/TSX
-- **Minimal state** – Avoid unnecessary `useState` or `useEffect`.
-- **Component isolation** – Each component should do one thing well.
-- **No prop drilling** – Use context or composition if needed.
+## React and TypeScript
 
-### Testing
-- **Visual regression tests** for UI changes.
-- **Contrast checks** for dark/light mode.
-- **Hover/active states** must be explicitly tested.
+- Keep React state updaters pure. Create/revoke Blob URLs outside functional state updater callbacks.
+- Reuse helpers from `app/lib/` instead of duplicating DOM/binary utilities in components.
+- Revoke object URLs when results or source files are replaced/unmounted.
+- Keep components focused; avoid state or effects that do not represent real UI/runtime state.
 
----
+## Security and PWA
 
-## Example Tasks
-### ❌ Bad
-> "Improve the upload button."
+- Keep HTML capture sandboxed and accept capture messages only from the preview iframe.
+- Keep framing protection and production security headers in `next.config.ts`.
+- Service Worker registration is production-only.
+- Bump `CACHE_VERSION` when the application shell or vendored runtime contract changes materially.
 
-### ✅ Good
-> "Make the 'Upload Photo' button:
-> - 24px taller, pill-shaped, centered.
-> - Color: #FF6163 (Light Red).
-> - Hover effect: scale(1.05) + 2px upward movement + soft glow shadow.
-> - Verify contrast in dark mode."
+## Verification
+
+Before committing, run `npm run verify`. It must pass typecheck, tests, smoke checks and the production build. UI changes should also be checked at 360×800, 780×900, 1100×900 and 1440×1000.

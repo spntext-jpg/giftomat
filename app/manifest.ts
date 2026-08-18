@@ -1,18 +1,16 @@
 import type { MetadataRoute } from "next";
 
-// GIFTOMAT_SPRINT4_V1_MANIFEST
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Гифтомат — GIF, PDF и сжатие изображений",
+    name: "Гифтомат — локальная браузерная медиастудия",
     short_name: "Гифтомат",
     description:
-      "Локальная студия для GIF, PDF-каруселей LinkedIn и оптимизированных изображений. Работает офлайн, ничего не загружается на сервер.",
+      "GIF из изображений и видео, PDF-карусели, HTML в PDF, Crop и оптимизация JPG/WebP — локально в браузере.",
     start_url: "/",
     scope: "/",
     display: "standalone",
-    orientation: "portrait",
-    background_color: "#111820",
-    theme_color: "#111820",
+    background_color: "#F7F8FC",
+    theme_color: "#15172A",
     icons: [
       {
         src: "/giftomat-favicon-stack-v4.png?v=20260728-v4",

@@ -1,6 +1,4 @@
 import { safeBaseName } from "./presets.ts";
-
-// GIFTOMAT_HEIC_V1_LIB
 const HEIC_MIME_TYPES = new Set([
   "image/heic",
   "image/heif",

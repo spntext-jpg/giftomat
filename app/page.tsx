@@ -4,7 +4,8 @@ import { useEffect, useMemo, useRef, useState, type ChangeEvent, type CSSPropert
 import CropWorkspace from "./components/CropWorkspace";
 import VideoImportPanel from "./components/VideoImportPanel";
 import HtmlToPdfPanel from "./components/HtmlToPdfPanel";
-import { createDownloadUrl, revokeDownloadUrl } from "./lib/download";
+import { copyToArrayBuffer } from "./lib/binary";
+import { createDownloadUrl, revokeDownloadUrl, triggerDownload } from "./lib/download";
 import { encodeGif } from "./lib/encoder";
 import { looksLikeHeic, resolveImageFile } from "./lib/heic";
 import {
@@ -24,9 +25,6 @@ import {
   safeBaseName,
   type ToolMode,
   type WebOutputFormat,
-  X_GIF_MOBILE_MAX_BYTES,
-  X_GIF_WEB_MAX_BYTES,
-  X_GIF_WEB_TARGET_BYTES,
   buildGifAttempts,
   GIF_MOBILE_MAX_BYTES,
   GIF_WEB_MAX_BYTES,
@@ -70,11 +68,6 @@ function getGifXAspectHint(width: number, height: number): string | undefined {
   return undefined;
 }
 
-function copyToArrayBuffer(bytes: Uint8Array): ArrayBuffer {
-  const buffer = new ArrayBuffer(bytes.byteLength);
-  new Uint8Array(buffer).set(bytes);
-  return buffer;
-}
 
 const TOOL_COPY: Record<ToolMode, { title: string; description: string }> = {
   gif: {
@@ -123,11 +116,6 @@ function ToolIcon({ name }: { name: ToolMode | "upload" | "download" | "trash" |
     </svg>
   );
 }
-
-// GIFTOMAT_CROP_RATIO_CLEANUP_V1_PAGE
-// GIFTOMAT_CJM_POLISH_V2_PAGE
-// GIFTOMAT_PDF_DROPDOWN_V1_PAGE
-// GIFTOMAT_PRODUCTION_RELEASE_V1_PAGE
 export default function GiftomatPage() {
   const [images, setImages] = useState<ImageItem[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -139,18 +127,14 @@ export default function GiftomatPage() {
   const [result, setResult] = useState<ExportResult | null>(null);
   const [previewMode, setPreviewMode] = useState<PreviewMode>("source");
   const [frameDuration, setFrameDuration] = useState(2);
-  // GIFTOMAT_SPRINT3_V1_FRAME_DURATIONS
   const [frameDurationOverrides, setFrameDurationOverrides] = useState<Record<string, number>>({});
   const [pdfPreset, setPdfPreset] = useState<PdfPresetId>("linkedin-portrait");
   const [pdfFit, setPdfFit] = useState<"contain" | "cover">("contain");
   const [jpegQuality, setJpegQuality] = useState(82);
   const [webOutputFormat, setWebOutputFormat] = useState<WebOutputFormat>("jpeg");
-  // GIFTOMAT_SPRINT1_V1_COMPARE
   const [comparePreview, setComparePreview] = useState<{ url: string; size: number } | null>(null);
   const [showCompressPreview, setShowCompressPreview] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
-  // GIFTOMAT_SPRINT4B_V1_MOBILE_NAV
-  // GIFTOMAT_MOBILE_DRAWER_V1_STATE
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   useEffect(() => {
@@ -166,17 +150,11 @@ export default function GiftomatPage() {
       document.body.style.overflow = previousOverflow;
     };
   }, [mobileNavOpen]);
-  // GIFTOMAT_VIDEO_GIF_V1_STATE
   const [videoImportOpen, setVideoImportOpen] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-  // GIFTOMAT_HEIC_V1_INFLIGHT
   const addFilesInFlightRef = useRef(false);
   const imagesRef = useRef<ImageItem[]>([]);
-
-  // GIFTOMAT_AUGUST_AUDIT_V5_THEME: August uses one light Canvas workspace with a stable Navy
-  // dark anchor. Do not advertise a fake OS-driven dark theme when there is
-  // no [data-theme="dark"] token contract. The root layout owns the theme.
 
   useEffect(() => {
     imagesRef.current = images;
@@ -260,8 +238,6 @@ export default function GiftomatPage() {
         .slice(0, availableSlots);
 
       const rejectedCount = Array.from(incoming).length - candidates.length;
-
-      // GIFTOMAT_HEIC_V1_RESOLVE
       const resolved = await Promise.all(candidates.map((file) => resolveImageFile(file)));
       const usableFiles = resolved.filter((file): file is File => file !== null);
       const failedHeicCount = resolved.length - usableFiles.length;
@@ -292,8 +268,6 @@ export default function GiftomatPage() {
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
-
-  // GIFTOMAT_SPRINT1_V1_PASTE
   useEffect(() => {
     const handlePaste = (event: ClipboardEvent) => {
       const items = event.clipboardData?.items;
@@ -326,11 +300,6 @@ export default function GiftomatPage() {
     });
     invalidateResult();
   };
-
-  // GIFTOMAT_SPRINT2_V1_REPLACE
-  // GIFTOMAT_AUGUST_AUDIT_V5_URLS: keep the React state updater pure. Blob URL creation and
-  // revocation happen outside setImages(), so development/Strict-mode updater
-  // replays cannot duplicate these side effects.
   const replaceImages = (updates: { id: string; file: File }[]) => {
     if (!updates.length) return;
 
@@ -359,8 +328,6 @@ export default function GiftomatPage() {
     setFrameDurationOverrides({});
     invalidateResult();
   };
-
-  // GIFTOMAT_SPRINT3_V1_CYCLE_DURATION
   const cycleFrameDuration = (id: string) => {
     setFrameDurationOverrides((current) => {
       const next = { ...current };
@@ -386,7 +353,6 @@ export default function GiftomatPage() {
     const loaded = await Promise.all(images.map((image) => loadImage(image.url)));
     const firstFrame = loaded[0];
     const attempts = buildGifAttempts(firstFrame.naturalWidth, firstFrame.naturalHeight);
-    // GIFTOMAT_SPRINT3_V1_DELAYS
     const delaysMs = images.map((image) => (frameDurationOverrides[image.id] ?? frameDuration) * 1000);
     const hasCustomDurations = images.some((image) => frameDurationOverrides[image.id] !== undefined);
 
@@ -991,18 +957,10 @@ export default function GiftomatPage() {
                       </div>
                     )}
                   </div>
-                  {/* GIFTOMAT_SPRINT7_V1_DOWNLOAD_FIX */}
                   <button
                     type="button"
                     className="download-button"
-                    onClick={() => {
-                      const link = document.createElement("a");
-                      link.href = result.downloadUrl;
-                      link.download = result.fileName;
-                      document.body.appendChild(link);
-                      link.click();
-                      document.body.removeChild(link);
-                    }}
+                    onClick={() => triggerDownload(result.downloadUrl, result.fileName)}
                   >
                     <ToolIcon name="download" />
                     Скачать

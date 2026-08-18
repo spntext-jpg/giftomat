@@ -14,7 +14,7 @@ interface VideoImportPanelProps {
 const DEFAULT_FRAME_COUNT = 12;
 const MIN_FRAME_COUNT = 2;
 const MAX_EXTRACT_DIMENSION = 1600;
-const MAX_VIDEO_BYTES = 200 * 1024 * 1024; // GIFTOMAT_AUGUST_AUDIT_V5: matches the visible 200 MB promise.
+const MAX_VIDEO_BYTES = 200 * 1024 * 1024;
 
 function seekVideo(video: HTMLVideoElement, time: number): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -33,8 +33,6 @@ function seekVideo(video: HTMLVideoElement, time: number): Promise<void> {
     video.currentTime = time;
   });
 }
-
-// GIFTOMAT_VIDEO_GIF_V1_PANEL
 export default function VideoImportPanel({ disabled = false, maxFrames, onExtracted, onClose }: VideoImportPanelProps) {
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [videoFile, setVideoFile] = useState<File | null>(null);

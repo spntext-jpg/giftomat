@@ -16,16 +16,16 @@ out/
 .DS_Store
 .vscode/
 
-# local patch, backup and repository snapshot files
+# local migration, backup and repository snapshot files
 giftomat_*.py
-apply_giftomat_sprint.py
+apply_*.py
+fix_*.py
+*.patch
+*.diff
 giftomat-sprint-report.md
-giftomat-sprint-2026.zip
+giftomat-sprint-*.zip
 repomix-output*.xml
 .giftomat-verified.json
+.giftomat-*-verified.json
 __pycache__/
 *.py[cod]
-
-# Giftomat GIF orientation patch
-giftomat_gif_orientation_v2.py
-.giftomat-orientation-v2-verified.json

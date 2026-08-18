@@ -1,4 +1,3 @@
-// GIFTOMAT_HTML2PDF_V1_LIB
 export interface HtmlPdfPagePreset {
   id: string;
   label: string;

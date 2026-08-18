@@ -9,7 +9,7 @@ import {
   type PointerEvent as ReactPointerEvent,
   type WheelEvent,
 } from "react";
-import { createDownloadUrl, revokeDownloadUrl } from "../lib/download";
+import { createDownloadUrl, revokeDownloadUrl, triggerDownload } from "../lib/download";
 import {
   clampCropValue,
   cropImageToBlob,
@@ -34,8 +34,6 @@ interface CropWorkspaceProps {
 }
 
 type CropFormat = "jpeg" | "png";
-
-// GIFTOMAT_CROP_RATIO_CLEANUP_V1_CROP_START
 const MIN_CROP_DIMENSION = 64;
 const MAX_CROP_DIMENSION = 8000;
 
@@ -45,9 +43,6 @@ function normalizeCropDimension(value: string, fallback: number): number {
   if (!Number.isFinite(parsed)) return fallback;
   return Math.round(clampCropValue(parsed, MIN_CROP_DIMENSION, MAX_CROP_DIMENSION));
 }
-// GIFTOMAT_CROP_RATIO_CLEANUP_V1_CROP_END
-
-// GIFTOMAT_CJM_POLISH_V2_CROP
 export default function CropWorkspace({
   image,
   disabled = false,
@@ -72,7 +67,6 @@ export default function CropWorkspace({
   const [batchWorking, setBatchWorking] = useState(false);
   const [batchProgress, setBatchProgress] = useState(0);
   const [batchResult, setBatchResult] = useState<{ count: number } | null>(null);
-  // GIFTOMAT_CLEANUP_V1_PRESET_SELECT
   const [selectedPresetId, setSelectedPresetId] = useState("");
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -480,18 +474,10 @@ export default function CropWorkspace({
                   {usedAsSource ? "✓ Добавлено в общий список" : "Использовать в GIF / PDF / Compress"}
                 </button>
               </div>
-              {/* GIFTOMAT_SPRINT7_V1_DOWNLOAD_FIX */}
               <button
                 type="button"
                 className="download-button"
-                onClick={() => {
-                  const link = document.createElement("a");
-                  link.href = result.downloadUrl;
-                  link.download = result.name;
-                  document.body.appendChild(link);
-                  link.click();
-                  document.body.removeChild(link);
-                }}
+                onClick={() => triggerDownload(result.downloadUrl, result.name)}
               >
                 Скачать файл
               </button>

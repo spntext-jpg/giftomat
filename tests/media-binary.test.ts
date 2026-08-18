@@ -7,9 +7,8 @@ import {
   LINKEDIN_PDF_MAX_BYTES,
   LINKEDIN_PDF_TARGET_BYTES,
   safeBaseName,
-  X_GIF_MOBILE_MAX_BYTES,
-  X_GIF_WEB_MAX_BYTES,
-  X_GIF_WEB_TARGET_BYTES,
+  GIF_MOBILE_MAX_BYTES,
+  GIF_WEB_MAX_BYTES,
   buildGifAttempts,
 } from "../app/lib/presets.ts";
 
@@ -51,8 +50,7 @@ test("file naming and byte formatting stay deterministic", () => {
 
 
 test("social export safety thresholds stay below platform limits", () => {
-  assert.ok(X_GIF_WEB_TARGET_BYTES < X_GIF_WEB_MAX_BYTES);
-  assert.ok(X_GIF_MOBILE_MAX_BYTES < X_GIF_WEB_MAX_BYTES);
+  assert.ok(GIF_MOBILE_MAX_BYTES < GIF_WEB_MAX_BYTES);
   assert.ok(LINKEDIN_PDF_TARGET_BYTES < LINKEDIN_PDF_MAX_BYTES);
 });
 
