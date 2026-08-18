@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { computeExtractionTimestamps, fitWithinMaxDimension } from "../app/lib/video.ts";
+import { computeExtractionTimestamps, fitWithinMaxDimension, normalizeExtractionRange } from "../app/lib/video.ts";
 
 test("fitWithinMaxDimension downscales large dimensions proportionally", () => {
   const result = fitWithinMaxDimension(3840, 2160, 1600);
@@ -31,4 +31,21 @@ test("computeExtractionTimestamps returns just the start for a single frame", ()
 
 test("computeExtractionTimestamps returns an empty array for zero frames", () => {
   assert.deepEqual(computeExtractionTimestamps(0, 10, 0), []);
+});
+
+// GIFTOMAT_AUGUST_AUDIT_V5: extraction range regression coverage.
+test("normalizeExtractionRange never seeks past duration", () => {
+  const range = normalizeExtractionRange(10, 10, 10);
+  assert.ok(Math.abs(range.start - 9.9) < 1e-9);
+  assert.equal(range.end, 10);
+});
+
+test("normalizeExtractionRange repairs an end before start", () => {
+  const range = normalizeExtractionRange(7, 2, 10);
+  assert.equal(range.start, 7);
+  assert.ok(Math.abs(range.end - 7.1) < 1e-9);
+});
+
+test("normalizeExtractionRange handles invalid duration safely", () => {
+  assert.deepEqual(normalizeExtractionRange(3, 8, Number.NaN), { start: 0, end: 0 });
 });

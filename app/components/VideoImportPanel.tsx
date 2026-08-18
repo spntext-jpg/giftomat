@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { safeBaseName } from "../lib/presets";
-import { computeExtractionTimestamps, fitWithinMaxDimension } from "../lib/video";
+import { computeExtractionTimestamps, fitWithinMaxDimension, normalizeExtractionRange } from "../lib/video";
 
 interface VideoImportPanelProps {
   disabled?: boolean;
@@ -14,6 +14,7 @@ interface VideoImportPanelProps {
 const DEFAULT_FRAME_COUNT = 12;
 const MIN_FRAME_COUNT = 2;
 const MAX_EXTRACT_DIMENSION = 1600;
+const MAX_VIDEO_BYTES = 200 * 1024 * 1024; // GIFTOMAT_AUGUST_AUDIT_V5: matches the visible 200 MB promise.
 
 function seekVideo(video: HTMLVideoElement, time: number): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -60,10 +61,21 @@ export default function VideoImportPanel({ disabled = false, maxFrames, onExtrac
     Math.min(clampedMaxFrames || MIN_FRAME_COUNT, Math.round(Number(frameCountInput) || DEFAULT_FRAME_COUNT))
   );
 
+  const getNormalizedRange = () =>
+    normalizeExtractionRange(
+      startInput.trim() === "" ? 0 : Number(startInput),
+      endInput.trim() === "" ? duration : Number(endInput),
+      duration
+    );
+
   const handleFileSelect = (file: File | undefined) => {
     if (!file) return;
     if (!file.type.startsWith("video/")) {
       setError("Выберите видеофайл (MP4, WebM или MOV).");
+      return;
+    }
+    if (file.size > MAX_VIDEO_BYTES) {
+      setError("Видео должно быть не больше 200 МБ.");
       return;
     }
     setError(null);
@@ -85,13 +97,13 @@ export default function VideoImportPanel({ disabled = false, maxFrames, onExtrac
   };
 
   const commitStart = () => {
-    const value = Math.max(0, Math.min(duration, Number(startInput) || 0));
-    setStartInput(value.toFixed(1));
+    const range = getNormalizedRange();
+    setStartInput(range.start.toFixed(1));
   };
 
   const commitEnd = () => {
-    const value = Math.max(0, Math.min(duration, Number(endInput) || duration));
-    setEndInput(value.toFixed(1));
+    const range = getNormalizedRange();
+    setEndInput(range.end.toFixed(1));
   };
 
   const commitFrameCount = () => {
@@ -102,8 +114,7 @@ export default function VideoImportPanel({ disabled = false, maxFrames, onExtrac
     const video = videoRef.current;
     if (!video || !videoFile || working || disabled) return;
 
-    const start = Math.max(0, Math.min(duration, Number(startInput) || 0));
-    const end = Math.max(start + 0.1, Math.min(duration, Number(endInput) || duration));
+    const { start, end } = getNormalizedRange();
     const frameCount = effectiveFrameCount;
 
     if (clampedMaxFrames < MIN_FRAME_COUNT) {

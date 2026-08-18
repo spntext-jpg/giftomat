@@ -174,16 +174,9 @@ export default function GiftomatPage() {
   const addFilesInFlightRef = useRef(false);
   const imagesRef = useRef<ImageItem[]>([]);
 
-  useEffect(() => {
-    const mediaQuery = window.matchMedia("(prefers-color-scheme: light)");
-    const applyTheme = (isLight: boolean) => {
-      document.documentElement.setAttribute("data-theme", isLight ? "light" : "dark");
-    };
-    applyTheme(mediaQuery.matches);
-    const handler = (event: MediaQueryListEvent) => applyTheme(event.matches);
-    mediaQuery.addEventListener("change", handler);
-    return () => mediaQuery.removeEventListener("change", handler);
-  }, []);
+  // GIFTOMAT_AUGUST_AUDIT_V5_THEME: August uses one light Canvas workspace with a stable Navy
+  // dark anchor. Do not advertise a fake OS-driven dark theme when there is
+  // no [data-theme="dark"] token contract. The root layout owns the theme.
 
   useEffect(() => {
     imagesRef.current = images;
@@ -335,16 +328,26 @@ export default function GiftomatPage() {
   };
 
   // GIFTOMAT_SPRINT2_V1_REPLACE
+  // GIFTOMAT_AUGUST_AUDIT_V5_URLS: keep the React state updater pure. Blob URL creation and
+  // revocation happen outside setImages(), so development/Strict-mode updater
+  // replays cannot duplicate these side effects.
   const replaceImages = (updates: { id: string; file: File }[]) => {
     if (!updates.length) return;
-    setImages((current) =>
-      current.map((image) => {
-        const update = updates.find((item) => item.id === image.id);
-        if (!update) return image;
-        URL.revokeObjectURL(image.url);
-        return { id: image.id, url: URL.createObjectURL(update.file), file: update.file };
-      })
-    );
+
+    const updatesById = new Map(updates.map((update) => [update.id, update.file]));
+    const replacements = new Map<string, ImageItem>();
+    const oldUrls: string[] = [];
+
+    for (const image of images) {
+      const file = updatesById.get(image.id);
+      if (!file) continue;
+      replacements.set(image.id, { id: image.id, url: URL.createObjectURL(file), file });
+      oldUrls.push(image.url);
+    }
+
+    if (!replacements.size) return;
+    setImages((current) => current.map((image) => replacements.get(image.id) ?? image));
+    queueMicrotask(() => oldUrls.forEach((url) => URL.revokeObjectURL(url)));
     invalidateResult();
   };
 
@@ -633,7 +636,6 @@ export default function GiftomatPage() {
             type="button"
             className={`tool-button giftomat-nav-button ${activeTool === "gif" ? "active" : ""}`}
             onClick={() => switchTool("gif")}
-            aria-pressed={activeTool === "gif"}
             aria-current={activeTool === "gif" ? "page" : undefined}
             aria-label="GIF — Анимация"
             disabled={stage === "working"}
@@ -651,7 +653,6 @@ export default function GiftomatPage() {
             type="button"
             className={`tool-button giftomat-nav-button ${activeTool === "pdf" ? "active" : ""}`}
             onClick={() => switchTool("pdf")}
-            aria-pressed={activeTool === "pdf"}
             aria-current={activeTool === "pdf" ? "page" : undefined}
             aria-label="PDF — Карусель"
             disabled={stage === "working"}
@@ -669,7 +670,6 @@ export default function GiftomatPage() {
             type="button"
             className={`tool-button giftomat-nav-button ${activeTool === "compress" ? "active" : ""}`}
             onClick={() => switchTool("compress")}
-            aria-pressed={activeTool === "compress"}
             aria-current={activeTool === "compress" ? "page" : undefined}
             aria-label="Сжатие — JPG и WebP"
             disabled={stage === "working"}
@@ -687,7 +687,6 @@ export default function GiftomatPage() {
             type="button"
             className={`tool-button giftomat-nav-button ${activeTool === "crop" ? "active" : ""}`}
             onClick={() => switchTool("crop")}
-            aria-pressed={activeTool === "crop"}
             aria-current={activeTool === "crop" ? "page" : undefined}
             aria-label="Обрезка — Точный размер"
             disabled={stage === "working"}
@@ -705,7 +704,6 @@ export default function GiftomatPage() {
             type="button"
             className={`tool-button giftomat-nav-button ${activeTool === "html2pdf" ? "active" : ""}`}
             onClick={() => switchTool("html2pdf")}
-            aria-pressed={activeTool === "html2pdf"}
             aria-current={activeTool === "html2pdf" ? "page" : undefined}
             aria-label="HTML в PDF — Сохранение вёрстки"
             disabled={stage === "working"}

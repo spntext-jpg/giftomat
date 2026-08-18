@@ -104,14 +104,29 @@ if (!htmlPanel.includes('referrerPolicy="no-referrer"')) {
 if (!globalCss.includes("GIFTOMAT_PRODUCTION_RELEASE_V1_CSS_START")) {
   throw new Error("Production navigation CSS is missing");
 }
-if (!globalCss.includes("--nav-active: var(--accent)")) {
-  throw new Error("Navigation active state must use the warm orange accent");
+// GIFTOMAT_AUGUST_DS_V1: navigation selection now uses August accent purple
+// (Amado action semantics §62: "selected interactive state" = purple),
+// not the legacy warm-orange accent and not Growth Lime (forbidden as a
+// general selection color by the §47 AI lime rule).
+if (!globalCss.includes("--nav-active: var(--august-accent)")) {
+  throw new Error("Navigation active state must use the August accent purple");
+}
+if (globalCss.includes("--nav-active: var(--accent)")) {
+  throw new Error("Navigation active state must not resolve through the legacy --accent (now Growth Lime) token");
 }
 if (!globalCss.includes("overflow-wrap: anywhere")) {
   throw new Error("Navigation labels are not protected from overflow");
 }
-if (!serviceWorker.includes('CACHE_VERSION = "giftomat-v2"')) {
-  throw new Error("Service worker cache version was not upgraded");
+// GIFTOMAT_AUGUST_DS_V2: don't pin a single frozen cache-version literal —
+// each legitimate version bump (§36) would break this otherwise. Just
+// require *a* quoted CACHE_VERSION assignment to exist and, if
+// present, that it matches what caches.delete() cleans up (i.e. the
+// version constant is actually wired into cache invalidation).
+if (!/const CACHE_VERSION = "[^"]+"/.test(serviceWorker)) {
+  throw new Error("Service worker is missing a CACHE_VERSION constant");
+}
+if (!serviceWorker.includes("key !== CACHE_VERSION")) {
+  throw new Error("Service worker cache cleanup must compare against CACHE_VERSION");
 }
 if (!serviceWorker.includes('"/html-to-image.js"')) {
   throw new Error("HTML-to-PDF runtime is missing from the offline shell");
@@ -154,3 +169,46 @@ for (const marker of [
   if (!expandedPresets.includes(marker)) throw new Error(`Missing expanded preset: ${marker}`);
 }
 // GIFTOMAT_CONTRAST_PRESETS_V2_SMOKE_END
+
+
+// GIFTOMAT_AUGUST_AUDIT_V5_SMOKE_START
+const augustAuditLayout = readFileSync("app/layout.tsx", "utf8");
+const augustAuditVideoPanel = readFileSync("app/components/VideoImportPanel.tsx", "utf8");
+const augustAuditVideoModule = readFileSync("app/lib/video.ts", "utf8");
+
+if (!globalCss.startsWith('@import "tailwindcss";')) {
+  throw new Error("Tailwind v4 entry must use @import tailwindcss");
+}
+for (const obsoleteDirective of ["@tailwind base;", "@tailwind components;", "@tailwind utilities;"]) {
+  if (globalCss.includes(obsoleteDirective)) throw new Error(`Obsolete Tailwind v3 directive remains: ${obsoleteDirective}`);
+}
+if (!globalCss.includes("GIFTOMAT_AUGUST_AUDIT_V5_CSS")) {
+  throw new Error("August audit CSS contract is missing");
+}
+if (!globalCss.includes("background: var(--august-surface) !important;")) {
+  throw new Error("Active navigation must resolve to the August Surface state");
+}
+if (!globalCss.includes("color: var(--august-ink) !important;")) {
+  throw new Error("Active navigation must use August Ink on the light Surface");
+}
+if (!augustAuditLayout.includes('content="#15172A"') || !augustAuditLayout.includes('content="#F7F8FC"')) {
+  throw new Error("Browser theme-color is not synchronized with August Navy/Canvas");
+}
+if (!augustAuditLayout.includes('data-theme="light"') || page.includes('matchMedia("(prefers-color-scheme: light)")')) {
+  throw new Error("August must use one explicit light Canvas theme instead of a fake OS dark-theme listener");
+}
+if (page.includes('aria-pressed={activeTool')) {
+  throw new Error("Tool destinations must not expose redundant aria-pressed state");
+}
+if (!page.includes("GIFTOMAT_AUGUST_AUDIT_V5_URLS") ||
+    !page.includes("setImages((current) => current.map((image) => replacements.get(image.id) ?? image));") ||
+    page.includes("URL.revokeObjectURL(image.url);\n        return { id: image.id, url: URL.createObjectURL(update.file)")) {
+  throw new Error("Blob URL side effects must stay outside the replaceImages state updater");
+}
+if (!augustAuditVideoPanel.includes("MAX_VIDEO_BYTES = 200 * 1024 * 1024")) {
+  throw new Error("Video import must enforce the advertised 200 MB limit");
+}
+if (!augustAuditVideoModule.includes("normalizeExtractionRange")) {
+  throw new Error("Video extraction range normalizer is missing");
+}
+// GIFTOMAT_AUGUST_AUDIT_V5_SMOKE_END

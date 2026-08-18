@@ -32,11 +32,12 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ru" suppressHydrationWarning className={inter.variable}>
+    <html lang="ru" data-theme="light" suppressHydrationWarning className={inter.variable}>
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-        <meta name="theme-color" content="#111820" media="(prefers-color-scheme: dark)" />
-        <meta name="theme-color" content="#eef6fb" media="(prefers-color-scheme: light)" />
+        {/* GIFTOMAT_AUGUST_AUDIT_V5: keep browser chrome aligned with manifest.ts August colors. */}
+        <meta name="theme-color" content="#15172A" media="(prefers-color-scheme: dark)" />
+        <meta name="theme-color" content="#F7F8FC" media="(prefers-color-scheme: light)" />
       </head>
       <body>
         <Script src="/gif.js" strategy="beforeInteractive" />

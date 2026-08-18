@@ -1,8 +1,12 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+/* GIFTOMAT_AUGUST_AUDIT_V5_CSS: Tailwind v4 entry + post-audit August cascade contract. */
 
 :root {
+  /* The product workspace is intentionally light; native form chrome should
+     not silently switch to a dark UA palette while the Canvas stays light. */
+  color-scheme: light;
+
   /* GIFTOMAT_AUGUST_DS_V1: August primitive tokens (canonical palette, §4.1). */
   --august-ink: #171927;
   --august-muted: #697084;
@@ -111,7 +115,6 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   outline: 2px solid var(--august-accent);
   outline-offset: 2px;
   box-shadow: 0 0 0 4px var(--august-focus-outer);
-  border-radius: 4px;
 }
 svg { width: 1.25rem; height: 1.25rem; }
 
@@ -2219,23 +2222,28 @@ svg { width: 1.25rem; height: 1.25rem; }
   min-width: 0;
 }
 
+/* GIFTOMAT_AUGUST_AUDIT_V5: the sidebar is the stable Navy dark anchor. Inactive
+   destinations must stay dark-glass in both themes; the previous late
+   production rule painted them with the light --surface-soft token. */
 .tool-sidebar.giftomat-nav .giftomat-nav-button {
   position: relative !important;
   min-width: 0 !important;
   overflow: hidden !important;
-  border: 1px solid var(--border) !important;
-  background: linear-gradient(145deg, var(--surface-soft), rgba(255, 255, 255, .015)) !important;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .035) !important;
+  border: 1px solid var(--nav-anchor-border) !important;
+  background: rgba(255, 255, 255, .045) !important;
+  color: var(--nav-anchor-text) !important;
+  -webkit-text-fill-color: currentColor !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .04) !important;
   cursor: pointer;
   isolation: isolate;
   transition: transform .18s ease, border-color .18s ease, background .18s ease, box-shadow .18s ease !important;
 }
 
 .tool-sidebar.giftomat-nav .giftomat-nav-button:hover:not(:disabled) {
-  transform: translateY(-2px) !important;
-  border-color: color-mix(in srgb, var(--nav-active) 42%, var(--border)) !important;
-  background: color-mix(in srgb, var(--surface-hover) 82%, var(--nav-active) 18%) !important;
-  box-shadow: 0 12px 28px rgba(0, 0, 0, .18), inset 0 1px 0 rgba(255, 255, 255, .07) !important;
+  transform: translateY(-1px) !important;
+  border-color: rgba(255, 255, 255, .18) !important;
+  background: color-mix(in srgb, var(--nav-anchor-raised) 86%, var(--nav-active) 14%) !important;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, .18), inset 0 1px 0 rgba(255, 255, 255, .08) !important;
 }
 
 .tool-sidebar.giftomat-nav .giftomat-nav-button.active,
@@ -2327,7 +2335,7 @@ svg { width: 1.25rem; height: 1.25rem; }
     padding: 9px 10px !important;
     margin: 0 !important;
     border-radius: 15px !important;
-    color: var(--text-primary) !important;
+    color: var(--nav-anchor-text) !important;
     -webkit-text-fill-color: currentColor !important;
   }
 
@@ -2393,8 +2401,8 @@ svg { width: 1.25rem; height: 1.25rem; }
     font-weight: 620 !important;
     line-height: 1.22 !important;
     letter-spacing: 0 !important;
-    color: var(--text-muted) !important;
-    -webkit-text-fill-color: var(--text-muted) !important;
+    color: var(--nav-anchor-text-secondary) !important;
+    -webkit-text-fill-color: var(--nav-anchor-text-secondary) !important;
   }
 }
 
@@ -2498,6 +2506,31 @@ svg { width: 1.25rem; height: 1.25rem; }
   padding: 18px 24px 20px !important;
 }
 
+/* GIFTOMAT_AUGUST_AUDIT_V5: complete the compact/touch pass missed by stage 11. */
+@media (max-width: 980px) {
+  .secondary-button,
+  .segmented-control button,
+  .video-import-grid input {
+    min-height: 44px !important;
+  }
+
+  .crop-size-grid {
+    grid-template-columns: minmax(0, 1fr) 44px minmax(0, 1fr) !important;
+  }
+
+  .crop-ratio-link {
+    width: 44px !important;
+    height: 44px !important;
+  }
+}
+
+@media (pointer: coarse) {
+  .frame-delete,
+  .frame-duration-badge {
+    opacity: 1;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     scroll-behavior: auto !important;
@@ -2509,43 +2542,38 @@ svg { width: 1.25rem; height: 1.25rem; }
 /* GIFTOMAT_PRODUCTION_RELEASE_V1_CSS_END */
 
 /* GIFTOMAT_CONTRAST_PRESETS_V2_CSS_START */
-/*
- * Keep the warm selected state, but give the label a soft dark keyline.
- * Multi-directional text-shadow is more legible at 10–13 px than text-stroke
- * and works consistently in Chromium, Firefox and Safari.
- */
+/* GIFTOMAT_AUGUST_AUDIT_V5: selected destination = light Surface on the Navy anchor.
+   The previous late override used white text on a pale purple surface,
+   contradicting the earlier August contract and reducing contrast. */
 .tool-sidebar.giftomat-nav .giftomat-nav-button.active,
 .tool-sidebar.giftomat-nav .giftomat-nav-button[aria-current="page"] {
-  border-color: color-mix(in srgb, var(--nav-active) 72%, transparent) !important;
-  background: linear-gradient(
-    135deg,
-    color-mix(in srgb, var(--nav-active) 27%, var(--surface)),
-    color-mix(in srgb, var(--nav-active-soft) 10%, var(--surface-strong))
-  ) !important;
+  border-color: color-mix(in srgb, var(--nav-active) 38%, white) !important;
+  background: var(--august-surface) !important;
+  box-shadow: 0 12px 28px rgba(10, 12, 24, .22), inset 0 1px 0 rgba(255, 255, 255, .7) !important;
 }
 
 .tool-sidebar.giftomat-nav .giftomat-nav-button.active .giftomat-nav-title,
 .tool-sidebar.giftomat-nav .giftomat-nav-button[aria-current="page"] .giftomat-nav-title {
-  color: #ffffff !important;
-  -webkit-text-fill-color: #ffffff !important;
+  color: var(--august-ink) !important;
+  -webkit-text-fill-color: var(--august-ink) !important;
 }
 
 .tool-sidebar.giftomat-nav .giftomat-nav-button.active .giftomat-nav-note,
 .tool-sidebar.giftomat-nav .giftomat-nav-button[aria-current="page"] .giftomat-nav-note {
-  color: var(--nav-anchor-text-secondary) !important;
-  -webkit-text-fill-color: var(--nav-anchor-text-secondary) !important;
+  color: var(--august-muted) !important;
+  -webkit-text-fill-color: var(--august-muted) !important;
 }
 
 [data-theme="light"] .tool-sidebar.giftomat-nav .giftomat-nav-button.active .giftomat-nav-title,
 [data-theme="light"] .tool-sidebar.giftomat-nav .giftomat-nav-button[aria-current="page"] .giftomat-nav-title {
-  color: #ffffff !important;
-  -webkit-text-fill-color: #ffffff !important;
+  color: var(--august-ink) !important;
+  -webkit-text-fill-color: var(--august-ink) !important;
 }
 
 [data-theme="light"] .tool-sidebar.giftomat-nav .giftomat-nav-button.active .giftomat-nav-note,
 [data-theme="light"] .tool-sidebar.giftomat-nav .giftomat-nav-button[aria-current="page"] .giftomat-nav-note {
-  color: var(--nav-anchor-text-secondary) !important;
-  -webkit-text-fill-color: var(--nav-anchor-text-secondary) !important;
+  color: var(--august-muted) !important;
+  -webkit-text-fill-color: var(--august-muted) !important;
 }
 /* GIFTOMAT_CONTRAST_PRESETS_V2_CSS_END */
 /* GIFTOMAT_NAV_SELECTION_FIX_V1_CSS_START */
@@ -2565,7 +2593,7 @@ svg { width: 1.25rem; height: 1.25rem; }
    keep it on-brand instead of the default black/gray block. */
 .tool-sidebar.giftomat-nav .giftomat-nav-button::selection,
 .tool-sidebar.giftomat-nav .giftomat-nav-button *::selection {
-  background: color-mix(in srgb, var(--nav-active, var(--accent)) 40%, transparent);
-  color: var(--text-primary);
+  background: color-mix(in srgb, var(--nav-active, var(--august-accent)) 40%, transparent);
+  color: var(--nav-anchor-text);
 }
 /* GIFTOMAT_NAV_SELECTION_FIX_V1_CSS_END */
