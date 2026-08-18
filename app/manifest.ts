@@ -13,8 +13,8 @@ export default function manifest(): MetadataRoute.Manifest {
     theme_color: "#151728",
     icons: [
       {
-        src: "/giftomat-favicon-stack-v4.png?v=20260728-v4",
-        sizes: "512x512",
+        src: "/giftomat-v3.png?v=20260818-v3",
+        sizes: "1254x1254",
         type: "image/png",
         purpose: "any",
       },

@@ -33,7 +33,8 @@ Giftomat не имеет серверного media-processing pipeline. Canvas,
 
 - светлый Canvas `#F7F8FC`;
 - Navy `#151728` для sidebar и media workbench;
-- Lime `#DFFF6A` как filled primary/brand accent с Ink-текстом;
+- Tangerine `#FF8A2A` для execution CTA и статуса локальной обработки с Ink-текстом;
+- Lime `#DFFF6A` для brand/progress/completion accents с Ink-текстом;
 - Purple `#6E5CF6` для focus и secondary selection;
 - White Surface для controls и active navigation;
 - тёмный hero/header над белой панелью настроек;
@@ -42,7 +43,7 @@ Giftomat не имеет серверного media-processing pipeline. Canvas,
 - `prefers-reduced-motion` поддерживается;
 - стили находятся в одном каноническом `app/globals.css` без `!important` и migration override layers.
 
-Ключевое правило контраста: **Lime не используется как обычный foreground на White/Canvas**. Primary actions используют Lime background + Ink text. Полный контракт находится в [`design.md`](./design.md).
+Ключевое правило контраста: **Lime и Tangerine не используются как обычный foreground на White/Canvas**. Execution CTA используют Tangerine + Ink, completion/download — Lime + Ink. Полный контракт находится в [`design.md`](./design.md).
 
 Tailwind намеренно не используется: интерфейс построен на semantic/component classes и CSS custom properties.
 

@@ -23,9 +23,9 @@ export const metadata: Metadata = {
     title: "Гифтомат",
   },
   icons: {
-    icon: [{ url: "/giftomat-favicon-stack-v4.png?v=20260728-v4", type: "image/png", sizes: "512x512" }],
-    shortcut: "/giftomat-favicon-stack-v4.png?v=20260728-v4",
-    apple: "/giftomat-favicon-stack-v4.png?v=20260728-v4",
+    icon: [{ url: "/giftomat-v3.png?v=20260818-v3", type: "image/png", sizes: "1254x1254" }],
+    shortcut: "/giftomat-v3.png?v=20260818-v3",
+    apple: "/giftomat-v3.png?v=20260818-v3",
   },
 };
 

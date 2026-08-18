@@ -21,13 +21,14 @@ Core roles:
 - Canvas: `#F7F8FC`
 - Surface: `#FFFFFF`
 - Ink/Navy: `#151728`
-- Lime Primary: `#DFFF6A` with Ink text
+- Tangerine Action: `#FF8A2A` with Ink text for execution CTAs
+- Lime Brand/Completion: `#DFFF6A` with Ink text
 - Purple Interaction: `#6E5CF6` for focus and secondary selection
 - Dark Workbench: Navy media/canvas surfaces
 - Active navigation: White Surface + Ink text + Lime icon tile
 - Typography: self-hosted Inter Variable
 
-Lime is a filled action/brand surface, not low-contrast foreground text on White/Canvas. Never use White text on Lime. Purple must not compete with Lime as the default primary CTA.
+Tangerine is the execution-action surface; Lime is brand/progress/completion. Neither is low-contrast foreground text on White/Canvas. Use Ink on both bright accents; Purple remains focus/secondary selection.
 
 ### CSS rules
 

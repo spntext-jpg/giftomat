@@ -100,25 +100,35 @@ for (const file of ["app/page.tsx", "app/lib/pdf.ts", "app/lib/zip.ts"]) {
   if (/function\s+copyToArrayBuffer\s*\(/.test(source)) throw new Error(`Duplicate copyToArrayBuffer remains in ${file}`);
 }
 
-// August v3 — Dark Workbench design contract.
+// August v3 — Dark Workbench design contract (v3.1 Tangerine Action).
 for (const token of [
   "--august-canvas: #F7F8FC",
   "--august-lime: #DFFF6A",
+  "--august-orange: #FF8A2A",
   "--august-purple: #6E5CF6",
   "--august-navy: #151728",
-  "--primary: var(--august-lime)",
-  "--primary-ink: var(--august-lime-ink)",
+  "--action: var(--august-orange)",
+  "--action-ink: var(--august-orange-ink)",
 ]) {
   if (!globalCss.includes(token)) throw new Error(`Missing August v3 token/role: ${token}`);
 }
-for (const obsolete of ["--august-accent", "--august-growth", "var(--accent)", "var(--cyan)"]) {
-  if (globalCss.includes(obsolete)) throw new Error(`Ambiguous pre-v3 design token remains: ${obsolete}`);
+for (const obsolete of ["--august-accent", "--august-growth", "var(--accent)", "var(--cyan)", "--primary:", "var(--primary)"]) {
+  if (globalCss.includes(obsolete)) throw new Error(`Ambiguous/obsolete design token remains: ${obsolete}`);
 }
-if (!/\.primary-button \{[\s\S]*?background: var\(--primary\);[\s\S]*?color: var\(--primary-ink\)/m.test(globalCss)) {
-  throw new Error("Primary action must use Lime background with Ink text");
+if (!/\.primary-button \{[\s\S]*?background: var\(--action\);[\s\S]*?color: var\(--action-ink\)/m.test(globalCss)) {
+  throw new Error("Execution CTA must use Tangerine background with Ink text");
 }
-if (!/\.download-button \{[\s\S]*?background: var\(--primary\);[\s\S]*?color: var\(--primary-ink\)/m.test(globalCss)) {
-  throw new Error("Download action must use Lime background with Ink text");
+if (!/\.download-button \{[\s\S]*?background: var\(--august-lime\);[\s\S]*?color: var\(--august-lime-ink\)/m.test(globalCss)) {
+  throw new Error("Download/completion action must use Lime background with Ink text");
+}
+if (!/\.privacy-pill \{[\s\S]*?background: var\(--august-orange\);[\s\S]*?color: var\(--august-orange-ink\)/m.test(globalCss)) {
+  throw new Error("Local-processing badge must use Tangerine with Ink text");
+}
+if (!/\.empty-dropzone \{[\s\S]*?background: var\(--august-surface\);[\s\S]*?color: var\(--august-ink\)/m.test(globalCss)) {
+  throw new Error("Upload/drop zone must be White Surface with Ink text");
+}
+if (!globalCss.includes(".empty-dropzone:not(:disabled):hover") || !globalCss.includes(".frame-card:hover") || !globalCss.includes(".segmented-control button:not(.active):not(:disabled):hover")) {
+  throw new Error("Interactive hover polish is incomplete");
 }
 if (!/\.canvas-panel \{[\s\S]*?var\(--august-navy-raised\)[\s\S]*?var\(--august-navy\)/m.test(globalCss)) {
   throw new Error("Media canvas must use the Dark Workbench Navy surface");
@@ -154,12 +164,20 @@ if (page.includes("aria-pressed={activeTool")) throw new Error("Navigation desti
 if (!page.includes("setImages((current) => current.map((image) => replacements.get(image.id) ?? image));")) {
   throw new Error("replaceImages must keep its state updater pure");
 }
-if (!design.includes("August v3 — Dark Workbench") || !design.includes("Lime — поверхность, а не текст на белом")) {
-  throw new Error("design.md is missing the canonical August v3 contrast contract");
+if (!design.includes("August v3 — Dark Workbench") || !design.includes("v3.1 — Tangerine Action") || !design.includes("Drop Zone")) {
+  throw new Error("design.md is missing the canonical August v3.1 contract");
 }
 
 if (!manifest.includes('theme_color: "#151728"') || !layout.includes('content="#151728"')) {
   throw new Error("PWA/browser theme color must match August v3 Navy");
+}
+if (!existsSync("public/giftomat-v3.png")) throw new Error("Canonical Giftomat v3 favicon is missing");
+for (const source of [layout, manifest, serviceWorker]) {
+  if (!source.includes("/giftomat-v3.png?v=20260818-v3")) throw new Error("Favicon/PWA icon references are not synchronized");
+  if (source.includes("giftomat-favicon-stack-v4")) throw new Error("Legacy favicon reference remains");
+}
+for (const legacyIcon of ["app/favicon.ico", "public/favicon.ico", "public/giftomat-favicon-stack-v4.png"]) {
+  if (existsSync(legacyIcon)) throw new Error(`Competing legacy favicon remains: ${legacyIcon}`);
 }
 
 // PWA/security contracts.
