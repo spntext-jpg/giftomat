@@ -3,6 +3,7 @@
 
   /* August v3 — Dark Workbench. */
   /* August v3.1 — Tangerine Action. */
+  /* August v3 — Production Final. */
   --august-ink: #151728;
   --august-ink-soft: #292C3E;
   --august-muted: #6F7385;
@@ -15,11 +16,8 @@
   --august-lime-active: #C3E93E;
   --august-lime-ink: #151728;
 
-  /* August v3.1 — Tangerine Action. Warm execution accent; Ink foreground is mandatory. */
+  /* Warm status accent. Reserved for the static “Обработка локально” badge. */
   --august-orange: #FF8A2A;
-  --august-orange-hover: #F97818;
-  --august-orange-active: #E9680C;
-  --august-orange-soft: #FFF0E2;
   --august-orange-ink: #151728;
 
   --august-purple: #6E5CF6;
@@ -40,8 +38,8 @@
   --august-success-text: #276131;
   --august-danger-text: #A43F3F;
 
-  /* Semantic roles. Tangerine owns execution CTAs; Lime owns brand/progress/completion;
-     Purple owns focus and secondary selection. Bright accents are surfaces, not text on White. */
+  /* Semantic roles. Lime owns primary/execution/completion surfaces; Purple owns
+     focus and secondary selection. Tangerine is reserved for local-processing status. */
   --bg-page: var(--august-canvas);
   --surface: var(--august-surface);
   --surface-strong: var(--august-surface);
@@ -52,10 +50,6 @@
   --text-muted: var(--august-muted);
   --border: var(--august-border);
   --border-strong: var(--august-border-strong);
-  --action: var(--august-orange);
-  --action-hover: var(--august-orange-hover);
-  --action-active: var(--august-orange-active);
-  --action-ink: var(--august-orange-ink);
   --interactive: var(--august-purple);
   --interactive-dark: var(--august-purple-dark);
   --success: #2E9E52;
@@ -240,8 +234,8 @@ svg { width: 1.25rem; height: 1.25rem; }
   transition: border-color .2s ease, background .2s ease, box-shadow .2s ease;
 }
 .canvas-panel.dragging {
-  border-color: var(--august-orange);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--august-orange) 28%, transparent), 0 28px 64px rgba(21, 23, 40, .20);
+  border-color: var(--august-purple);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--august-purple) 24%, transparent), 0 28px 64px rgba(21, 23, 40, .20);
 }
 .canvas-toolbar { min-height: 50px; padding: 2px 4px 12px; display: flex; align-items: center;  gap: 14px; }
 .canvas-toolbar strong { display: block; font-size: 14px; margin-top: 3px; }
@@ -290,14 +284,14 @@ svg { width: 1.25rem; height: 1.25rem; }
 }
 .empty-dropzone:not(:disabled):hover {
   transform: translateY(-2px);
-  background: color-mix(in srgb, var(--august-surface) 96%, var(--august-orange) 4%);
-  border-color: var(--august-orange);
-  box-shadow: 0 18px 40px rgba(21, 23, 40, .14), inset 0 0 0 1px color-mix(in srgb, var(--august-orange) 24%, transparent);
+  background: color-mix(in srgb, var(--august-surface) 97%, var(--august-purple) 3%);
+  border-color: var(--august-purple);
+  box-shadow: 0 18px 40px rgba(21, 23, 40, .14), inset 0 0 0 1px color-mix(in srgb, var(--august-purple) 20%, transparent);
 }
 .canvas-panel.dragging .empty-dropzone {
   transform: translateY(-2px) scale(.995);
-  border-color: var(--august-orange);
-  box-shadow: 0 0 0 4px color-mix(in srgb, var(--august-orange) 22%, transparent), 0 18px 40px rgba(21, 23, 40, .15);
+  border-color: var(--august-purple);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--august-purple) 20%, transparent), 0 18px 40px rgba(21, 23, 40, .15);
 }
 .empty-dropzone strong { margin-top: 6px; color: var(--august-ink); font-size: clamp(16px, 2vw, 22px); }
 .empty-dropzone span { color: var(--august-muted); font-size: 13px; }
@@ -385,7 +379,7 @@ svg { width: 1.25rem; height: 1.25rem; }
 .frame-delete { position: absolute; top: 5px; right: 5px; width: 21px; height: 21px; padding: 0; border: 0; border-radius: 8px; background: rgba(0, 14, 26, .72); color: white; cursor: pointer; opacity: 0; transition: opacity .15s ease; }
 .frame-card:hover .frame-delete, .frame-delete:focus-visible { opacity: 1; }
 .add-frame-card { flex: 0 0 78px; height: 78px; border-radius: 12px; border: 1px dashed rgba(255,255,255,.18); background: rgba(255,255,255,.05); color: var(--august-dark-secondary); cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 9px; font-weight: 700; }
-.add-frame-card:not(:disabled):hover { transform: translateY(-2px); color: var(--august-orange); border-color: var(--august-orange); background: rgba(255, 138, 42, .08); box-shadow: 0 12px 24px rgba(0, 0, 0, .18); }
+.add-frame-card:not(:disabled):hover { transform: translateY(-2px); color: var(--august-purple); border-color: var(--august-purple); background: rgba(110, 92, 246, .08); box-shadow: 0 12px 24px rgba(0, 0, 0, .18); }
 
 .control-panel {   flex-direction: column; }
 
@@ -442,12 +436,12 @@ svg { width: 1.25rem; height: 1.25rem; }
 .download-button:not(:disabled):active { background: var(--august-lime-active); transform: scale(.98); }
 .download-button svg { width: 16px; height: 16px; }
 .control-footer { padding-top: 13px;  }
-.primary-button { width: 100%; border: 1px solid color-mix(in srgb, var(--action-ink) 12%, transparent); padding: 0 15px; background: var(--action); color: var(--action-ink); box-shadow: 0 10px 24px rgba(204, 91, 16, .22); cursor: pointer; font-size: 12px; font-weight: 900; display: flex; align-items: center; justify-content: center; gap: 9px; transition: transform .16s ease, background .16s ease, box-shadow .16s ease, opacity .16s ease; }
-.primary-button:not(:disabled):hover { transform: translateY(-2px); background: var(--action-hover); box-shadow: 0 16px 32px rgba(204, 91, 16, .28); }
-.primary-button:not(:disabled):active { background: var(--action-active); transform: scale(.98); }
+.primary-button { width: 100%; border: 1px solid color-mix(in srgb, var(--august-lime-ink) 12%, transparent); padding: 0 15px; background: var(--august-lime); color: var(--august-lime-ink); box-shadow: 0 10px 24px rgba(112, 143, 30, .20); cursor: pointer; font-size: 12px; font-weight: 900; display: flex; align-items: center; justify-content: center; gap: 9px; transition: transform .16s ease, background .16s ease, box-shadow .16s ease, opacity .16s ease; }
+.primary-button:not(:disabled):hover { transform: translateY(-2px); background: var(--august-lime-hover); box-shadow: 0 16px 32px rgba(112, 143, 30, .26); }
+.primary-button:not(:disabled):active { background: var(--august-lime-active); transform: scale(.98); }
 .primary-button:disabled { cursor: not-allowed; opacity: .42; box-shadow: none; }
 .control-footer > span { display: block;  text-align: center; color: var(--text-muted);  }
-.button-spinner { width: 15px; height: 15px; border-radius: 50%; border: 2px solid rgba(21, 23, 40, .24); border-top-color: var(--august-orange-ink); animation: spin .8s linear infinite; }
+.button-spinner { width: 15px; height: 15px; border-radius: 50%; border: 2px solid rgba(21, 23, 40, .24); border-top-color: var(--august-lime-ink); animation: spin .8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 @media (min-width: 1500px) {

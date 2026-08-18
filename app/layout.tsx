@@ -22,11 +22,6 @@ export const metadata: Metadata = {
     statusBarStyle: "black-translucent",
     title: "Гифтомат",
   },
-  icons: {
-    icon: [{ url: "/giftomat-v3.png?v=20260818-v3", type: "image/png", sizes: "1254x1254" }],
-    shortcut: "/giftomat-v3.png?v=20260818-v3",
-    apple: "/giftomat-v3.png?v=20260818-v3",
-  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

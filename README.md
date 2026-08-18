@@ -1,78 +1,107 @@
 # Giftomat
 
-Giftomat — локальная браузерная студия для подготовки медиафайлов. Основные операции выполняются на устройстве пользователя: исходные изображения, видео и HTML не отправляются на сервер.
+Giftomat — локальная браузерная медиастудия для подготовки GIF, PDF, изображений и HTML-документов. Основная обработка выполняется на устройстве пользователя: исходные изображения, видео и HTML не отправляются в отдельный media-processing backend.
 
 ## Возможности
 
 - **GIF** из изображений с индивидуальной длительностью кадров и сохранением ориентации первого кадра.
 - **Video → GIF frames**: локальное извлечение кадров из MP4/WebM/MOV до 200 МБ.
-- **PDF-карусели** с готовыми social/document пресетами и режимами contain/cover.
-- **HTML → PDF** через sandbox-предпросмотр и постраничный рендер.
+- **PDF-карусели** с social/document preset'ами и режимами contain/cover.
+- **HTML → PDF** через sandbox preview и постраничный рендер.
 - **Crop** одного изображения или всей загруженной пачки под готовые и произвольные размеры.
-- **Compress** в JPG/WebP; несколько файлов собираются в ZIP.
-- **HEIC/HEIF** автоматически конвертируется в JPEG перед дальнейшей обработкой.
-- **PWA/offline shell** для основного интерфейса и локальных runtime-библиотек.
+- **Compress** в JPG/WebP с ZIP для пакетной выгрузки.
+- **HEIC/HEIF** → JPEG перед дальнейшей браузерной обработкой.
+- **PWA/offline shell** для интерфейса и локальных vendored runtime-библиотек.
 
-## Приватность и архитектура
+## Архитектура и приватность
 
-Giftomat не имеет серверного media-processing pipeline. Canvas, GIF-кодирование, PDF, Crop, ZIP, HTML capture и видео-кадры работают в браузере. Blob URL освобождаются после использования. Service Worker регистрируется только в production.
+Giftomat не имеет серверного media-processing pipeline. Canvas, GIF-кодирование, PDF, Crop, ZIP, HTML capture и видео-кадры обрабатываются в браузере. Blob URL освобождаются после использования. Service Worker регистрируется только в production.
 
 Ключевые части:
 
-- `app/page.tsx` — основной workspace и маршрутизация между инструментами;
+- `app/page.tsx` — основной workspace и переключение инструментов;
 - `app/components/` — Crop, HTML→PDF, Video import и Service Worker registration;
-- `app/lib/` — чистые media/binary helpers и encoder orchestration;
+- `app/lib/` — media, binary, download и encoder helpers;
 - `public/gif.js` + `public/gif.worker.js` — vendored GIF runtime;
 - `public/html-to-image.js` — vendored HTML capture runtime;
-- `scripts/smoke-check.mjs` — проверки продуктовых контрактов;
+- `scripts/smoke-check.mjs` — продуктовые, design, PWA, security и repository-hygiene contracts;
 - `tests/` — unit/regression tests.
 
-## Дизайн-система
+## August v3 — Dark Workbench
 
-Интерфейс использует **August v3 — Dark Workbench**:
+`design.md` — единственный канонический документ дизайн-системы.
 
-- светлый Canvas `#F7F8FC`;
-- Navy `#151728` для sidebar и media workbench;
-- Tangerine `#FF8A2A` для execution CTA и статуса локальной обработки с Ink-текстом;
-- Lime `#DFFF6A` для brand/progress/completion accents с Ink-текстом;
-- Purple `#6E5CF6` для focus и secondary selection;
-- White Surface для controls и active navigation;
-- тёмный hero/header над белой панелью настроек;
-- Inter Variable локально из `app/fonts/`;
-- touch targets от 44 px на compact viewport;
-- `prefers-reduced-motion` поддерживается;
-- стили находятся в одном каноническом `app/globals.css` без `!important` и migration override layers.
+Финальная цветовая модель:
 
-Ключевое правило контраста: **Lime и Tangerine не используются как обычный foreground на White/Canvas**. Execution CTA используют Tangerine + Ink, completion/download — Lime + Ink. Полный контракт находится в [`design.md`](./design.md).
+- Canvas `#F7F8FC`;
+- Navy `#151728` — sidebar и media workbench;
+- White `#FFFFFF` — controls, active navigation и drop-zone;
+- Lime `#DFFF6A` + Ink — primary/execution, download/completion, hero chips и progress;
+- Purple `#6E5CF6` — focus, selection и hover/drag interaction details;
+- Tangerine `#FF8A2A` + Ink — **только** badge `Обработка локально`.
 
-Tailwind намеренно не используется: интерфейс построен на semantic/component classes и CSS custom properties.
+Ключевое правило контраста: яркие Lime/Tangerine используются как поверхности с Ink-текстом, а не как мелкий foreground на White/Canvas.
 
-## Локальная разработка
+Стили находятся в одном `app/globals.css`: без Tailwind, `!important` и migration override layers.
 
-```bash
-npm install
-npm run dev
-```
+## Favicon / app icon
 
-## Проверка перед коммитом
+- `public/giftomat-v3.png` — канонический product/PWA/brand asset;
+- `app/icon.png` — byte-identical copy для Next.js file-based browser favicon;
+- верхний левый brand mark использует `/giftomat-v3.png`;
+- legacy favicon assets отсутствуют.
+
+## Технологии
+
+- Next.js 16;
+- React 19;
+- TypeScript 5;
+- self-hosted Inter Variable;
+- browser Canvas / Blob / Web Worker APIs.
+
+## Quality gate
+
+Перед production commit обязательно:
 
 ```bash
 npm run verify
 ```
 
-`verify` последовательно запускает:
+`verify` последовательно выполняет:
 
 1. TypeScript typecheck;
 2. unit/regression tests;
-3. smoke-check продуктовых и security-контрактов;
-4. production build Next.js.
+3. smoke-check продуктовых, design, security и repository contracts;
+4. production `next build`.
 
-Изменение считается готовым только после полного зелёного `npm run verify`.
+Изменение считается готовым только после полного зелёного gate.
 
-## Правила сопровождения
+## Engineering contract
 
-- Не добавлять одноразовые migration/patch scripts в репозиторий.
-- Не наслаивать новые CSS override-блоки; изменять канонический component rule.
-- Не менять vendored GIF runtime и параметры кодирования без отдельного regression pass.
-- При изменениях PWA shell обновлять `CACHE_VERSION` в `public/sw.js`.
-- Новые media-функции должны оставаться browser-local, если продуктовая задача явно не требует сервера.
+- Делать хирургические изменения и не рефакторить несвязанный работающий код.
+- Не менять vendored GIF runtime и encoder contract без отдельного regression pass.
+- Не добавлять одноразовые migration/patch scripts в Git.
+- Не наслаивать CSS override-блоки; изменять каноническое component rule.
+- React functional state updaters должны оставаться чистыми; Blob URL side effects выполняются вне updater.
+- Общие download/binary/media операции переиспользуют `app/lib/` helpers.
+- HTML capture остаётся sandboxed и принимает сообщения только от своего preview iframe.
+- Production security headers в `next.config.ts` не ослабляются без отдельного security review.
+- Next.js 16 version-sensitive API/convention changes проверяются по установленной документации `node_modules/next/dist/docs/` или актуальной официальной документации перед изменением framework-level кода.
+- При изменении PWA shell обновляется `CACHE_VERSION` в `public/sw.js`.
+- UI-контракт и цветовые роли описываются только в `design.md`, без отдельных AI-specific instruction files.
+
+## Repository hygiene
+
+В Git не должны попадать:
+
+- `.next/`, `node_modules/`, `*.tsbuildinfo`;
+- Repomix snapshots;
+- patch/diff-файлы;
+- `giftomat_*.py`, `apply_*.py`, `fix_*.py`;
+- Python caches.
+
+`AGENTS.md` и `CLAUDE.md` намеренно удалены: их полезные правила консолидированы здесь и в `design.md`, чтобы не поддерживать несколько расходящихся источников истины.
+
+## Production
+
+Основная release-проверка — `npm run verify`. После успешного commit/push ветки `main` production deployment выполняется существующим Vercel workflow проекта.

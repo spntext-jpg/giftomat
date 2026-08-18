@@ -1,293 +1,302 @@
 # August v3 — Dark Workbench
 
-August v3 is the canonical design system for Giftomat. Revision **v3.1 — Tangerine Action** adds a warm execution accent and makes upload surfaces explicitly White while preserving the original Dark Workbench architecture.
+**Status: production canonical.**
 
-## 1. Visual model
+August v3 is the single design system for Giftomat. The final production contract keeps the visual language deliberately small and unambiguous:
 
-**Pale Canvas + Navy Dark Workbench + White Controls + Tangerine execution actions + Lime brand/completion accents + Purple interaction details.**
+**Pale Canvas + Navy Dark Workbench + White Controls + Lime Actions + Purple Interaction + one Tangerine status badge.**
 
-The interface should feel like a modern media workstation rather than a generic SaaS dashboard: large deliberate surfaces, restrained borders, strong hierarchy, bold contrast and a small number of clear color roles.
+## 1. Core principles
 
-### Core principles
+1. **Navy is architecture.** Sidebar and media workbench are the stable dark anchors.
+2. **White is interaction space.** Inputs, settings, active navigation and drop zones use White Surface.
+3. **Lime is the primary bright action surface.** Execution, generate/prepare and completion/download actions use Lime + Ink.
+4. **Purple is interaction detail.** Focus, selection, hover/drag emphasis and precise interactive cues use Purple.
+5. **Tangerine is status-only.** `#FF8A2A` is reserved for the static **“Обработка локально”** badge.
+6. **Bright colors are surfaces, not small text.** Lime/Tangerine foreground text on White is forbidden.
+7. **Motion confirms interactivity.** Hover movement is restrained and appears only on actionable controls.
 
-1. **Navy is architecture.** Sidebar and media workbench are deep Navy anchors.
-2. **White is interaction space.** Inputs, control panels, active navigation and upload/drop zones use White Surface.
-3. **Tangerine means “do it now”.** Execution CTAs that start processing/exporting use warm Tangerine with Ink text.
-4. **Lime means brand/progress/completion.** Lime is used for brand moments, hero chips, progress, active icon tiles and completion/download actions. It is not ordinary text on White.
-5. **Purple means interaction detail.** Focus rings, secondary selection and precise interactive cues use Purple.
-6. **Bright accents are surfaces, not body text.** Lime or Orange as small text on White is forbidden.
-7. **Motion confirms interactivity.** Hover lift/shadow is applied only to controls that are actually actionable.
-
-## 2. Color tokens
-
-### 2.1 Foundation
+## 2. Canonical palette
 
 | Token | Value | Role |
 |---|---:|---|
-| `--august-ink` | `#151728` | primary text and foreground on bright surfaces |
+| `--august-ink` | `#151728` | primary text / foreground on bright surfaces |
 | `--august-ink-soft` | `#292C3E` | secondary dark foreground |
 | `--august-muted` | `#6F7385` | secondary text |
-| `--august-canvas` | `#F7F8FC` | app canvas |
-| `--august-surface` | `#FFFFFF` | controls, cards, active nav, drop zone |
-| `--august-soft` | `#F2F3F7` | subtle control background |
-
-### 2.2 Navy Dark Workbench
-
-| Token | Value | Role |
-|---|---:|---|
+| `--august-canvas` | `#F7F8FC` | application canvas |
+| `--august-surface` | `#FFFFFF` | controls, active nav, drop zone |
+| `--august-soft` | `#F2F3F7` | quiet nested control surface |
 | `--august-navy` | `#151728` | sidebar / deepest workbench |
 | `--august-navy-raised` | `#1C1E33` | raised dark surface |
-| `--august-navy-soft` | `#24263D` | preview / media surface |
-| `--august-dark-secondary` | `#B8BDCE` | secondary text on Navy |
-
-### 2.3 Action Tangerine
-
-| Token | Value | Role |
-|---|---:|---|
-| `--august-orange` | `#FF8A2A` | execution CTA, “Обработка локально” badge |
-| `--august-orange-hover` | `#F97818` | hover execution CTA |
-| `--august-orange-active` | `#E9680C` | pressed execution CTA |
-| `--august-orange-soft` | `#FFF0E2` | optional subtle orange tint |
-| `--august-orange-ink` | `#151728` | mandatory foreground on Orange |
-
-**Orange contract:**
-
-- `.primary-button` in the bottom control footer = Orange + Ink;
-- “Обработка локально” = Orange + Ink;
-- Orange may mark add/upload hover states;
-- never use White text on Orange;
-- Orange is not a warning/error color in Giftomat.
-
-### 2.4 Brand Lime
-
-| Token | Value | Role |
-|---|---:|---|
-| `--august-lime` | `#DFFF6A` | brand, hero chip, progress, active nav icon, completion/download |
-| `--august-lime-hover` | `#D2F650` | hover completion action |
-| `--august-lime-active` | `#C3E93E` | pressed completion action |
+| `--august-navy-soft` | `#24263D` | preview/media surface |
+| `--august-lime` | `#DFFF6A` | primary action / brand / progress / completion |
+| `--august-lime-hover` | `#D2F650` | Lime hover |
+| `--august-lime-active` | `#C3E93E` | Lime pressed |
 | `--august-lime-ink` | `#151728` | mandatory foreground on Lime |
-
-**Lime contract:** Lime is a filled highlight/completion surface, not low-contrast foreground text on White/Canvas.
-
-### 2.5 Purple Interaction
-
-| Token | Value | Role |
-|---|---:|---|
-| `--august-purple` | `#6E5CF6` | focus, secondary selection |
+| `--august-purple` | `#6E5CF6` | focus / selection / interactive emphasis |
 | `--august-purple-dark` | `#5140DC` | stronger interaction detail |
 | `--august-purple-soft` | `#EEEAFF` | subtle interactive tint |
+| `--august-orange` | `#FF8A2A` | local-processing status badge only |
+| `--august-orange-ink` | `#151728` | foreground on Tangerine badge |
 
-Purple does not compete with Tangerine as the execution CTA and does not replace Lime brand/progress semantics.
+## 3. Color-role invariants
 
-## 3. Surface hierarchy
+### Lime
+
+Use Lime for:
+
+- bottom/footer execution CTA: **Создать GIF, Создать PDF, Подготовить файл, Добавить/подготовить изображение** and equivalent actions;
+- download/result actions;
+- hero eyebrow chips;
+- progress/completion accents;
+- active sidebar icon tile;
+- compact value surfaces where strong emphasis is useful.
+
+Always use Ink on Lime. Never use White text on Lime.
+
+### Purple
+
+Use Purple for:
+
+- `:focus-visible`;
+- selected frame/control state;
+- drop-zone hover and drag-active feedback;
+- subtle interactive borders/tints;
+- secondary interactive emphasis.
+
+Purple is not the default primary CTA.
+
+### Tangerine
+
+Tangerine is intentionally scarce. It is used **only** as the background of the `Обработка локально` badge with Ink foreground.
+
+Do not use Tangerine for:
+
+- primary buttons;
+- drop-zone hover/drag;
+- add-frame hover;
+- warnings/errors;
+- links or selection.
+
+This scarcity is what makes the status badge distinctive.
+
+## 4. Surface hierarchy
 
 1. **Canvas** — `#F7F8FC`.
 2. **Sidebar** — Navy dark anchor.
 3. **Media Workbench** — Navy preview/canvas surface.
-4. **Control Panel** — White Surface with a Navy hero/header.
+4. **Control Panel** — White Surface with Navy hero/header.
 5. **Drop Zone** — White Surface inside the Dark Workbench.
 6. **Nested controls** — White/Soft with quiet borders.
 
-Avoid glass-on-glass nesting and avoid turning every block into a card.
+Avoid glass-on-glass nesting and avoid turning every content block into a card.
 
-## 4. Upload / drop zone
+## 5. Drop zone
 
-The upload target is intentionally White even though it lives inside the Navy media workbench.
+The upload/drop target is always White even inside the Navy workbench.
 
 - background: White Surface;
 - title: Ink;
 - supporting text: Muted;
 - border: quiet dashed Ink border;
-- hover: 2px lift + Tangerine border + modest shadow;
-- drag-active: Tangerine ring/border;
+- hover: 2px lift + Purple border + subtle Purple tint + neutral shadow;
+- drag-active: Purple ring/border;
 - disabled: no hover movement.
 
-This creates a clear “place content here” affordance without using low-contrast Lime text on White.
+The drop zone never uses Lime or Tangerine as small foreground text.
 
-## 5. Sidebar
+## 6. Sidebar
 
-Sidebar is the stable Navy dark anchor.
+Sidebar is the permanent Navy dark anchor.
 
 ### Inactive item
 
-- Navy/transparent surface;
+- transparent/Navy surface;
 - White title;
 - muted light note/icon;
 - hover may lift by 2px and brighten the surface;
-- text color must never disappear on hover/press.
+- pressed state must keep text readable.
 
 ### Active item
 
 - White Surface card;
 - Ink title;
 - Muted note;
-- Lime icon tile + Ink icon;
-- pressed state must explicitly preserve Ink including `-webkit-text-fill-color`.
+- Lime icon tile with Ink icon;
+- pressed state explicitly preserves Ink, including `-webkit-text-fill-color`.
 
-## 6. Control panel and hero
+## 7. Dark Workbench
+
+The media/canvas side is a large Navy work surface rather than another White SaaS card.
+
+- media preview sits on Navy/Navy Soft;
+- controls over arbitrary media use high-contrast dark glass only when required;
+- the White drop zone is a deliberate interaction island inside the workbench;
+- static decoration stays restrained.
+
+## 8. Control panel and hero
 
 The settings panel is White. Its heading is a Navy hero surface.
 
-- hero title: White;
-- supporting copy: `--august-dark-secondary`;
+- title: White;
+- supporting copy: dark-secondary;
 - eyebrow chip: Lime + Ink;
 - controls below: White/Soft;
-- execution CTA in footer: Tangerine + Ink.
+- footer execution CTA: Lime + Ink.
 
-## 7. Buttons
+## 9. Buttons
 
-### Execution CTA — `.primary-button`
-
-Used for actions such as Create PDF, Add image, Prepare file, Generate/export and other bottom-footer actions.
-
-- Orange background;
-- Ink text;
-- 48px+ touch height;
-- hover: Orange Hover + `translateY(-2px)` + warm shadow;
-- active: Orange Active + `scale(.98)`;
-- focus-visible: Purple two-stage ring.
-
-### Completion / download — `.download-button`
+### Primary / execution — `.primary-button`
 
 - Lime background;
 - Ink text;
-- hover: Lime Hover + lift;
-- active: Lime Active;
-- this color difference deliberately separates “run processing” from “result is ready / download”.
+- 48px+ height;
+- hover: Lime Hover + `translateY(-2px)` + restrained Lime shadow;
+- active: Lime Active + `scale(.98)`;
+- focus-visible: Purple ring.
 
-### Secondary / icon buttons
+Disabled CTA keeps the same semantic color but reduced opacity and no interaction shadow.
 
-- White/Soft surfaces on light panels;
-- translucent White on the Navy workbench;
-- hover: 1–2px lift, slightly stronger border and shadow;
-- Purple remains the focus color.
+### Download / completion — `.download-button`
 
-## 8. Hover and motion
+Also Lime + Ink. The difference between execution and download is context/content, not a competing accent color.
 
-Hover feedback is reserved for interactive elements:
+### Secondary / icon
 
+- White/Soft on light panels;
+- translucent White on Navy;
+- hover: 1–2px lift, slightly stronger border/shadow;
+- focus: Purple.
+
+## 10. Local-processing badge
+
+`Обработка локально` is the one Tangerine surface in the product chrome.
+
+- background: `#FF8A2A`;
+- foreground/icon: Ink;
+- pill geometry;
+- warm subtle shadow;
+- it is a status statement, not a CTA.
+
+## 11. Hover and motion
+
+Hover feedback belongs only to interactive elements:
+
+- nav destinations;
 - buttons;
-- navigation destinations;
-- upload/drop zones;
-- frame selectors/add-frame;
-- crop ratio control;
+- drop zone;
+- frame/add-frame controls;
+- segmented controls;
+- crop ratio controls;
 - PDF/select container.
 
-Default hover motion: `translateY(-1px)` or `translateY(-2px)` plus a short shadow. Avoid scale-up hover because it causes layout instability. Pressed state may use `scale(.98)`.
+Default motion: `translateY(-1px)` or `translateY(-2px)` plus a restrained shadow. Avoid scale-up hover. Pressed state may use `scale(.98)`.
 
-Under `prefers-reduced-motion: reduce`, transitions/animations must remain suppressed.
+`prefers-reduced-motion: reduce` must suppress nonessential animation/transitions.
 
-## 9. Forms and selection
+## 12. Forms and selection
 
-- input/control surfaces: White/Soft;
+- input surfaces: White/Soft;
 - field text: Ink;
 - helper text: Muted;
-- focus: Purple ring;
+- focus: Purple;
 - frame selection: Purple border/ring;
 - range track: Navy → Purple;
-- range thumb: Lime with Navy border;
-- numeric output/value pill: Lime + Ink where it represents a compact value, never Lime text on White.
+- range thumb: Lime + Navy border;
+- compact highlighted value: Lime + Ink.
 
-## 10. Typography
+## 13. Typography
 
 Self-hosted Inter Variable is canonical.
 
-- display/hero: strong weight, tight tracking;
-- control titles: compact and explicit;
-- eyebrow labels: uppercase, high tracking;
-- body/help: restrained, readable;
-- avoid decorative font changes inside media utilities.
+- display/hero: strong weight and tight tracking;
+- control title: compact and explicit;
+- eyebrow: uppercase/high tracking;
+- body/help: restrained and readable;
+- no decorative font changes inside media tools.
 
-## 11. Radius system
+## 14. Radius and shadows
+
+### Radius
 
 - small controls: 10–14px;
 - cards/fields: 14–18px;
 - major surfaces: 20–24px;
 - hero/workbench: 20–28px;
-- chips/status pills: pill only when semantically appropriate.
+- chips/status: pill only where semantically appropriate.
 
-Do not apply a single radius to every object.
-
-## 12. Shadows
-
-Shadows communicate hierarchy, not decoration.
+### Shadows
 
 - White controls: soft neutral shadow;
 - Dark Workbench: deeper Navy shadow;
-- Tangerine CTA: restrained warm shadow;
-- Lime completion action: restrained olive/lime shadow;
-- Purple glow is reserved for focus/selection.
+- Lime CTA: restrained olive/lime shadow;
+- Purple glow: focus/selection only;
+- Tangerine warm shadow: local-processing badge only.
 
-## 13. Favicon / app icon
+## 15. Favicon and product mark
 
-Canonical asset: `public/giftomat-v3.png`.
+Canonical source artwork: `public/giftomat-v3.png`.
+
+The same bytes are copied to `app/icon.png` so Next.js owns the browser favicon through its file-based metadata convention. The top-left Giftomat brand mark and PWA manifest use `public/giftomat-v3.png`.
 
 Visual language:
 
 - deep Navy base;
 - stacked White documents;
-- labels PDF / GIF / JPG / HTML;
-- Lime and Tangerine details;
-- strong silhouette and generous padding for small icon sizes.
+- PDF / GIF / JPG / HTML labels;
+- Lime + Tangerine details;
+- strong silhouette at small sizes.
 
-Do not keep competing legacy favicon assets in `app/favicon.ico`, `public/favicon.ico` or the old `giftomat-favicon-stack-v4.png`.
+Do not restore legacy favicon assets or a second metadata icon configuration.
 
-## 14. Accessibility
+## 16. Accessibility and responsive rules
 
-- Ink on Orange must remain high contrast;
-- Ink on Lime must remain high contrast;
-- White/Canvas never uses Lime or Orange as small body text;
-- visible Purple focus ring on both White and Navy;
-- touch targets are at least 44×44px where practical;
-- hover must never be the only signal for an action;
-- active sidebar text remains readable in Safari via explicit text fill color.
+- Ink on Lime/Tangerine;
+- no Lime/Tangerine body text on White/Canvas;
+- visible Purple focus ring on White and Navy;
+- active sidebar text must remain readable in Safari;
+- touch targets ≥44×44px where practical;
+- hover is never the only action signal;
+- check 360×800, 780×900, 1100×900 and 1440×1000.
 
-## 15. Responsive behavior
-
-Canonical review viewports:
-
-- 360×800;
-- 780×900;
-- 1100×900;
-- 1440×1000.
-
-Mobile drawer remains Navy. White drop zones and Tangerine footer CTA retain the same semantic roles on compact layouts.
-
-## 16. PWA and browser chrome
+## 17. PWA/browser chrome
 
 - theme color: Navy `#151728`;
-- background color: Canvas `#F7F8FC`;
+- background: Canvas `#F7F8FC`;
 - PWA icon: `public/giftomat-v3.png`;
-- bump the service-worker cache namespace when shell/icon assets change.
+- browser icon: `app/icon.png`;
+- bump `CACHE_VERSION` when shell/icon assets change.
 
-## 17. Implementation rules
+## 18. Engineering rules
 
 1. `app/globals.css` is the single styling source of truth.
-2. Edit canonical rules; do not append versioned override layers.
+2. Edit canonical rules; never append versioned override layers.
 3. No `!important`.
-4. Do not introduce ambiguous generic `accent` tokens.
-5. Prefer semantic roles: Action Tangerine / Brand Lime / Purple Interaction / Navy Workbench / White Surface.
-6. Vendored `gif.js`, worker and `html-to-image.js` are outside design refactors.
-7. Run `npm run verify` before commit.
+4. No ambiguous generic accent/action aliases.
+5. Keep React functional state updaters pure.
+6. Reuse `app/lib/` helpers instead of duplicating download/binary logic.
+7. Do not modify `public/gif.js`, `public/gif.worker.js` or `public/html-to-image.js` during unrelated work.
+8. Keep HTML capture sandbox/source validation and production security headers.
+9. Run `npm run verify` before every production commit.
 
-## 18. Do / Don’t
+## 19. Do / Don’t
 
 ### Do
 
-- White drop zone on Navy workbench;
-- Tangerine execution CTA + Ink;
+- White drop zone on Navy;
+- Lime primary/footer CTA + Ink;
+- Lime download/completion + Ink;
 - Tangerine local-processing badge + Ink;
-- Lime completion/download + Ink;
-- Lime chip on Navy hero;
+- Purple focus/selection/drag feedback;
 - White active navigation + Ink + Lime icon;
-- Purple focus rings;
-- restrained hover lift on actionable elements.
+- restrained hover lift.
 
 ### Don’t
 
-- Lime text on White/Canvas;
-- Orange text on White/Canvas;
-- White text on Lime/Orange;
-- make every button the same accent color;
-- hover static informational cards as if they were clickable;
-- reintroduce migration CSS layers or `!important`.
+- Tangerine CTA buttons;
+- Tangerine drop-zone interaction;
+- Lime/Tangerine text on White;
+- White text on Lime/Tangerine;
+- multiple competing primary colors;
+- hover static informational cards as if clickable;
+- reintroduce migration CSS layers, Tailwind or `!important` without an explicit architectural decision.
