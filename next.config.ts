@@ -1,26 +1,13 @@
 import type { NextConfig } from "next";
 
-const securityHeaders = [
-  { key: "X-Content-Type-Options", value: "nosniff" },
-  { key: "X-Frame-Options", value: "SAMEORIGIN" },
-  { key: "Content-Security-Policy", value: "frame-ancestors 'self';" },
-  { key: "Referrer-Policy", value: "no-referrer" },
-  { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
-];
-
+// Giftomat is a 100% client-side app. Static export produces a self-contained
+// `out/` directory that a minimal `node:http` server (server.js) serves directly.
+// This avoids running a heavy `next build` on the deploy host at startup.
+// The security headers that `headers()` used to set are enforced in server.js,
+// because `headers()` is not supported together with `output: "export"`.
 const nextConfig: NextConfig = {
-  async headers() {
-    return [
-      { source: "/:path*", headers: securityHeaders },
-      {
-        source: "/sw.js",
-        headers: [
-          { key: "Cache-Control", value: "no-cache, no-store, must-revalidate" },
-          { key: "Content-Type", value: "application/javascript; charset=utf-8" },
-        ],
-      },
-    ];
-  },
+  output: "export",
+  trailingSlash: false,
 };
 
 export default nextConfig;
