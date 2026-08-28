@@ -751,6 +751,7 @@ export default function GiftomatPage() {
               image={selectedImage}
               disabled={stage === "working"}
               onAddFiles={addFiles}
+              onRemoveImage={removeImage}
               batchImages={images}
               onReplaceImages={replaceImages}
             />

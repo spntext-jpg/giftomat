@@ -74,6 +74,11 @@ for (const marker of ["cropImageToBlob", "crop-preview-canvas", "Подгото�
     throw new Error(`Missing crop flow: ${marker}`);
   }
 }
+if (!cropWorkspace.includes("crop-clear-button") ||
+    !cropWorkspace.includes("onRemoveImage(image.id)") ||
+    !page.includes("onRemoveImage={removeImage}")) {
+  throw new Error("Crop workspace must expose a current-image clear action");
+}
 if (!videoPanel.includes("MAX_VIDEO_BYTES = 200 * 1024 * 1024") || !video.includes("normalizeExtractionRange")) {
   throw new Error("Video import safety contract is incomplete");
 }
@@ -224,7 +229,8 @@ if (!page.includes("handleFrameDragStart") || !page.includes("handleGifPositionP
 }
 for (const marker of [
   '"portrait-3-4"', '"social-wide"', '"document-a4"', 'id: "ig-photo"',
-  'id: "linkedin-post"', 'id: "x-header"', 'id: "youtube-banner"',
+  'id: "media-wide"', 'id: "media-portrait"', 'id: "linkedin-post"',
+  'id: "x-header"', 'id: "youtube-banner"',
 ]) {
   if (!presets.includes(marker)) throw new Error(`Missing production preset: ${marker}`);
 }

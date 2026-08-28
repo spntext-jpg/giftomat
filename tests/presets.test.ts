@@ -7,6 +7,8 @@ const cropById = new Map(CROP_PRESETS.map((preset) => [preset.id, preset]));
 // GIFTOMAT_CONTRAST_PRESETS_V2_TESTS
 test("crop dropdown contains the expanded production formats", () => {
   const expected = [
+    ["media-wide", 1320, 768],
+    ["media-portrait", 1080, 1350],
     ["ig-portrait", 1080, 1350],
     ["ig-photo", 1080, 1440],
     ["linkedin-post", 1200, 628],

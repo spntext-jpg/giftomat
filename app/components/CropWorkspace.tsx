@@ -29,6 +29,7 @@ interface CropWorkspaceProps {
   image: CropSource | null;
   disabled?: boolean;
   onAddFiles: (files: FileList | File[]) => void;
+  onRemoveImage: (id: string) => void;
   batchImages: CropSource[];
   onReplaceImages: (updates: { id: string; file: File }[]) => void;
 }
@@ -47,6 +48,7 @@ export default function CropWorkspace({
   image,
   disabled = false,
   onAddFiles,
+  onRemoveImage,
   batchImages,
   onReplaceImages,
 }: CropWorkspaceProps) {
@@ -291,11 +293,33 @@ export default function CropWorkspace({
     <>
       <section className="canvas-panel crop-canvas-panel glass-panel">
         <div className="canvas-toolbar">
-
           {image && (
-            <button className="secondary-button compact" onClick={resetPosition} disabled={working || disabled}>
-              По центру
-            </button>
+            <div className="toolbar-actions">
+              <button
+                type="button"
+                className="secondary-button compact"
+                onClick={resetPosition}
+                disabled={working || batchWorking || disabled}
+              >
+                По центру
+              </button>
+              <button
+                type="button"
+                className="secondary-button compact crop-clear-button"
+                onClick={() => onRemoveImage(image.id)}
+                disabled={working || batchWorking || disabled}
+                aria-label="Убрать текущее изображение из области обрезки"
+                title="Очистить область обрезки"
+              >
+                <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M4 7h16" />
+                  <path d="M9 7V4h6v3" />
+                  <path d="m6 7 1 13h10l1-13" />
+                  <path d="M10 11v5M14 11v5" />
+                </svg>
+                <span>Очистить</span>
+              </button>
+            </div>
           )}
         </div>
 

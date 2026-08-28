@@ -120,6 +120,8 @@ export const PDF_PRESETS: Record<PdfPresetId, Omit<FixedPreset, "id">> = {
   },
 };
 export const CROP_PRESETS: FixedPreset[] = [
+  { id: "media-wide", label: "СМИ · широкий", description: "1320 × 768 px · ~1.72:1", width: 1320, height: 768 },
+  { id: "media-portrait", label: "СМИ · портрет", description: "1080 × 1350 px · 4:5", width: 1080, height: 1350 },
   { id: "ig-post", label: "Instagram · квадрат", description: "1080 × 1080 px · 1:1", width: 1080, height: 1080 },
   { id: "ig-portrait", label: "Instagram · портрет", description: "1080 × 1350 px · 4:5", width: 1080, height: 1350 },
   { id: "ig-photo", label: "Instagram · фото", description: "1080 × 1440 px · 3:4", width: 1080, height: 1440 },
