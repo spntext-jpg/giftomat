@@ -186,19 +186,31 @@ if (!design.includes("August v3 — Dark Workbench") || !design.includes("Status
 if (!manifest.includes('theme_color: "#151728"') || !layout.includes('content="#151728"')) {
   throw new Error("PWA/browser theme color must match August v3 Navy");
 }
-if (!existsSync("public/giftomat-v3.png") || !existsSync("app/icon.png")) {
-  throw new Error("Canonical Giftomat v3 icon assets are missing");
+if (!existsSync("public/giftomat-icon.png") || !existsSync("app/icon.png")) {
+  throw new Error("Canonical Giftomat icon assets are missing");
 }
-const publicIcon = readFileSync("public/giftomat-v3.png");
+if (existsSync("public/giftomat-v3.png")) {
+  throw new Error("Legacy public/giftomat-v3.png must be removed after the v8 icon migration");
+}
+const publicIcon = readFileSync("public/giftomat-icon.png");
 const appIcon = readFileSync("app/icon.png");
-if (!publicIcon.equals(appIcon)) throw new Error("app/icon.png must be byte-identical to public/giftomat-v3.png");
-if (!page.includes('src="/giftomat-v3.png?v=20260818-final"')) throw new Error("Top-left brand icon is not using Giftomat v3 artwork");
+if (!publicIcon.equals(appIcon)) {
+  throw new Error("public/giftomat-icon.png must be byte-identical to canonical app/icon.png");
+}
+if (!page.includes('src="/giftomat-icon.png?v=20260828-v8"')) {
+  throw new Error("Top-left brand icon is not using the canonical v8 artwork");
+}
 if (page.includes("giftomat-favicon-stack-v4") || layout.includes("giftomat-favicon-stack-v4") || manifest.includes("giftomat-favicon-stack-v4") || serviceWorker.includes("giftomat-favicon-stack-v4")) {
   throw new Error("Legacy favicon reference remains");
 }
-if (layout.includes("icons:")) throw new Error("Duplicate metadata.icons configuration remains; app/icon.png is canonical");
-if (!manifest.includes("/giftomat-v3.png?v=20260818-final") || !serviceWorker.includes("/giftomat-v3.png?v=20260818-final")) {
-  throw new Error("PWA/public icon references are not synchronized");
+if (layout.includes("icons:")) {
+  throw new Error("Duplicate metadata.icons configuration remains; app/icon.png is the browser favicon source");
+}
+if (!manifest.includes("/giftomat-icon.png?v=20260828-v8") || !serviceWorker.includes("/giftomat-icon.png?v=20260828-v8")) {
+  throw new Error("PWA/public icon references are not synchronized with app/icon.png");
+}
+if (page.includes("/giftomat-v3.png") || manifest.includes("/giftomat-v3.png") || serviceWorker.includes("/giftomat-v3.png")) {
+  throw new Error("Legacy Giftomat v3 icon references remain");
 }
 if (existsSync("AGENTS.md") || existsSync("CLAUDE.md")) {
   throw new Error("Duplicate AI-specific instruction files remain; rules belong in README/design.md");

@@ -235,19 +235,21 @@ Self-hosted Inter Variable is canonical.
 
 ## 15. Favicon and product mark
 
-Canonical source artwork: `public/giftomat-v3.png`.
+Canonical binary source: `app/icon.png`.
 
-The same bytes are copied to `app/icon.png` so Next.js owns the browser favicon through its file-based metadata convention. The top-left Giftomat brand mark and PWA manifest use `public/giftomat-v3.png`.
+`app/icon.png` is the Next.js file-based browser favicon. A byte-identical copy is stored at `public/giftomat-icon.png` for runtime surfaces that require a public URL. The top-left Giftomat brand mark, PWA manifest and service-worker shell use `/giftomat-icon.png?v=20260828-v8`.
 
-Visual language:
+Current visual language:
 
-- deep Navy base;
-- stacked White documents;
-- PDF / GIF / JPG / HTML labels;
-- Lime + Tangerine details;
-- strong silhouette at small sizes.
+- square 1:1 icon;
+- Lime background;
+- one centered file/document symbol;
+- dark Ink/Navy details;
+- visible GIF / PDF / JPG labels;
+- simple geometric silhouette that remains recognizable at favicon size;
+- no extra floating decoration.
 
-Do not restore legacy favicon assets or a second metadata icon configuration.
+Do not restore `public/giftomat-v3.png`, legacy favicon assets, or a second metadata icon configuration.
 
 ## 16. Accessibility and responsive rules
 
@@ -263,8 +265,8 @@ Do not restore legacy favicon assets or a second metadata icon configuration.
 
 - theme color: Navy `#151728`;
 - background: Canvas `#F7F8FC`;
-- PWA icon: `public/giftomat-v3.png`;
-- browser icon: `app/icon.png`;
+- PWA/runtime icon: `public/giftomat-icon.png` (byte-identical to `app/icon.png`);
+- browser favicon source: `app/icon.png`;
 - bump `CACHE_VERSION` when shell/icon assets change.
 
 ## 18. Engineering rules
@@ -300,3 +302,46 @@ Do not restore legacy favicon assets or a second metadata icon configuration.
 - multiple competing primary colors;
 - hover static informational cards as if clickable;
 - reintroduce migration CSS layers, Tailwind or `!important` without an explicit architectural decision.
+
+<!-- GIFTOMAT_LATEST_DECISIONS_START -->
+## Latest approved product/design decisions — August 28, 2026
+
+These decisions extend the August v3 system and should be treated as current constraints in future sprints.
+
+### Action hierarchy
+
+- Lime remains the execution color for create/prepare/generate actions.
+- Tangerine (`#FF8A2A`) is also approved for explicit download/completion actions, in addition to the local-processing status surface.
+- In the right settings panel, the primary create action belongs immediately after the final relevant setting.
+- A generated result and its download action belong below the create action, never above it.
+
+### GIF interaction
+
+- GIF formats are neutral presets rather than platform warnings.
+- Supported product directions include source ratio, X 16:9, 1:1, 4:5 and 9:16.
+- When a fixed output ratio is selected, users can reposition each frame inside the output canvas.
+- Frame order is user-controlled by drag and drop.
+- Reordering and frame positioning are separate interactions and must not overwrite each other's state.
+
+### Crop interaction
+
+- Crop must expose a clear/remove-current-image action when an image is loaded.
+- Clearing the Crop source removes only the active image, not the whole workspace.
+- Editorial/media crop presets include:
+  - `1320 × 768 px` — wide media/editorial image;
+  - `1080 × 1350 px` — portrait 4:5 media/social image.
+
+### Product icon direction — landed
+
+Approved visual direction for the next canonical `app/icon.png`:
+
+- square 1:1 asset;
+- Lime background;
+- one centered file/document mark;
+- dark Ink/Navy details;
+- visible `gif`, `pdf`, `jpg` labels;
+- simple, geometric, premium and legible at small favicon sizes;
+- no extra floating objects and no unnecessary text.
+
+`app/icon.png` is the canonical favicon/application binary. `public/giftomat-icon.png` is its byte-identical public runtime copy, and manifest/service-worker/top-left references use `/giftomat-icon.png?v=20260828-v8`.
+<!-- GIFTOMAT_LATEST_DECISIONS_END -->

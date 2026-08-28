@@ -46,10 +46,13 @@ Giftomat не имеет серверного media-processing pipeline. Canvas,
 
 ## Favicon / app icon
 
-- `public/giftomat-v3.png` — канонический product/PWA/brand asset;
-- `app/icon.png` — byte-identical copy для Next.js file-based browser favicon;
-- верхний левый brand mark использует `/giftomat-v3.png`;
-- legacy favicon assets отсутствуют.
+- `app/icon.png` — canonical binary source and Next.js file-based browser favicon.
+- `public/giftomat-icon.png` — byte-identical runtime/PWA/brand copy generated from `app/icon.png`.
+- top-left Giftomat product mark uses `/giftomat-icon.png?v=20260828-v8`;
+- PWA manifest and service-worker shell use `/giftomat-icon.png?v=20260828-v8`;
+- legacy `public/giftomat-v3.png` is removed.
+
+When changing the icon, replace `app/icon.png` first, synchronize the public copy/runtime references, bump `CACHE_VERSION`, and run `npm run verify`.
 
 ## Технологии
 
@@ -105,3 +108,42 @@ npm run verify
 ## Production
 
 Основная release-проверка — `npm run verify`. После успешного commit/push ветки `main` production deployment выполняется существующим Vercel workflow проекта.
+
+<!-- GIFTOMAT_CURRENT_STATE_START -->
+## Current product state — August 28, 2026
+
+The repository state after the August 28 sprints includes:
+
+- GIF output presets: source ratio, X 16:9, square 1:1, portrait 4:5 and vertical 9:16.
+- Fixed GIF presets support per-frame positioning inside the output frame.
+- GIF frame thumbnails can be reordered by drag and drop; frame IDs and individual timing remain attached to the frame.
+- The old warning that treated a portrait GIF as inherently unsuitable for X is removed. X is one optional output preset, not a global GIF constraint.
+- Primary create/prepare actions live directly after the relevant settings in the right control panel; generated result/download controls appear below the create action.
+- Download/completion actions use Tangerine (`#FF8A2A`) + Ink, while execution/create actions remain Lime + Ink.
+- Crop supports clearing/removing the currently active image so another source can be added without resetting unrelated frames.
+- Crop includes editorial/media presets for `1320 × 768 px` and `1080 × 1350 px`.
+- `npm run verify` remains the mandatory production quality gate.
+
+### Icon migration status — completed
+
+A new square Giftomat icon has been approved for the next asset update:
+
+- bright Lime background;
+- one centered file/document symbol;
+- `gif`, `pdf`, `jpg` labels;
+- modern minimal app-icon treatment;
+- intended canonical filename: `app/icon.png`;
+- intended use: browser favicon and application/PWA icon.
+
+The icon migration is complete: `app/icon.png` is the canonical binary source and `public/giftomat-icon.png` is its byte-identical runtime/PWA copy. The PWA manifest, service worker and top-left brand mark use `/giftomat-icon.png?v=20260828-v8`. Legacy `public/giftomat-v3.png` is removed, and the service-worker cache version is bumped with the asset migration.
+
+### Patch workflow
+
+Every new Giftomat patch script must use a new versioned filename. Never overwrite or reuse a previous patch filename.
+
+Preferred form:
+
+`giftomat_<scope>_YYYYMMDD_vN.py`
+
+Patch scripts are local migration artifacts and must not be committed to Git.
+<!-- GIFTOMAT_CURRENT_STATE_END -->

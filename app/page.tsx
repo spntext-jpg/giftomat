@@ -620,7 +620,7 @@ export default function GiftomatPage() {
       <header className="topbar glass-panel">
         <div className="brand-lockup">
           <div className="brand-mark" aria-hidden="true">
-            <img className="brand-mark-image" src="/giftomat-v3.png?v=20260818-final" alt="" />
+            <img className="brand-mark-image" src="/giftomat-icon.png?v=20260828-v8" alt="" />
           </div>
           <div>
             <strong>Гифтомат</strong>
