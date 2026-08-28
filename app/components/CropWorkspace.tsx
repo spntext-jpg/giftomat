@@ -459,7 +459,26 @@ export default function CropWorkspace({
             </div>
           )}
 
-          {error && <div className="error-card" role="alert">{error}</div>}
+          <div className="settings-action-block">
+          <button
+            className="primary-button"
+            onClick={batchMode ? exportCropBatch : exportCrop}
+            disabled={batchMode ? (!batchImages.length || batchWorking || disabled) : (!image || working || disabled)}
+          >
+            {(working || batchWorking) ? <span className="button-spinner" /> : null}
+            {batchMode
+              ? batchWorking
+                ? `Обрабатываем… ${batchProgress}%`
+                : `Обрезать все кадры (${batchImages.length})`
+              : working
+                ? "Обрезаем…"
+                : image
+                  ? "Подготовить файл"
+                  : "Добавьте изображение"}
+          </button>
+        </div>
+
+        {error && <div className="error-card" role="alert">{error}</div>}
           {!batchMode && result && (
             <div className="result-card crop-result-card">
               <div className="result-check">✓</div>
@@ -494,25 +513,6 @@ export default function CropWorkspace({
           )}
         </div>
 
-        <div className="control-footer">
-          <button
-            className="primary-button"
-            onClick={batchMode ? exportCropBatch : exportCrop}
-            disabled={batchMode ? (!batchImages.length || batchWorking || disabled) : (!image || working || disabled)}
-          >
-            {(working || batchWorking) ? <span className="button-spinner" /> : null}
-            {batchMode
-              ? batchWorking
-                ? `Обрабатываем… ${batchProgress}%`
-                : `Обрезать все кадры (${batchImages.length})`
-              : working
-                ? "Обрезаем…"
-                : image
-                  ? "Подготовить файл"
-                  : "Добавьте изображение"}
-          </button>
-          <span>Файл обрабатывается локально</span>
-        </div>
       </aside>
     </>
   );

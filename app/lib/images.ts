@@ -1,10 +1,16 @@
 import type { FitMode } from "./presets";
 
+export interface FramePosition {
+  x: number;
+  y: number;
+}
+
 export interface RenderOptions {
   width: number;
   height: number;
   fit?: FitMode;
   background?: string | null;
+  position?: FramePosition;
 }
 
 export function loadImage(src: string): Promise<HTMLImageElement> {
@@ -56,8 +62,12 @@ export function drawImageToCanvas(
 
   const drawWidth = sourceWidth * scale;
   const drawHeight = sourceHeight * scale;
-  const dx = (width - drawWidth) / 2;
-  const dy = (height - drawHeight) / 2;
+  const maxOffsetX = Math.max(0, (drawWidth - width) / 2);
+  const maxOffsetY = Math.max(0, (drawHeight - height) / 2);
+  const normalizedX = Math.max(-1, Math.min(1, options.position?.x ?? 0));
+  const normalizedY = Math.max(-1, Math.min(1, options.position?.y ?? 0));
+  const dx = (width - drawWidth) / 2 + normalizedX * maxOffsetX;
+  const dy = (height - drawHeight) / 2 + normalizedY * maxOffsetY;
 
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = "high";
@@ -69,7 +79,8 @@ export function imagesToImageData(
   images: HTMLImageElement[],
   width: number,
   height: number,
-  fit: FitMode = "cover"
+  fit: FitMode = "cover",
+  positions: FramePosition[] = []
 ): ImageData[] {
   const canvas = document.createElement("canvas");
   canvas.width = width;
@@ -77,8 +88,8 @@ export function imagesToImageData(
   const ctx = canvas.getContext("2d", { willReadFrequently: true });
   if (!ctx) throw new Error("Canvas 2D недоступен в этом браузере");
 
-  return images.map((img) => {
-    drawImageToCanvas(ctx, img, { width, height, fit });
+  return images.map((img, index) => {
+    drawImageToCanvas(ctx, img, { width, height, fit, position: positions[index] });
     return ctx.getImageData(0, 0, width, height);
   });
 }

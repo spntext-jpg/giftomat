@@ -12,7 +12,7 @@ August v3 is the single design system for Giftomat. The final production contrac
 2. **White is interaction space.** Inputs, settings, active navigation and drop zones use White Surface.
 3. **Lime is the primary bright action surface.** Execution, generate/prepare and completion/download actions use Lime + Ink.
 4. **Purple is interaction detail.** Focus, selection, hover/drag emphasis and precise interactive cues use Purple.
-5. **Tangerine is status-only.** `#FF8A2A` is reserved for the static **“Обработка локально”** badge.
+5. **Tangerine is status/download-only.** `#FF8A2A` is reserved for the static **“Обработка локально”** badge and download/completion actions.
 6. **Bright colors are surfaces, not small text.** Lime/Tangerine foreground text on White is forbidden.
 7. **Motion confirms interactivity.** Hover movement is restrained and appears only on actionable controls.
 
@@ -68,7 +68,7 @@ Purple is not the default primary CTA.
 
 ### Tangerine
 
-Tangerine is intentionally scarce. It is used **only** as the background of the `Обработка локально` badge with Ink foreground.
+Tangerine is intentionally scarce. It is used for the `Обработка локально` badge and explicit download/completion actions, always with Ink foreground.
 
 Do not use Tangerine for:
 
@@ -159,7 +159,7 @@ Disabled CTA keeps the same semantic color but reduced opacity and no interactio
 
 ### Download / completion — `.download-button`
 
-Also Lime + Ink. The difference between execution and download is context/content, not a competing accent color.
+Tangerine + Ink. Download/completion is visually distinct from Lime execution while staying inside the same high-contrast system.
 
 ### Secondary / icon
 
@@ -285,7 +285,7 @@ Do not restore legacy favicon assets or a second metadata icon configuration.
 
 - White drop zone on Navy;
 - Lime primary/footer CTA + Ink;
-- Lime download/completion + Ink;
+- Tangerine download/completion + Ink;
 - Tangerine local-processing badge + Ink;
 - Purple focus/selection/drag feedback;
 - White active navigation + Ink + Lime icon;
@@ -293,7 +293,7 @@ Do not restore legacy favicon assets or a second metadata icon configuration.
 
 ### Don’t
 
-- Tangerine CTA buttons;
+- Tangerine primary/execution CTA buttons;
 - Tangerine drop-zone interaction;
 - Lime/Tangerine text on White;
 - White text on Lime/Tangerine;

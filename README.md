@@ -4,7 +4,7 @@ Giftomat — локальная браузерная медиастудия дл
 
 ## Возможности
 
-- **GIF** из изображений с индивидуальной длительностью кадров и сохранением ориентации первого кадра.
+- **GIF** из изображений с индивидуальной длительностью кадров, изменяемым порядком, social-пресетами и ручным позиционированием внутри фиксированного формата.
 - **Video → GIF frames**: локальное извлечение кадров из MP4/WebM/MOV до 200 МБ.
 - **PDF-карусели** с social/document preset'ами и режимами contain/cover.
 - **HTML → PDF** через sandbox preview и постраничный рендер.
@@ -36,9 +36,9 @@ Giftomat не имеет серверного media-processing pipeline. Canvas,
 - Canvas `#F7F8FC`;
 - Navy `#151728` — sidebar и media workbench;
 - White `#FFFFFF` — controls, active navigation и drop-zone;
-- Lime `#DFFF6A` + Ink — primary/execution, download/completion, hero chips и progress;
+- Lime `#DFFF6A` + Ink — primary/execution, hero chips и progress;
 - Purple `#6E5CF6` — focus, selection и hover/drag interaction details;
-- Tangerine `#FF8A2A` + Ink — **только** badge `Обработка локально`.
+- Tangerine `#FF8A2A` + Ink — badge `Обработка локально` и download/completion actions.
 
 Ключевое правило контраста: яркие Lime/Tangerine используются как поверхности с Ink-текстом, а не как мелкий foreground на White/Canvas.
 

@@ -300,7 +300,19 @@ export default function HtmlToPdfPanel({ disabled = false }: HtmlToPdfPanelProps
             <div className="range-labels"><span>Легче файл</span><span>Печатное качество</span></div>
           </div>
 
-          {error && <div className="error-card" role="alert">{error}</div>}
+          <div className="settings-action-block">
+          <button
+            type="button"
+            className="primary-button"
+            onClick={exportPdf}
+            disabled={!htmlSource.trim() || working || disabled}
+          >
+            {working ? <span className="button-spinner" /> : null}
+            {working ? `Рендерим… ${progress}%` : "Создать PDF"}
+          </button>
+        </div>
+
+        {error && <div className="error-card" role="alert">{error}</div>}
           {result && (
             <div className="result-card">
               <div className="result-check">✓</div>
@@ -322,18 +334,6 @@ export default function HtmlToPdfPanel({ disabled = false }: HtmlToPdfPanelProps
           )}
         </div>
 
-        <div className="control-footer">
-          <button
-            type="button"
-            className="primary-button"
-            onClick={exportPdf}
-            disabled={!htmlSource.trim() || working || disabled}
-          >
-            {working ? <span className="button-spinner" /> : null}
-            {working ? `Рендерим… ${progress}%` : "Создать PDF"}
-          </button>
-          <span>Файл обрабатывается локально</span>
-        </div>
       </aside>
     </>
   );

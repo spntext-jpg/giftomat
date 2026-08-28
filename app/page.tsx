@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type ChangeEvent, type CSSProperties, type DragEvent, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ChangeEvent, type CSSProperties, type DragEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import CropWorkspace from "./components/CropWorkspace";
 import VideoImportPanel from "./components/VideoImportPanel";
 import HtmlToPdfPanel from "./components/HtmlToPdfPanel";
@@ -13,6 +13,7 @@ import {
   imageToJpegBlob,
   imageToOptimizedBlob,
   imagesToImageData,
+  type FramePosition,
   loadImage,
 } from "./lib/images";
 import { buildImagePdf, type JpegPdfPage } from "./lib/pdf";
@@ -27,6 +28,8 @@ import {
   type WebOutputFormat,
   buildGifAttempts,
   GIF_MOBILE_MAX_BYTES,
+  GIF_PRESETS,
+  type GifPresetId,
   GIF_WEB_MAX_BYTES,
   getNextFrameDuration,
 } from "./lib/presets";
@@ -50,23 +53,11 @@ interface ExportResult {
   downloadUrl: string;
   previewUrl?: string;
   warning?: string;
-  aspectHint?: string;
 }
 
 const MAX_FILES = 60;
 const MAX_FILE_BYTES = 40 * 1024 * 1024;
 
-function getGifXAspectHint(width: number, height: number): string | undefined {
-  if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) return undefined;
-  const ratio = width / height;
-  if (ratio < 0.95) {
-    return `GIF ${width} × ${height} слишком вертикальный для поста в X. В ленте могут появиться полосы справа и слева. Лучше слегка подрезать кадры до 1:1 или 16:9.`;
-  }
-  if (ratio > 2.05) {
-    return `GIF ${width} × ${height} слишком широкий для поста в X. Для более аккуратного вида лучше слегка подрезать кадры до 16:9 или 1:1.`;
-  }
-  return undefined;
-}
 
 
 const TOOL_COPY: Record<ToolMode, { title: string; description: string }> = {
@@ -128,6 +119,9 @@ export default function GiftomatPage() {
   const [previewMode, setPreviewMode] = useState<PreviewMode>("source");
   const [frameDuration, setFrameDuration] = useState(2);
   const [frameDurationOverrides, setFrameDurationOverrides] = useState<Record<string, number>>({});
+  const [gifPresetId, setGifPresetId] = useState<GifPresetId>("source");
+  const [gifFramePositions, setGifFramePositions] = useState<Record<string, FramePosition>>({});
+  const [draggedFrameId, setDraggedFrameId] = useState<string | null>(null);
   const [pdfPreset, setPdfPreset] = useState<PdfPresetId>("linkedin-portrait");
   const [pdfFit, setPdfFit] = useState<"contain" | "cover">("contain");
   const [jpegQuality, setJpegQuality] = useState(82);
@@ -155,6 +149,13 @@ export default function GiftomatPage() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const addFilesInFlightRef = useRef(false);
   const imagesRef = useRef<ImageItem[]>([]);
+  const gifPositionDragRef = useRef<{
+    pointerId: number;
+    frameId: string;
+    startX: number;
+    startY: number;
+    startPosition: FramePosition;
+  } | null>(null);
 
   useEffect(() => {
     imagesRef.current = images;
@@ -183,6 +184,9 @@ export default function GiftomatPage() {
     () => images.find((image) => image.id === selectedId) ?? images[0] ?? null,
     [images, selectedId]
   );
+  const selectedGifPreset = GIF_PRESETS.find((preset) => preset.id === gifPresetId) ?? GIF_PRESETS[0];
+  const selectedGifPosition = selectedImage ? (gifFramePositions[selectedImage.id] ?? { x: 0, y: 0 }) : { x: 0, y: 0 };
+
 
   useEffect(() => {
     if (activeTool !== "compress" || !selectedImage) {
@@ -349,11 +353,70 @@ export default function GiftomatPage() {
     invalidateResult();
   };
 
+  const reorderFrames = (sourceId: string, targetId: string) => {
+    if (sourceId === targetId) return;
+    setImages((current) => {
+      const from = current.findIndex((item) => item.id === sourceId);
+      const to = current.findIndex((item) => item.id === targetId);
+      if (from < 0 || to < 0) return current;
+      const next = [...current];
+      const [moved] = next.splice(from, 1);
+      next.splice(to, 0, moved);
+      return next;
+    });
+    invalidateResult();
+  };
+
+  const handleFrameDragStart = (event: DragEvent<HTMLDivElement>, id: string) => {
+    setDraggedFrameId(id);
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", id);
+  };
+
+  const handleFrameDrop = (event: DragEvent<HTMLDivElement>, targetId: string) => {
+    event.preventDefault();
+    event.stopPropagation();
+    const sourceId = draggedFrameId || event.dataTransfer.getData("text/plain");
+    if (sourceId) reorderFrames(sourceId, targetId);
+    setDraggedFrameId(null);
+  };
+
+  const handleGifPositionPointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (activeTool !== "gif" || gifPresetId === "source" || previewMode === "result" || !selectedImage) return;
+    event.currentTarget.setPointerCapture(event.pointerId);
+    gifPositionDragRef.current = {
+      pointerId: event.pointerId,
+      frameId: selectedImage.id,
+      startX: event.clientX,
+      startY: event.clientY,
+      startPosition: gifFramePositions[selectedImage.id] ?? { x: 0, y: 0 },
+    };
+  };
+
+  const handleGifPositionPointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
+    const drag = gifPositionDragRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    const rect = event.currentTarget.getBoundingClientRect();
+    const next = {
+      x: Math.max(-1, Math.min(1, drag.startPosition.x + ((event.clientX - drag.startX) / Math.max(1, rect.width)) * 2)),
+      y: Math.max(-1, Math.min(1, drag.startPosition.y + ((event.clientY - drag.startY) / Math.max(1, rect.height)) * 2)),
+    };
+    setGifFramePositions((current) => ({ ...current, [drag.frameId]: next }));
+    invalidateResult();
+  };
+
+  const handleGifPositionPointerEnd = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (gifPositionDragRef.current?.pointerId === event.pointerId) gifPositionDragRef.current = null;
+  };
+
   const generateGif = async () => {
     const loaded = await Promise.all(images.map((image) => loadImage(image.url)));
     const firstFrame = loaded[0];
-    const attempts = buildGifAttempts(firstFrame.naturalWidth, firstFrame.naturalHeight);
+    const sourceWidth = selectedGifPreset.width ?? firstFrame.naturalWidth;
+    const sourceHeight = selectedGifPreset.height ?? firstFrame.naturalHeight;
+    const attempts = buildGifAttempts(sourceWidth, sourceHeight);
     const delaysMs = images.map((image) => (frameDurationOverrides[image.id] ?? frameDuration) * 1000);
+    const positions = images.map((image) => gifFramePositions[image.id] ?? { x: 0, y: 0 });
     const hasCustomDurations = images.some((image) => frameDurationOverrides[image.id] !== undefined);
 
     let finalBlob: Blob | null = null;
@@ -368,7 +431,7 @@ export default function GiftomatPage() {
 
       // The first frame defines the canvas. Every following frame uses cover,
       // preventing artificial white or transparent side bars.
-      const frames = imagesToImageData(loaded, attempt.width, attempt.height, "cover");
+      const frames = imagesToImageData(loaded, attempt.width, attempt.height, "cover", positions);
       finalBlob = await encodeGif(
         frames,
         delaysMs,
@@ -388,7 +451,6 @@ export default function GiftomatPage() {
       warning = "GIF готов для загрузки через x.com. Для мобильного приложения X нужен файл до 5 МБ.";
     }
 
-    const aspectHint = getGifXAspectHint(finalSize.width, finalSize.height);
     const downloadUrl = createDownloadUrl(finalBlob);
     const previewUrl = downloadUrl;
     setResult({
@@ -407,7 +469,6 @@ export default function GiftomatPage() {
       ],
       previewUrl,
       warning,
-      aspectHint,
     });
     setPreviewMode("result");
   };
@@ -716,7 +777,7 @@ export default function GiftomatPage() {
             onDrop={(event: DragEvent<HTMLElement>) => {
               event.preventDefault();
               setIsDragging(false);
-              addFiles(event.dataTransfer.files);
+              if (event.dataTransfer.files.length > 0) addFiles(event.dataTransfer.files);
             }}
           >
             <div className="canvas-toolbar">
@@ -748,13 +809,27 @@ export default function GiftomatPage() {
             ) : (
               <div className={`preview-workspace ${previewMode === "result" ? "result-mode" : ""}`}>
                 <div className={`preview-stage ${previewMode === "result" ? "result-mode" : ""}`}>
-                  <div className="preview-media-shell">
+                  <div
+                    className={`preview-media-shell ${activeTool === "gif" && gifPresetId !== "source" && previewMode !== "result" ? "gif-positionable" : ""}`}
+                    onPointerDown={handleGifPositionPointerDown}
+                    onPointerMove={handleGifPositionPointerMove}
+                    onPointerUp={handleGifPositionPointerEnd}
+                    onPointerCancel={handleGifPositionPointerEnd}
+                  >
                     {previewMode === "result" && result?.previewUrl ? (
                       <img src={result.previewUrl} alt="Готовая GIF-анимация" className="preview-image contain result-media" />
                     ) : activeTool === "compress" && showCompressPreview && comparePreview ? (
                       <img src={comparePreview.url} alt="Сжатая версия" className="preview-image contain compare-media" />
                     ) : selectedImage ? (
-                      <img src={selectedImage.url} alt={selectedImage.file.name} className="preview-image contain source-media" />
+                      <img
+                        src={selectedImage.url}
+                        alt={selectedImage.file.name}
+                        className={`preview-image source-media ${activeTool === "gif" && gifPresetId !== "source" ? "gif-framed-preview" : "contain"}`}
+                        style={activeTool === "gif" && gifPresetId !== "source" ? {
+                          aspectRatio: `${selectedGifPreset.width} / ${selectedGifPreset.height}`,
+                          objectPosition: `${50 - selectedGifPosition.x * 50}% ${50 - selectedGifPosition.y * 50}%`,
+                        } : undefined}
+                      />
                     ) : null}
                   </div>
 
@@ -783,7 +858,15 @@ export default function GiftomatPage() {
 
                 <div className="frame-strip" aria-label="Загруженные изображения">
                   {images.map((image, index) => (
-                    <div key={image.id} className={`frame-card ${selectedImage?.id === image.id ? "selected" : ""}`}>
+                    <div
+                      key={image.id}
+                      className={`frame-card ${selectedImage?.id === image.id ? "selected" : ""} ${draggedFrameId === image.id ? "dragging-frame" : ""}`}
+                      draggable={stage !== "working"}
+                      onDragStart={(event) => handleFrameDragStart(event, image.id)}
+                      onDragOver={(event) => { event.preventDefault(); event.stopPropagation(); }}
+                      onDrop={(event) => handleFrameDrop(event, image.id)}
+                      onDragEnd={() => setDraggedFrameId(null)}
+                    >
                       <button className="frame-select" disabled={stage === "working"} onClick={() => { setSelectedId(image.id); setPreviewMode("source"); }} aria-label={`Выбрать кадр ${index + 1}`}>
                         <img src={image.url} alt="" />
                         <span>{index + 1}</span>
@@ -839,6 +922,31 @@ export default function GiftomatPage() {
                   >
                     Кадры из видео
                   </button>
+                  <div className="setting-group">
+                    <label htmlFor="gif-preset">Формат GIF</label>
+                    <div className="pdf-preset-select">
+                      <select
+                        id="gif-preset"
+                        className="pdf-preset-control"
+                        value={gifPresetId}
+                        disabled={stage === "working"}
+                        onChange={(event: ChangeEvent<HTMLSelectElement>) => {
+                          setGifPresetId(event.target.value as GifPresetId);
+                          invalidateResult();
+                        }}
+                      >
+                        {GIF_PRESETS.map((preset) => (
+                          <option key={preset.id} value={preset.id}>
+                            {preset.label}{preset.width && preset.height ? ` · ${preset.width} × ${preset.height} px` : ""}
+                          </option>
+                        ))}
+                      </select>
+                      <svg className="pdf-preset-chevron" aria-hidden="true" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="m6 8 4 4 4-4" />
+                      </svg>
+                    </div>
+                    {gifPresetId !== "source" && <p className="setting-hint">Перетаскивайте активный кадр в предпросмотре, чтобы выбрать область внутри формата.</p>}
+                  </div>
                   <div className="setting-group">
                     <div className="setting-row">
                       <label htmlFor="frame-duration">Задержка кадра</label>
@@ -931,6 +1039,14 @@ export default function GiftomatPage() {
                 </>
               )}
 
+              <div className="settings-action-block">
+                <button className="primary-button" onClick={runExport} disabled={!canGenerate}>
+                  {stage === "working" ? <span className="button-spinner" /> : null}
+                  {buttonLabel}
+                </button>
+                <span>{activeTool === "gif" ? "Минимум 2 изображения" : "Порядок файлов сохраняется"}</span>
+              </div>
+
               {errorMessage && <div className="error-card" role="alert">{errorMessage}</div>}
 
               {result && (
@@ -940,22 +1056,6 @@ export default function GiftomatPage() {
                     <strong>{result.title}</strong>
                     <div className="result-meta">{result.details.map((detail) => <span key={detail}>{detail}</span>)}</div>
                     {result.warning && <p className="result-warning">{result.warning}</p>}
-                    {result.aspectHint && (
-                      <div className="result-tip">
-                        <p>{result.aspectHint}</p>
-                        {result.kind === "gif" && (
-                          <button
-                            className="secondary-button result-inline-action"
-                            onClick={() => {
-                              if (images[0]) setSelectedId(images[0].id);
-                              switchTool("crop");
-                            }}
-                          >
-                            Подрезать в Crop
-                          </button>
-                        )}
-                      </div>
-                    )}
                   </div>
                   <button
                     type="button"
@@ -969,13 +1069,7 @@ export default function GiftomatPage() {
               )}
             </div>
 
-            <div className="control-footer">
-              <button className="primary-button" onClick={runExport} disabled={!canGenerate}>
-                {stage === "working" ? <span className="button-spinner" /> : null}
-                {buttonLabel}
-              </button>
-              <span>{activeTool === "gif" ? "Минимум 2 изображения" : "Порядок файлов сохраняется"}</span>
-            </div>
+
           </aside>
             </>
           )}

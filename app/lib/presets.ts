@@ -7,6 +7,29 @@ export type PdfPresetId =
   | "landscape"
   | "story"
   | "document-a4";
+export type GifPresetId =
+  | "source"
+  | "x-16-9"
+  | "square"
+  | "portrait-4-5"
+  | "vertical-9-16";
+
+export interface GifPreset {
+  id: GifPresetId;
+  label: string;
+  description: string;
+  width?: number;
+  height?: number;
+}
+
+export const GIF_PRESETS: GifPreset[] = [
+  { id: "source", label: "Исходные пропорции", description: "Сохраняет соотношение сторон первого кадра" },
+  { id: "x-16-9", label: "X · 16:9", description: "1280 × 720 px", width: 1280, height: 720 },
+  { id: "square", label: "Квадрат · 1:1", description: "1080 × 1080 px", width: 1080, height: 1080 },
+  { id: "portrait-4-5", label: "Портрет · 4:5", description: "1080 × 1350 px", width: 1080, height: 1350 },
+  { id: "vertical-9-16", label: "Вертикаль · 9:16", description: "720 × 1280 px", width: 720, height: 1280 },
+];
+
 export type FitMode = "cover" | "contain";
 export type WebOutputFormat = "jpeg" | "webp";
 

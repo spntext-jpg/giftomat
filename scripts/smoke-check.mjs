@@ -58,11 +58,11 @@ for (const marker of [
 ]) {
   if (!page.includes(marker)) throw new Error(`Missing navigation flow: ${marker}`);
 }
-for (const forbidden of ["x-landscape", "X · полный экран", "GIF_PRESETS", "GifPresetId", "gifPreset"]) {
+for (const forbidden of ["x-landscape", "X · полный экран"]) {
   if (page.includes(forbidden) || presets.includes(forbidden)) throw new Error(`Obsolete forced-X format remains: ${forbidden}`);
 }
-if (!/imagesToImageData\([\s\S]*?,\s*"cover"\s*\)/m.test(page)) {
-  throw new Error("GIF generation must explicitly use cover rendering");
+if (!/imagesToImageData\(\s*loaded,\s*attempt\.width,\s*attempt\.height,\s*"cover",\s*positions\s*\)/m.test(page)) {
+  throw new Error("GIF generation must explicitly use cover rendering with per-frame positions");
 }
 if (!images.includes('fit === "cover"') || !images.includes("Math.max(")) {
   throw new Error("Cover rendering math is missing");
@@ -120,15 +120,15 @@ for (const obsolete of [
 if (!/\.primary-button \{[\s\S]*?background: var\(--august-lime\);[\s\S]*?color: var\(--august-lime-ink\)/m.test(globalCss)) {
   throw new Error("Execution CTA must use Lime background with Ink text");
 }
-if (!/\.download-button \{[\s\S]*?background: var\(--august-lime\);[\s\S]*?color: var\(--august-lime-ink\)/m.test(globalCss)) {
-  throw new Error("Download/completion action must use Lime background with Ink text");
+if (!/\.download-button \{[\s\S]*?background: var\(--august-orange\);[\s\S]*?color: var\(--august-orange-ink\)/m.test(globalCss)) {
+  throw new Error("Download/completion action must use Tangerine background with Ink text");
 }
 if (!/\.privacy-pill \{[\s\S]*?background: var\(--august-orange\);[\s\S]*?color: var\(--august-orange-ink\)/m.test(globalCss)) {
   throw new Error("Local-processing badge must use Tangerine with Ink text");
 }
-const orangeUsageLines = globalCss.split("\\n").filter((line) => line.includes("var(--august-orange)"));
-if (orangeUsageLines.length !== 1 || !orangeUsageLines[0].includes("background: var(--august-orange);")) {
-  throw new Error("Tangerine must be reserved for the local-processing badge background");
+const orangeBackgroundCount = (globalCss.match(/background: var\(--august-orange\);/g) ?? []).length;
+if (orangeBackgroundCount !== 2) {
+  throw new Error("Tangerine must be reserved for local-processing and download/completion surfaces");
 }
 if (!/\.empty-dropzone \{[\s\S]*?background: var\(--august-surface\);[\s\S]*?color: var\(--august-ink\)/m.test(globalCss)) {
   throw new Error("Upload/drop zone must be White Surface with Ink text");
@@ -174,7 +174,7 @@ if (page.includes("aria-pressed={activeTool")) throw new Error("Navigation desti
 if (!page.includes("setImages((current) => current.map((image) => replacements.get(image.id) ?? image));")) {
   throw new Error("replaceImages must keep its state updater pure");
 }
-if (!design.includes("August v3 — Dark Workbench") || !design.includes("Status: production canonical") || !design.includes("Tangerine is status-only")) {
+if (!design.includes("August v3 — Dark Workbench") || !design.includes("Status: production canonical") || !design.includes("Tangerine is status/download-only")) {
   throw new Error("design.md is missing the canonical production August v3 contract");
 }
 
@@ -211,6 +211,17 @@ for (const header of ["X-Content-Type-Options", "X-Frame-Options", "Referrer-Pol
 }
 
 // Presets and repository hygiene.
+for (const marker of [
+  "export const GIF_PRESETS",
+  'id: "x-16-9"',
+  'id: "portrait-4-5"',
+  'id: "vertical-9-16"',
+]) {
+  if (!presets.includes(marker)) throw new Error(`Missing GIF preset contract: ${marker}`);
+}
+if (!page.includes("handleFrameDragStart") || !page.includes("handleGifPositionPointerMove")) {
+  throw new Error("GIF reorder/position interaction contract is incomplete");
+}
 for (const marker of [
   '"portrait-3-4"', '"social-wide"', '"document-a4"', 'id: "ig-photo"',
   'id: "linkedin-post"', 'id: "x-header"', 'id: "youtube-banner"',
