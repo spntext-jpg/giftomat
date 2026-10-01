@@ -9,7 +9,6 @@ import { createDownloadUrl, revokeDownloadUrl, triggerDownload } from "./lib/dow
 import { encodeGif } from "./lib/encoder";
 import { looksLikeHeic, resolveImageFile } from "./lib/heic";
 import {
-  computeDimensions,
   imageToJpegBlob,
   imageToOptimizedBlob,
   imagesToImageData,

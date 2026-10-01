@@ -6,15 +6,21 @@ import {
   useRef,
   useState,
   type ChangeEvent,
+  type DragEvent,
+  type KeyboardEvent as ReactKeyboardEvent,
   type PointerEvent as ReactPointerEvent,
-  type WheelEvent,
 } from "react";
 import { createDownloadUrl, revokeDownloadUrl, triggerDownload } from "../lib/download";
 import {
+  CROP_MAX_ZOOM,
+  CROP_MIN_ZOOM,
   clampCropValue,
   cropImageToBlob,
   drawCrop,
   getCropPreviewSize,
+  getCropTransform,
+  nudgeCropOffset,
+  stepCropZoom,
 } from "../lib/crop";
 import { loadImage } from "../lib/images";
 import { CROP_PRESETS, formatBytes, safeBaseName, type FixedPreset } from "../lib/presets";
@@ -44,6 +50,90 @@ function normalizeCropDimension(value: string, fallback: number): number {
   if (!Number.isFinite(parsed)) return fallback;
   return Math.round(clampCropValue(parsed, MIN_CROP_DIMENSION, MAX_CROP_DIMENSION));
 }
+
+const NUDGE_STEP_PX = 1;
+const NUDGE_STEP_FAST_PX = 10;
+const ZOOM_BUTTON_STEP = 0.05;
+const ZOOM_WHEEL_STEP = 0.08;
+const HOLD_REPEAT_DELAY_MS = 400;
+const HOLD_REPEAT_INTERVAL_MS = 45;
+
+const CONTROL_ICON_PATHS = {
+  left: "m15 6-6 6 6 6",
+  right: "m9 6 6 6-6 6",
+  up: "m6 15 6-6 6 6",
+  down: "m6 9 6 6 6-6",
+  zoomIn: "M12 5v14M5 12h14",
+  zoomOut: "M5 12h14",
+} as const;
+
+type ControlIconName = keyof typeof CONTROL_ICON_PATHS;
+
+interface HoldButtonProps {
+  label: string;
+  icon: ControlIconName;
+  disabled: boolean;
+  onStep: () => void;
+}
+
+/** Icon button that fires once on press and keeps repeating while it is held. */
+function HoldButton({ label, icon, disabled, onStep }: HoldButtonProps) {
+  const stepRef = useRef(onStep);
+  const timerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    stepRef.current = onStep;
+  }, [onStep]);
+
+  const stop = useCallback(() => {
+    if (timerRef.current === null) return;
+    window.clearTimeout(timerRef.current);
+    timerRef.current = null;
+  }, []);
+
+  useEffect(() => {
+    if (disabled) stop();
+  }, [disabled, stop]);
+
+  useEffect(() => stop, [stop]);
+
+  const start = (event: ReactPointerEvent<HTMLButtonElement>) => {
+    if (disabled || event.button !== 0) return;
+    event.currentTarget.setPointerCapture(event.pointerId);
+    stop();
+    stepRef.current();
+    const repeat = () => {
+      stepRef.current();
+      timerRef.current = window.setTimeout(repeat, HOLD_REPEAT_INTERVAL_MS);
+    };
+    timerRef.current = window.setTimeout(repeat, HOLD_REPEAT_DELAY_MS);
+  };
+
+  // Keyboard activation produces a click without pointer events (detail === 0).
+  const handleClick = (event: { detail: number }) => {
+    if (event.detail === 0) onStep();
+  };
+
+  return (
+    <button
+      type="button"
+      className="crop-nudge-button"
+      aria-label={label}
+      title={label}
+      disabled={disabled}
+      onPointerDown={start}
+      onPointerUp={stop}
+      onPointerCancel={stop}
+      onLostPointerCapture={stop}
+      onClick={handleClick}
+    >
+      <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d={CONTROL_ICON_PATHS[icon]} />
+      </svg>
+    </button>
+  );
+}
+
 export default function CropWorkspace({
   image,
   disabled = false,
@@ -70,6 +160,8 @@ export default function CropWorkspace({
   const [batchProgress, setBatchProgress] = useState(0);
   const [batchResult, setBatchResult] = useState<{ count: number } | null>(null);
   const [selectedPresetId, setSelectedPresetId] = useState("");
+  const [isDragging, setIsDragging] = useState(false);
+  const [naturalSize, setNaturalSize] = useState<{ width: number; height: number } | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const loadedImageRef = useRef<HTMLImageElement | null>(null);
@@ -83,6 +175,12 @@ export default function CropWorkspace({
 
   const width = normalizeCropDimension(widthInput, 1200);
   const height = normalizeCropDimension(heightInput, 628);
+  const transform = naturalSize
+    ? getCropTransform(naturalSize.width, naturalSize.height, width, height, zoom, offsetX, offsetY)
+    : null;
+  const controlsLocked = disabled || working || batchWorking;
+  const canMoveX = transform !== null && transform.maxOffsetX > 0;
+  const canMoveY = transform !== null && transform.maxOffsetY > 0;
 
   const resetPosition = useCallback(() => {
     setZoom(1);
@@ -108,6 +206,11 @@ export default function CropWorkspace({
         ? loadedImageRef.current
         : await loadImage(image.url);
       loadedImageRef.current = loaded;
+      setNaturalSize((current) =>
+        current && current.width === loaded.naturalWidth && current.height === loaded.naturalHeight
+          ? current
+          : { width: loaded.naturalWidth, height: loaded.naturalHeight }
+      );
       const preview = getCropPreviewSize(width, height);
       const canvas = canvasRef.current;
       canvas.width = preview.width;
@@ -211,11 +314,82 @@ export default function CropWorkspace({
     if (dragRef.current?.pointerId === event.pointerId) dragRef.current = null;
   };
 
-  const handleWheel = (event: WheelEvent<HTMLCanvasElement>) => {
-    if (!image) return;
-    event.preventDefault();
-    setZoom((current) => clampCropValue(current + (event.deltaY > 0 ? -0.08 : 0.08), 1, 4));
+  const nudge = (axis: "x" | "y", direction: -1 | 1, pixels: number = NUDGE_STEP_PX) => {
+    if (!transform) return;
+    if (axis === "x") {
+      const range = transform.maxOffsetX;
+      setOffsetX((current) => nudgeCropOffset(current, range, direction * pixels));
+    } else {
+      const range = transform.maxOffsetY;
+      setOffsetY((current) => nudgeCropOffset(current, range, direction * pixels));
+    }
     setResult(null);
+  };
+
+  const changeZoom = (delta: number) => {
+    setZoom((current) => stepCropZoom(current, delta));
+    setResult(null);
+  };
+
+  const handleCanvasKeyDown = (event: ReactKeyboardEvent<HTMLCanvasElement>) => {
+    if (controlsLocked) return;
+    const step = event.shiftKey ? NUDGE_STEP_FAST_PX : NUDGE_STEP_PX;
+    switch (event.key) {
+      case "ArrowLeft":
+        nudge("x", -1, step);
+        break;
+      case "ArrowRight":
+        nudge("x", 1, step);
+        break;
+      case "ArrowUp":
+        nudge("y", -1, step);
+        break;
+      case "ArrowDown":
+        nudge("y", 1, step);
+        break;
+      case "+":
+      case "=":
+        changeZoom(ZOOM_BUTTON_STEP);
+        break;
+      case "-":
+      case "_":
+        changeZoom(-ZOOM_BUTTON_STEP);
+        break;
+      default:
+        return;
+    }
+    event.preventDefault();
+  };
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    // React registers onWheel as a passive listener, so preventDefault() there
+    // is ignored and the page scrolls while zooming. A native listener is needed.
+    const handleWheel = (event: WheelEvent) => {
+      event.preventDefault();
+      setZoom((current) => stepCropZoom(current, event.deltaY > 0 ? -ZOOM_WHEEL_STEP : ZOOM_WHEEL_STEP));
+      setResult(null);
+    };
+    canvas.addEventListener("wheel", handleWheel, { passive: false });
+    return () => canvas.removeEventListener("wheel", handleWheel);
+  }, [image?.url]);
+
+  const handleDragOver = (event: DragEvent<HTMLElement>) => {
+    // Always cancel the default: dropping a file on the page would otherwise navigate away from the app.
+    event.preventDefault();
+    if (!disabled && !image) setIsDragging(true);
+  };
+
+  const handleDragLeave = (event: DragEvent<HTMLElement>) => {
+    if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setIsDragging(false);
+  };
+
+  const handleDrop = (event: DragEvent<HTMLElement>) => {
+    event.preventDefault();
+    setIsDragging(false);
+    const file = event.dataTransfer.files[0];
+    if (file && !disabled && !image) onAddFiles([file]);
   };
 
   const exportCrop = async () => {
@@ -291,7 +465,12 @@ export default function CropWorkspace({
 
   return (
     <>
-      <section className="canvas-panel crop-canvas-panel glass-panel">
+      <section
+        className={`canvas-panel crop-canvas-panel glass-panel ${isDragging ? "dragging" : ""}`}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
         <div className="canvas-toolbar">
           {image && (
             <div className="toolbar-actions">
@@ -326,7 +505,7 @@ export default function CropWorkspace({
         {!image ? (
           <button className="empty-dropzone crop-dropzone" onClick={() => inputRef.current?.click()} disabled={disabled}>
 <strong>Добавьте баннер</strong>
-            <span>Затем задайте размер и перетащите нужную область</span>
+            <span>Перетащите файл сюда или нажмите, затем задайте размер и подвиньте нужную область</span>
             <em>PNG, JPG, WEBP</em>
           </button>
         ) : (
@@ -339,13 +518,27 @@ export default function CropWorkspace({
                 onPointerMove={handlePointerMove}
                 onPointerUp={handlePointerEnd}
                 onPointerCancel={handlePointerEnd}
-                onWheel={handleWheel}
-                aria-label="Область обрезки. Перетаскивайте изображение мышью."
+                onKeyDown={handleCanvasKeyDown}
+                tabIndex={0}
+                aria-label="Область обрезки. Перетаскивайте изображение мышью или сдвигайте стрелками клавиатуры."
               />
               <span className="crop-frame-size">{width} × {height} px</span>
             </div>
+            <div className="crop-nudge-bar">
+              <div className="crop-nudge-group" role="group" aria-label="Сдвиг кадра на 1 px">
+                <HoldButton label="Сдвинуть влево на 1 px" icon="left" disabled={controlsLocked || !canMoveX || offsetX <= -1} onStep={() => nudge("x", -1)} />
+                <HoldButton label="Сдвинуть вверх на 1 px" icon="up" disabled={controlsLocked || !canMoveY || offsetY <= -1} onStep={() => nudge("y", -1)} />
+                <HoldButton label="Сдвинуть вниз на 1 px" icon="down" disabled={controlsLocked || !canMoveY || offsetY >= 1} onStep={() => nudge("y", 1)} />
+                <HoldButton label="Сдвинуть вправо на 1 px" icon="right" disabled={controlsLocked || !canMoveX || offsetX >= 1} onStep={() => nudge("x", 1)} />
+              </div>
+              <div className="crop-nudge-group" role="group" aria-label="Масштаб">
+                <HoldButton label="Уменьшить масштаб" icon="zoomOut" disabled={controlsLocked || zoom <= CROP_MIN_ZOOM} onStep={() => changeZoom(-ZOOM_BUTTON_STEP)} />
+                <output className="crop-zoom-value">{Math.round(zoom * 100)}%</output>
+                <HoldButton label="Увеличить масштаб" icon="zoomIn" disabled={controlsLocked || zoom >= CROP_MAX_ZOOM} onStep={() => changeZoom(ZOOM_BUTTON_STEP)} />
+              </div>
+            </div>
             <div className="crop-editor-hint">
-              Перетаскивайте изображение. Колесо мыши меняет масштаб.
+              Перетаскивайте кадр · колесо мыши — масштаб · стрелки клавиатуры — 1 px (Shift — 10 px)
             </div>
           </div>
         )}

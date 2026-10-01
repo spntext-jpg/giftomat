@@ -7,40 +7,30 @@ export function revokeDownloadUrl(url?: string): void {
   URL.revokeObjectURL(url);
 }
 
-export function triggerDownload(url: string, fileName: string): void {
-  // Встроенный предпросмотр Bitrix24 открывает приложение в iframe. В таком
-  // контексте браузер игнорирует атрибут `download` у blob: URL (защита от
-  // неявного скачивания во вложенных фреймах), и link.click() молча не делает
-  // ничего. Рабочий обход — открыть blob в новой вкладке через window.open:
-  // это пользовательский жест с кнопки, popup разрешён, а в новой вкладке
-  // (top-level) браузер уже скачает/покажет файл.
-  // В обычном окне оставляем чистый link.download + click — сохраняет имя файла.
-  let inIframe = false;
-  try {
-    inIframe = window.self !== window.top;
-  } catch {
-    inIframe = true; // cross-origin iframe: доступа к top нет — считаем вложенным
-  }
-
-  if (inIframe) {
-    const opened = window.open(url, "_blank");
-    // Если браузер задушил popup (редкость при жесте с кнопки) — fallback на
-    // обычный линк с download: во многих средах он всё же срабатывает.
-    if (!opened) {
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = fileName;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-    }
-    return;
-  }
-
+function clickDownloadLink(url: string, fileName: string): void {
   const link = document.createElement("a");
   link.href = url;
   link.download = fileName;
   document.body.appendChild(link);
   link.click();
   link.remove();
+}
+
+function isEmbeddedInFrame(): boolean {
+  try {
+    return window.self !== window.top;
+  } catch {
+    // Cross-origin parent: `top` is inaccessible, so the page is embedded.
+    return true;
+  }
+}
+
+export function triggerDownload(url: string, fileName: string): void {
+  // The Bitrix24 preview embeds the app in an iframe. There the browser ignores
+  // the `download` attribute on blob: URLs, so a plain link click silently does
+  // nothing. Opening the blob in a new tab (a user gesture from the button) lets
+  // the top-level browsing context download or display it. Outside an iframe the
+  // temporary-anchor click is kept because it preserves the file name.
+  if (isEmbeddedInFrame() && window.open(url, "_blank")) return;
+  clickDownloadLink(url, fileName);
 }

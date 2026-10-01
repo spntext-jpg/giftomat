@@ -12,6 +12,25 @@ export function clampCropValue(value: number, min: number, max: number): number 
   return Math.min(max, Math.max(min, value));
 }
 
+export const CROP_MIN_ZOOM = 1;
+export const CROP_MAX_ZOOM = 4;
+
+/**
+ * Returns the normalized offset after moving the drawn image by `pixels`
+ * output pixels along one axis. `maxOffsetPx` is the axis range in output
+ * pixels (`CropTransform.maxOffsetX` / `maxOffsetY`); with no spare room the
+ * offset is kept unchanged.
+ */
+export function nudgeCropOffset(current: number, maxOffsetPx: number, pixels: number): number {
+  if (maxOffsetPx <= 0) return current;
+  return clampCropValue(current + pixels / maxOffsetPx, -1, 1);
+}
+
+/** Applies a zoom delta inside the cover-safe range and rounds away float drift. */
+export function stepCropZoom(current: number, delta: number): number {
+  return Math.round(clampCropValue(current + delta, CROP_MIN_ZOOM, CROP_MAX_ZOOM) * 100) / 100;
+}
+
 export function getCropTransform(
   sourceWidth: number,
   sourceHeight: number,
@@ -25,7 +44,7 @@ export function getCropTransform(
   const safeSourceHeight = Math.max(1, sourceHeight);
   const safeTargetWidth = Math.max(1, targetWidth);
   const safeTargetHeight = Math.max(1, targetHeight);
-  const safeZoom = clampCropValue(zoom, 1, 4);
+  const safeZoom = clampCropValue(zoom, CROP_MIN_ZOOM, CROP_MAX_ZOOM);
   const normalizedX = clampCropValue(offsetX, -1, 1);
   const normalizedY = clampCropValue(offsetY, -1, 1);
   const scale = Math.max(

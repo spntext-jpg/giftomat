@@ -13,7 +13,7 @@ test("looksLikeHeic recognizes standard HEIC/HEIF mime types", () => {
 });
 
 test("looksLikeHeic falls back to file extension when mime type is empty", () => {
-  // iOS/некоторые браузеры иногда отдают HEIC с пустым или generic type.
+  // iOS and some browsers occasionally deliver HEIC with an empty or generic type.
   assert.equal(looksLikeHeic(makeFile("IMG_0001.HEIC", "")), true);
   assert.equal(looksLikeHeic(makeFile("IMG_0002.heif", "application/octet-stream")), true);
 });

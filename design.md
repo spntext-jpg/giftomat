@@ -303,6 +303,29 @@ Do not restore `public/giftomat-v3.png`, legacy favicon assets, or a second meta
 - hover static informational cards as if clickable;
 - reintroduce migration CSS layers, Tailwind or `!important` without an explicit architectural decision.
 
+## 20. Layout and responsive contract
+
+1. **Symmetry.** Compose every screen from centered groups with equal gaps (8 / 10 / 12 / 14 / 20 px) and mirrored paddings. Groups wrap as whole units; never leave a single orphaned control on a row.
+2. **No overlap.** Nothing may cover interactive content. Permitted overlays: the non-interactive frame-size chip on the Crop stage, delete badges on frame cards, the processing overlay, and the mobile drawer with its backdrop.
+3. **Fluid containers.** Children of grid/flex rows that hold text or controls set `min-width: 0`; long text uses `overflow-wrap: anywhere`; fixed widths are reserved for icon buttons and aspect-ratio frames.
+4. **No page-level horizontal scroll** at any width ≥ 320px. Wide content scrolls inside its own container.
+5. **Breakpoints:** ≤ 620px phone, ≤ 980px stacked (canvas above controls, drawer navigation), ≥ 981px two-pane workbench, ≥ 1500px wide. Adding a breakpoint requires a `design.md` change.
+6. **Touch targets** are at least 44 × 44px; icon buttons are 44px.
+7. **Hover** styles in new rules live inside `@media (hover: hover)`; hover is never the only signal.
+8. **Inline `style`** is for dynamic values only (aspect-ratio, object-position, CSS custom properties). Static styling belongs in `app/globals.css`.
+9. **Verify** at 320×640, 360×800, 780×900, 1100×900 and 1440×1000 (extends section 16). Without a browser, report "not visually verified".
+
+## 21. Crop fine positioning
+
+- Controls sit directly under the Crop stage in `.crop-nudge-bar`: one group of four arrows (← ↑ ↓ →) and one group with zoom − / value / +. Both groups are centered; buttons are 44 × 44px, translucent white on the Navy workbench, Purple on hover/press/focus, never Lime or Tangerine.
+- An arrow moves the image in the arrow direction by 1 exported pixel. Holding repeats after 400 ms at 45 ms intervals. With the canvas focused: arrows move 1px, Shift + arrow 10px, `+` / `-` change zoom.
+- Zoom ranges 100–400%: 5% per button step, 8% per wheel step. It never goes below 100% (cover rule: no letterbox bars). Buttons disable at their limits; an axis with no spare room disables its arrows.
+- The empty Crop drop zone accepts a dragged file; the drag state uses the Purple ring of `.canvas-panel.dragging`. Dropping a file never navigates the page away.
+
+## 22. Open design decisions
+
+- **Navigation IA.** Current mobile navigation is a drawer (toggle + backdrop). The alternative for five destinations is a floating bottom-nav. Needs Paulo's sign-off before any implementation. An earlier note cites "August §17.3" in favor of bottom-nav; this file has no such section (§17 is PWA/browser chrome), so treat it as an unverified preference.
+
 <!-- GIFTOMAT_LATEST_DECISIONS_START -->
 ## Latest approved product/design decisions — August 28, 2026
 
@@ -329,11 +352,14 @@ These decisions extend the August v3 system and should be treated as current con
 - Clearing the Crop source removes only the active image, not the whole workspace.
 - Editorial/media crop presets include:
   - `1320 × 768 px` — wide media/editorial image;
-  - `1080 × 1350 px` — portrait 4:5 media/social image.
+  - `1080 × 1350 px` — portrait 4:5 media/social image;
+  - `1024 × 512 px` — blog cover (2:1);
+  - `950 × 417 px` — blog preview.
+- Fine positioning controls and drag-and-drop intake are specified in section 21.
 
 ### Product icon direction — landed
 
-Approved visual direction for the next canonical `app/icon.png`:
+Visual direction of the canonical `app/icon.png` (landed):
 
 - square 1:1 asset;
 - Lime background;

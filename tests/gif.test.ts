@@ -20,8 +20,8 @@ test("frame duration starting from undefined returns the first step", () => {
 });
 
 test("frame duration recovers from a value not on the step list", () => {
-  // Если override был выставлен глобальным слайдером (0.1 шаг) и не совпадает
-  // ни с одним фиксированным шагом — цикл не должен зависать, а стартует заново.
+  // If an override came from the global slider (0.1 step) and matches no fixed
+  // step, the cycle must not stall: it restarts from auto.
   const result = getNextFrameDuration(1.7);
   assert.equal(result, undefined);
 });

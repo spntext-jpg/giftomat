@@ -198,7 +198,6 @@ export default function HtmlToPdfPanel({ disabled = false }: HtmlToPdfPanelProps
           </button>
         ) : (
           <div className="html-import-frame-wrap">
-            {/* eslint-disable-next-line react/iframe-missing-sandbox */}
             <iframe
               ref={iframeRef}
               srcDoc={previewSrcDoc}

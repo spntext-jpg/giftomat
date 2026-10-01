@@ -23,24 +23,6 @@ export function loadImage(src: string): Promise<HTMLImageElement> {
   });
 }
 
-export function computeDimensions(
-  images: HTMLImageElement[],
-  maxWidth: number = 800,
-  maxHeight: number = 1200
-): { width: number; height: number } {
-  if (!images.length) return { width: maxWidth, height: Math.min(maxWidth, maxHeight) };
-
-  const first = images[0];
-  const sourceWidth = Math.max(1, first.naturalWidth);
-  const sourceHeight = Math.max(1, first.naturalHeight);
-  const scale = Math.min(1, maxWidth / sourceWidth, maxHeight / sourceHeight);
-
-  return {
-    width: Math.max(1, Math.round(sourceWidth * scale)),
-    height: Math.max(1, Math.round(sourceHeight * scale)),
-  };
-}
-
 export function drawImageToCanvas(
   ctx: CanvasRenderingContext2D,
   img: HTMLImageElement,

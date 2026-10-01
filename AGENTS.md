@@ -1,71 +1,87 @@
 # AGENTS.md — Giftomat
 
-Read this before touching any code in this repository. This file governs how automated coding agents (Cursor, Codex CLI, Claude Code, etc.) operate here.
+Single instruction file for coding agents. Read it fully, then work autonomously. The human owner is Paulo (Russian-speaking).
 
-## What this project is
-Giftomat — a privacy-first, fully client-side media studio in the browser. **No server-side media processing, ever.** Also ships as a PWA with offline support.
+## 1. Product invariants
 
-Instruments: GIF builder (incl. video→GIF frame extraction), PDF carousel, HTML→PDF, image crop (blog presets 1024×512 / 950×417, pan/nudge controls), JPG/WebP compression, HEIC/HEIF conversion.
+- Giftomat (Гифтомат) is a privacy-first, 100% client-side browser media studio and offline PWA. No server-side media processing, no telemetry, no network calls with user media. Ever.
+- Instruments: GIF (images, video → frames), PDF carousel, HTML → PDF, Crop (blog presets, nudge/zoom), JPG/WebP compress, HEIC/HEIF → JPEG.
+- Stack: Next.js 16 (App Router, `output: "export"`), React 19, TypeScript 5 strict, one stylesheet `app/globals.css`, vendored `public/gif.js` / `gif.worker.js` / `html-to-image.js`, service worker `public/sw.js`. There is no Tailwind, PostCSS, ESLint config or backend.
 
-Stack: Next.js (App Router), React, TypeScript, Tailwind CSS, Web Workers (`gif.worker.js`), service worker (`sw.js`).
+## 2. Source of truth (highest wins)
 
-## The one rule that overrides everything else: dual deployment
-This app ships to two different targets from the same codebase:
+1. Current code and tests.
+2. `design.md` — UI contract.
+3. `HANDOFF.md` — state, decisions, open questions.
+4. `ROADMAP.md` — work queue.
+5. `README.md` — overview. `build_galaxy.md` is the VibeCode platform reference.
 
-1. **Staging** — GitHub → Vercel (full Next.js runtime).
-2. **Production** — **VibeCode**: a static Next.js export served by a hand-rolled `server.js` on bare `node:http`. (VibeCode's own docs live under filenames containing "galaxy", e.g. `build_galaxy.md` — read those before changing anything export- or server-related.)
+Chat history, memory, old snapshots and summaries are hints, never truth. Repo drift is the most common failure: read a file before editing it, and if an anchor or assumption is missing, suspect drift first.
 
-**Before writing any code that touches routing, data fetching, API routes, middleware, or server components: confirm it works under `next export` + bare `node:http`.** If a feature needs Next.js server runtime features unavailable in a static export, it will build fine and pass locally, then silently break in production. This is the single highest-risk failure mode in this repo.
+## 3. Dual deployment: survive static export + bare `node:http`
 
-## Non-negotiable engineering rules
-- KISS, SOLID, DRY, YAGNI, SoC, fail-fast, POLA.
-- No speculative abstractions, no defensive code, no refactors beyond the scope of the requested change.
-- Surgical diffs only.
+- Staging: GitHub → Vercel. Production: VibeCode, static `out/` served by a hand-written `server.js` (`node:http` only). See `build_galaxy.md`.
+- Before every change ask: does this work as static files served by bare `node:http`? Forbidden: API/route handlers, server actions, middleware, SSR-only or dynamic rendering, `headers()` / `redirects()` / `rewrites()`, the `next/image` optimizer, `cookies()` / `headers()`, runtime `process.env` in client code, runtime network dependencies (CDN fonts/scripts).
+- `npm start` is broken under static export (`next start` refuses `output: "export"`). Do not use or "fix" it without the human (HANDOFF, open question 1). To preview: `npm run build`, then serve `out/`.
 
-## How changes are made here
-- Changes are delivered as **standalone, idempotent Python patch scripts**, not direct commits.
-- Patch scripts expose: `--verify`, `--apply`, `--commit`, `--push`, `--diagnose`.
-- Patch scripts must **no-op cleanly** if already applied (check for the target state, not just "did I run before").
-- Use **anchor-based string replacement with exact-string anchors**. Never edit by line number — line numbers drift the moment the file changes.
-- Mark every new code block with a versioned comment, e.g. `# GIFTOMAT_SPRINT_X_V1_<feature>`. Recognize legacy marker strings as an already-applied state so re-runs don't duplicate work.
-- **Idempotency hazard**: if your anchor's replacement string contains the original anchor string as a substring (or vice versa), a second run of the script will silently mis-fire. Explicitly test both a fresh apply and a second apply-on-top-of-applied before shipping.
-- The source of truth for "what's actually in the repo" is a repomix XML snapshot supplied at the start of a work session — **never assume it matches the live repo state**; repo drift is common and has caused real bugs before. If a patch fails to find its anchor, the first hypothesis is drift, not a bug in the patch logic.
+## 4. Autonomy and token economy
 
-## Required checks before any change is considered done
-Run against a fresh extraction of the current snapshot/repo:
-1. Typecheck
-2. Full unit test suite
-3. Smoke check
-4. Production build (`next build` under the export config actually used for VibeCode)
-5. PostCSS/Tailwind compile
+Work end to end without check-ins. The human reads the result, not the process.
 
-All five must pass. Don't ship on "typecheck passes."
+- Output = the deliverable plus at most 3 lines: the assumption made, what is blocked, how to run it. No preamble, no restating the task, no closing recap, no narrating tool calls, no apologies, no re-explaining known rules.
+- Ask at most ONE question, only when readings diverge materially or an item from section 9 applies. Otherwise state the assumption in one line and proceed.
+- Reply in Russian. Think, code, comments, identifiers and commit messages in English.
+- Read narrowly: `grep` or line ranges before opening a file; never re-read a file you just wrote; never paste whole files or long logs into chat (quote at most 10 lines). Run independent reads and commands in parallel. Do not re-verify what a green `npm run verify` already proved.
+- Prefer edits and diffs over rewrites. One coherent change per commit. No scope creep, unrequested refactors, docs, abstractions or defensive code.
+- Keep docs short and update the single canonical place; never duplicate a rule.
+- Stop when the acceptance criteria are met.
 
-## Known resolved issues — do not reintroduce
-- `DownloadButton` must remain its own component (was extracted specifically to fix a Turbopack JSX parsing error). Don't inline it back.
-- Every `gif.addFrame()` call needs `dispose: 2` — omitting it reintroduces frame artifacts.
-- Crop rendering must use `drawCover` logic — anything else reintroduces letterbox bars.
-- Downloads must use a programmatic temporary-anchor `click()`, never `<a download target="_blank">` on a blob URL — the latter is unreliable across browsers for this app's blob sizes/types.
-- Interactive elements have historically used inline `style={{}}` instead of Tailwind `className`, due to Tailwind v4 Preflight conflicts. **This may be partially superseded by the August Design System v3 token-based theming layer — check current file state before assuming either convention is authoritative, and don't mix both patterns in one component.**
+## 5. Delivering changes
 
-## Design system
-"August Design System v3" (Dark Workbench): Navy / Accent-purple / Growth-Lime token layer, Canvas shell, Navy sidebar, themed buttons/fields/panels/cards, mobile drawer with dark-glass treatment, accessibility touch-target sizing. Treat token definitions as the single source for color/spacing — don't hardcode values that already exist as tokens.
+- Agent with repo access: edit directly on the working branch, commit locally in small scoped commits, run `npm run verify` before each commit. Push or merge only when asked.
+- Out-of-band (chat → Codespaces): one standalone Python patch `giftomat_<scope>_YYYYMMDD_vN.py`. Every patch gets a new versioned name; it is git-ignored and never committed. Flags: `--diagnose`, `--verify`, `--apply`, `--commit`, `--push`. `--apply` runs prerequisites, applies, runs the gate, commits/pushes when asked, then deletes itself after success (`--keep` retains it).
+- Patch rules: exact-string anchors, never line numbers. All-or-nothing: check every anchor before writing anything and restore on failure. Idempotent: detect the applied state by the NEW text first, then OLD, and fail fast on drift. Before shipping, apply twice on a fresh extraction and confirm the second run changes nothing. Minimal diff. No historical marker comments in first-party code (smoke-check forbids them); markers live only inside patch scripts.
 
-Open decision, **not yet greenlit**: navigation IA — floating bottom-nav bar vs. slide-in drawer (design guidance leans bottom-nav for ≤5 destinations, which matches the current 5 instruments). Do not implement either without explicit product sign-off — this is a product decision, not an engineering one.
+## 6. Quality gate
 
-## Key third-party dependencies
-- `heic-to` — HEIC/HEIF conversion
-- `html-to-image` — loaded as UMD build from `public/`, not npm-resolved at runtime
-- Pygments — PDF syntax highlighting (Python-side tooling, not a JS runtime dep)
-- `wkhtmltopdf` — HTML→PDF doc generation
-- Python `markdown` — renders `.md` into PDF packages
+`npm run verify` = typecheck → unit tests → smoke-check → production build (must emit `out/index.html`). Node ≥ 22.6 is required because tests run with `--experimental-strip-types`. Everything must be green; "typecheck passes" is not done. Do not hardcode test counts.
 
-## Commit / language conventions
-- All code, identifiers, comments, and commit messages: **English**, regardless of the language used in product/marketing copy elsewhere in the org.
-- Commit messages should be scoped and specific enough to trace back to the marker comment(s) they introduce.
+New behavior needs a unit test in `tests/` (pure logic lives in `app/lib/`). New design or contract rules need an assertion in `scripts/smoke-check.mjs`. CI (`.github/workflows/verify.yml`) runs the same gate.
 
-## What agents should ask a human before doing
-- Anything touching the VibeCode static-export/server.js boundary in a new way.
-- The bottom-nav vs. drawer navigation decision.
-- Any change to the inline-style vs. Tailwind-className convention.
-- Anything implied by the Fable 5.1 external code review that isn't already an explicit ticket — that review exists as a document, not yet as triaged work items.
+## 7. Engineering principles (as applied here)
+
+- KISS / YAGNI: the smallest change that meets the acceptance criteria. Delete dead code; never comment it out. No speculative options.
+- SRP / SoC: math and blob/file logic live in `app/lib/*` (pure, tested); components render and wire. `app/page.tsx` is an orchestrator under decomposition (ROADMAP R1.1): extract hooks/components when touching it, never grow it.
+- DRY: one download path (`triggerDownload`), one binary helper set (`app/lib/binary.ts`), one intake/drop-zone pattern. Reuse `app/lib/` helpers.
+- Open/closed through data: presets are data in `app/lib/presets.ts`; add entries, not branches.
+- Fail fast: validate at boundaries (file type/size, dimension bounds), throw clear errors in `lib`, show a Russian message in the UI. No swallowed errors except documented optional features (service worker registration).
+- React 19: state updaters stay pure; side effects (Blob URL revoke, timers, listeners) live in effects with cleanup; no `any`; attach native non-passive listeners when `preventDefault()` is needed (React `onWheel` is passive).
+- Language: UI copy is Russian. If pt-BR copy is ever added it must avoid English corporate jargon; flag it then. Everything else is English.
+- Dependencies: none added without approval (section 9).
+
+## 8. Regression-sensitive zones (change only with a dedicated check)
+
+- GIF encoder `app/lib/encoder.ts` and vendored `public/gif.js`, `public/gif.worker.js`, `public/html-to-image.js`. Never edit vendored files. Repeating the first frame is a proven white-frame fix. `dispose: 2` was recorded as required but is absent from the code: unverified; add it only with a visual GIF check (ROADMAP R0.2).
+- Crop rendering uses cover math (`drawCrop`): no letterbox bars, zoom never below 100%.
+- Downloads go through `triggerDownload` only (temporary-anchor click, iframe-aware for the Bitrix24 preview). Never `<a download target="_blank">` on blob URLs; never a new `document.createElement("a")` outside `app/lib/download.ts`.
+- `replaceImages` / `removeImage`: pure updaters, Blob URLs revoked outside them.
+- HTML → PDF capture: `sandbox="allow-scripts"`, `referrerPolicy="no-referrer"`, accept `postMessage` only from the preview iframe.
+- PWA: any shell or icon asset change bumps `CACHE_VERSION` in `public/sw.js`. `app/icon.png` and `public/giftomat-icon.png` stay byte-identical.
+
+## 9. Ask the human first
+
+- VibeCode boundary: `server.js`, `out/` tracking, start script, response headers, `next.config.ts`.
+- Navigation IA (floating bottom-nav vs drawer): a product decision.
+- New dependencies or devDependencies.
+- Removing or renaming a user-facing feature.
+- Changing design tokens or color roles.
+- Triaging external review findings that are not in ROADMAP.
+- Analytics or telemetry of any kind.
+
+## 10. UI rules
+
+`design.md` is the contract: tokens only (no hardcoded colors that exist as tokens), classes in `app/globals.css`, inline `style` only for dynamic values, no `!important`, no override layers (edit the canonical rule), responsive and symmetric layouts, no overlapping elements, touch targets ≥ 44px. Check layouts at 320×640, 360×800, 780×900, 1100×900 and 1440×1000 when a browser is available; otherwise report "not visually verified".
+
+## 11. Commits
+
+English, imperative, scoped: `feat(crop): …`, `fix(download): …`, `chore(docs): …`. One logical change each. Never commit patch scripts, snapshots, `.env*` or `out/` (unless the VibeCode decision in HANDOFF says otherwise).

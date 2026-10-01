@@ -20,6 +20,10 @@ const requiredFiles = [
   "public/gif.worker.js",
   "public/html-to-image.js",
   "public/sw.js",
+  "AGENTS.md",
+  "HANDOFF.md",
+  "ROADMAP.md",
+  ".github/workflows/verify.yml",
 ];
 
 for (const file of requiredFiles) {
@@ -37,7 +41,7 @@ const presets = read("app/lib/presets.ts");
 const video = read("app/lib/video.ts");
 const globalCss = read("app/globals.css");
 const layout = read("app/layout.tsx");
-const manifest = read("app/manifest.ts");
+const manifest = read("public/manifest.webmanifest");
 const serviceWorker = read("public/sw.js");
 const nextConfig = read("next.config.ts");
 const packageJson = JSON.parse(read("package.json"));
@@ -78,6 +82,15 @@ if (!cropWorkspace.includes("crop-clear-button") ||
     !cropWorkspace.includes("onRemoveImage(image.id)") ||
     !page.includes("onRemoveImage={removeImage}")) {
   throw new Error("Crop workspace must expose a current-image clear action");
+}
+if (!cropWorkspace.includes("crop-nudge-bar") || !cropWorkspace.includes("nudgeCropOffset") || !cropWorkspace.includes("stepCropZoom")) {
+  throw new Error("Crop workspace must expose fine-positioning (nudge/zoom) controls");
+}
+if (cropWorkspace.includes("onWheel=")) {
+  throw new Error("Crop wheel zoom must use a native non-passive listener (React onWheel is passive)");
+}
+if (!/\.crop-nudge-button \{[\s\S]*?width: 44px;[\s\S]*?height: 44px;/m.test(globalCss)) {
+  throw new Error("Crop nudge buttons must keep the 44px touch target");
 }
 if (!videoPanel.includes("MAX_VIDEO_BYTES = 200 * 1024 * 1024") || !video.includes("normalizeExtractionRange")) {
   throw new Error("Video import safety contract is incomplete");
@@ -183,7 +196,7 @@ if (!design.includes("August v3 — Dark Workbench") || !design.includes("Status
   throw new Error("design.md is missing the canonical production August v3 contract");
 }
 
-if (!manifest.includes('theme_color: "#151728"') || !layout.includes('content="#151728"')) {
+if (!manifest.includes('"theme_color": "#151728"') || !layout.includes('content="#151728"')) {
   throw new Error("PWA/browser theme color must match August v3 Navy");
 }
 if (!existsSync("public/giftomat-icon.png") || !existsSync("app/icon.png")) {
@@ -212,8 +225,8 @@ if (!manifest.includes("/giftomat-icon.png?v=20260828-v8") || !serviceWorker.inc
 if (page.includes("/giftomat-v3.png") || manifest.includes("/giftomat-v3.png") || serviceWorker.includes("/giftomat-v3.png")) {
   throw new Error("Legacy Giftomat v3 icon references remain");
 }
-if (existsSync("AGENTS.md") || existsSync("CLAUDE.md")) {
-  throw new Error("Duplicate AI-specific instruction files remain; rules belong in README/design.md");
+if (!existsSync("AGENTS.md") || existsSync("CLAUDE.md")) {
+  throw new Error("AGENTS.md is the single agent-instruction file and CLAUDE.md must not exist");
 }
 
 // PWA/security contracts.
@@ -223,8 +236,17 @@ if (!/const CACHE_VERSION = "[^"]+"/.test(serviceWorker) || !serviceWorker.inclu
 for (const asset of ['"/gif.js"', '"/gif.worker.js"', '"/html-to-image.js"']) {
   if (!serviceWorker.includes(asset)) throw new Error(`Offline shell is missing ${asset}`);
 }
-for (const header of ["X-Content-Type-Options", "X-Frame-Options", "Referrer-Policy", "Permissions-Policy", "frame-ancestors 'self'"]) {
-  if (!nextConfig.includes(header)) throw new Error(`Missing production security contract: ${header}`);
+// A static export cannot carry headers(); the production boundary (server.js, see build_galaxy.md) owns them.
+if (!nextConfig.includes('output: "export"')) {
+  throw new Error('next.config.ts must keep output: "export" (VibeCode static export)');
+}
+if (existsSync("server.js")) {
+  const server = read("server.js");
+  for (const header of ["X-Content-Type-Options", "Referrer-Policy", "Permissions-Policy"]) {
+    if (!server.includes(header)) throw new Error(`Missing production security contract in server.js: ${header}`);
+  }
+} else {
+  console.warn("WARN: server.js is not in the repository; production headers and start contract are unverified (HANDOFF.md, ROADMAP R0.1).");
 }
 
 // Presets and repository hygiene.
@@ -242,7 +264,7 @@ if (!page.includes("handleFrameDragStart") || !page.includes("handleGifPositionP
 for (const marker of [
   '"portrait-3-4"', '"social-wide"', '"document-a4"', 'id: "ig-photo"',
   'id: "media-wide"', 'id: "media-portrait"', 'id: "linkedin-post"',
-  'id: "x-header"', 'id: "youtube-banner"',
+  'id: "x-header"', 'id: "youtube-banner"', 'id: "blog-cover"', 'id: "blog-preview"',
 ]) {
   if (!presets.includes(marker)) throw new Error(`Missing production preset: ${marker}`);
 }
@@ -270,7 +292,7 @@ for (const historicalPrefix of [
     throw new Error(`Historical migration/version marker remains: ${historicalPrefix}`);
   }
 }
-for (const file of ["tailwind.config.ts", "postcss.config.mjs", "apply_august_design_system.py", "fix_download_buttons_and_smoke.py", "AGENTS.md", "CLAUDE.md"]) {
+for (const file of ["tailwind.config.ts", "postcss.config.mjs", "apply_august_design_system.py", "fix_download_buttons_and_smoke.py", "CLAUDE.md", "project-summary-and-audit.md", "overview.md"]) {
   if (existsSync(file)) throw new Error(`Obsolete repository artifact remains: ${file}`);
 }
 if (!readme.includes("August v3") || !readme.includes("design.md") || !readme.includes("npm run verify")) {

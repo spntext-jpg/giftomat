@@ -5,9 +5,9 @@ export interface HtmlPdfPagePreset {
   heightPt: number;
 }
 
-// Точки — настоящие PDF-пункты (72 на дюйм), не "1px = 1pt" как у карусели.
-// Это реальные печатные форматы, поэтому просмотр в любом PDF-ридере выглядит
-// как обычный документ, а не квадратная карточка для соцсетей.
+// Units are real PDF points (72 per inch), unlike the carousel's "1px = 1pt".
+// These are true print formats, so any PDF reader shows an ordinary document
+// rather than a square social card.
 export const HTML_PDF_PAGE_PRESETS: HtmlPdfPagePreset[] = [
   { id: "a4-portrait", label: "A4 · портрет", widthPt: 595, heightPt: 842 },
   { id: "a4-landscape", label: "A4 · альбом", widthPt: 842, heightPt: 595 },
@@ -21,9 +21,9 @@ export interface PageSlice {
 }
 
 /**
- * Режет высокий "мастер-канвас" (весь захваченный документ целиком) на
- * страницы фиксированной высоты pageHeightPx. Последняя страница может быть
- * короче — вызывающий код должен дорисовать остаток фоном, а не растягивать.
+ * Cuts a tall "master canvas" (the whole captured document) into pages of a
+ * fixed height `pageHeightPx`. The last page may be shorter: the caller must
+ * paint the remainder with the page background instead of stretching it.
  */
 export function computePageSlices(totalHeightPx: number, pageHeightPx: number): PageSlice[] {
   if (totalHeightPx <= 0 || pageHeightPx <= 0) return [];
@@ -35,7 +35,7 @@ export function computePageSlices(totalHeightPx: number, pageHeightPx: number): 
   });
 }
 
-/** CSS-пиксели (96/дюйм) для ширины страницы — используется как ширина iframe при рендере. */
+/** CSS pixels (96 per inch) for a page width; used as the iframe width while rendering. */
 export function pointsToCssPixels(points: number): number {
   return Math.round((points / 72) * 96);
 }
@@ -75,9 +75,9 @@ const CAPTURE_SCRIPT = `
 </script>`;
 
 /**
- * Вставляет скрипт захвата (html-to-image + postMessage-протокол) в HTML
- * пользователя, не трогая остальную разметку. Чистая строковая функция —
- * поэтому тестируема без браузера.
+ * Injects the capture script (html-to-image + postMessage protocol) into the
+ * user's HTML without touching the rest of the markup. A pure string function,
+ * so it is testable without a browser.
  */
 export function buildCapturePreviewDocument(userHtml: string): string {
   if (/<\/body>/i.test(userHtml)) {

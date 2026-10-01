@@ -33,7 +33,7 @@ test("computeExtractionTimestamps returns an empty array for zero frames", () =>
   assert.deepEqual(computeExtractionTimestamps(0, 10, 0), []);
 });
 
-// GIFTOMAT_AUGUST_AUDIT_V5: extraction range regression coverage.
+// Extraction range regression coverage.
 test("normalizeExtractionRange never seeks past duration", () => {
   const range = normalizeExtractionRange(10, 10, 10);
   assert.ok(Math.abs(range.start - 9.9) < 1e-9);

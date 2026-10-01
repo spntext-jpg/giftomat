@@ -7,9 +7,9 @@ const HEIC_MIME_TYPES = new Set([
 ]);
 
 /**
- * Эвристика без обращения к содержимому файла (mime + расширение). На части
- * платформ HEIC приходит с пустым/неизвестным type, поэтому расширение — не
- * запасной, а равноправный признак.
+ * Heuristic that never reads file contents (mime type + extension). Some
+ * platforms deliver HEIC with an empty or unknown type, so the extension is an
+ * equal signal, not a fallback.
  */
 export function looksLikeHeic(file: File): boolean {
   const type = file.type.toLowerCase();
@@ -19,13 +19,12 @@ export function looksLikeHeic(file: File): boolean {
 }
 
 /**
- * Возвращает файл, пригодный для остальной части Гифтомата (canvas/Image
- * умеют декодировать только "обычные" растровые форматы):
- *   - не похож на HEIC -> файл возвращается как есть, heic-to даже не грузится;
- *   - похож на HEIC, но isHeic() говорит "нет" (например, кто-то просто
- *     переименовал .png в .heic) -> тоже возвращается как есть;
- *   - настоящий HEIC/HEIF -> конвертируется в JPEG;
- *   - конвертация упала -> null (вызывающий код помечает файл как отклонённый).
+ * Returns a file usable by the rest of Giftomat (canvas/Image only decode
+ * "ordinary" raster formats):
+ *   - does not look like HEIC -> returned as is, heic-to is not even loaded;
+ *   - looks like HEIC but isHeic() says no (e.g. a renamed .png) -> returned as is;
+ *   - real HEIC/HEIF -> converted to JPEG;
+ *   - conversion failed -> null (the caller marks the file as rejected).
  */
 export async function resolveImageFile(file: File): Promise<File | null> {
   if (!looksLikeHeic(file)) return file;

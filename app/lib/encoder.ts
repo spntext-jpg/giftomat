@@ -1,4 +1,29 @@
-declare const GIF: any;
+interface GifFrameOptions {
+  delay?: number;
+  copy?: boolean;
+}
+
+interface GifOptions {
+  workers: number;
+  quality: number;
+  width: number;
+  height: number;
+  workerScript: string;
+  background: string;
+  repeat: number;
+  dither: boolean;
+}
+
+interface GifEncoder {
+  addFrame(frame: ImageData, options?: GifFrameOptions): void;
+  on(event: "progress", listener: (progress: number) => void): void;
+  on(event: "finished", listener: (blob: Blob) => void): void;
+  on(event: "abort", listener: () => void): void;
+  render(): void;
+}
+
+// Vendored runtime (public/gif.js) loaded globally by app/layout.tsx.
+declare const GIF: new (options: GifOptions) => GifEncoder;
 
 
 export function encodeGif(
@@ -36,8 +61,8 @@ export function encodeGif(
       dither: false,
     });
 
-    // Минимальный повтор первого реального кадра сохраняет проверенный фикс
-    // начального белого кадра, но без промежуточных canvas-копий.
+    // Repeating the first real frame with a minimal delay keeps the proven fix
+    // for the initial white frame, without intermediate canvas copies.
     gif.addFrame(frames[0], { delay: 1, copy: true });
     frames.forEach((frame, index) => {
       const delayMs = delaysMs[index] ?? delaysMs[0] ?? 1000;
