@@ -3,6 +3,7 @@ import test from "node:test";
 import {
   CROP_MAX_ZOOM,
   CROP_MIN_ZOOM,
+  buildCropFileName,
   getCropPreviewSize,
   getCropTransform,
   nudgeCropOffset,
@@ -71,4 +72,9 @@ test("stepCropZoom stays within the cover-safe range and avoids float drift", ()
   assert.equal(stepCropZoom(CROP_MIN_ZOOM, -0.05), CROP_MIN_ZOOM);
   assert.equal(stepCropZoom(CROP_MAX_ZOOM - 0.01, 0.05), CROP_MAX_ZOOM);
   assert.equal(stepCropZoom(1.1, 0.05), 1.15);
+});
+
+test("crop export names are deterministic for jpeg and png", () => {
+  assert.equal(buildCropFileName("Campaign final.png", 1200, 630, "jpeg"), "Campaign-final-1200x630.jpg");
+  assert.equal(buildCropFileName("Campaign final.png", 1080, 1350, "png"), "Campaign-final-1080x1350.png");
 });

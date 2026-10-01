@@ -10,6 +10,9 @@ export type PdfPresetId =
 export type GifPresetId =
   | "source"
   | "x-16-9"
+  | "linkedin-wide"
+  | "linkedin-square"
+  | "linkedin-portrait"
   | "square"
   | "portrait-4-5"
   | "vertical-9-16";
@@ -25,6 +28,9 @@ export interface GifPreset {
 export const GIF_PRESETS: GifPreset[] = [
   { id: "source", label: "Исходные пропорции", description: "Сохраняет соотношение сторон первого кадра" },
   { id: "x-16-9", label: "X · 16:9", description: "1280 × 720 px", width: 1280, height: 720 },
+  { id: "linkedin-wide", label: "LinkedIn · 1.91:1", description: "1200 × 628 px", width: 1200, height: 628 },
+  { id: "linkedin-square", label: "LinkedIn · 1:1", description: "1200 × 1200 px", width: 1200, height: 1200 },
+  { id: "linkedin-portrait", label: "LinkedIn · 4:5", description: "720 × 900 px", width: 720, height: 900 },
   { id: "square", label: "Квадрат · 1:1", description: "1080 × 1080 px", width: 1080, height: 1080 },
   { id: "portrait-4-5", label: "Портрет · 4:5", description: "1080 × 1350 px", width: 1080, height: 1350 },
   { id: "vertical-9-16", label: "Вертикаль · 9:16", description: "720 × 1280 px", width: 720, height: 1280 },
@@ -128,10 +134,18 @@ export const CROP_PRESETS: FixedPreset[] = [
   { id: "ig-portrait", label: "Instagram · портрет", description: "1080 × 1350 px · 4:5", width: 1080, height: 1350 },
   { id: "ig-photo", label: "Instagram · фото", description: "1080 × 1440 px · 3:4", width: 1080, height: 1440 },
   { id: "ig-story", label: "Stories / Reels / TikTok", description: "1080 × 1920 px · 9:16", width: 1080, height: 1920 },
+  { id: "facebook-portrait", label: "Facebook · портрет", description: "1080 × 1350 px · 4:5", width: 1080, height: 1350 },
+  { id: "open-graph", label: "Open Graph · preview", description: "1200 × 630 px · 1.91:1", width: 1200, height: 630 },
   { id: "linkedin-post", label: "LinkedIn · пост", description: "1200 × 628 px · 1.91:1", width: 1200, height: 628 },
+  { id: "linkedin-square", label: "LinkedIn · квадрат", description: "1200 × 1200 px · 1:1", width: 1200, height: 1200 },
+  { id: "linkedin-portrait", label: "LinkedIn · портрет", description: "720 × 900 px · 4:5", width: 720, height: 900 },
   { id: "linkedin-banner", label: "LinkedIn · баннер", description: "1584 × 396 px · 4:1", width: 1584, height: 396 },
   { id: "x-post", label: "X · пост", description: "1600 × 900 px · 16:9", width: 1600, height: 900 },
   { id: "x-header", label: "X · шапка профиля", description: "1500 × 500 px · 3:1", width: 1500, height: 500 },
+  { id: "threads-portrait", label: "Threads · портрет", description: "1080 × 1350 px · 4:5", width: 1080, height: 1350 },
+  { id: "pinterest-pin", label: "Pinterest · pin", description: "1000 × 1500 px · 2:3", width: 1000, height: 1500 },
+  { id: "telegram-wide", label: "Telegram · 16:9", description: "1280 × 720 px · 16:9", width: 1280, height: 720 },
+  { id: "vk-wide", label: "VK · широкий", description: "1200 × 630 px · ~1.91:1", width: 1200, height: 630 },
   { id: "youtube-thumb", label: "YouTube · превью", description: "1280 × 720 px · 16:9", width: 1280, height: 720 },
   { id: "youtube-banner", label: "YouTube · баннер", description: "2560 × 1440 px · 16:9", width: 2560, height: 1440 },
 ];

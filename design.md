@@ -322,7 +322,17 @@ Do not restore `public/giftomat-v3.png`, legacy favicon assets, or a second meta
 - Zoom ranges 100–400%: 5% per button step, 8% per wheel step. It never goes below 100% (cover rule: no letterbox bars). Buttons disable at their limits; an axis with no spare room disables its arrows.
 - The empty Crop drop zone accepts a dragged file; the drag state uses the Purple ring of `.canvas-panel.dragging`. Dropping a file never navigates the page away.
 
-## 22. Open design decisions
+## 22. Shared workspace components
+
+- `ResultCard` is the single completion/download pattern for GIF/PDF/Compress, Crop and HTML → PDF. Result and progress containers use `aria-live="polite"`.
+- Generic form controls use `range-input` and `preset-select-*`; tool-specific legacy class names are forbidden.
+- GIF frame reordering must work without drag: the selected frame exposes 44×44 left/right move buttons in the canvas toolbar.
+- Crop multi-file work uses a horizontal thumbnail strip. Each source keeps its own zoom and X/Y offsets; selecting another source restores that source's position.
+- Crop accepts multiple PNG/JPG/WebP/AVIF/HEIC/HEIF files. Batch export produces one ZIP and replaces the in-memory sources with the rendered crops.
+- Upload and download actions stay in the current application context; downloads never open a new browser window.
+- `app/globals.css` may define a selector only once per media/support scope. The smoke gate enforces this.
+
+## 23. Open design decisions
 
 - **Navigation IA.** Current mobile navigation is a drawer (toggle + backdrop). The alternative for five destinations is a floating bottom-nav. Needs Paulo's sign-off before any implementation. An earlier note cites "August §17.3" in favor of bottom-nav; this file has no such section (§17 is PWA/browser chrome), so treat it as an unverified preference.
 

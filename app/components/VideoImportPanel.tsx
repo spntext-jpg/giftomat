@@ -162,7 +162,15 @@ export default function VideoImportPanel({ disabled = false, maxFrames, onExtrac
 
   return (
     <>
-      <section className="canvas-panel video-canvas-panel glass-panel">
+      <section
+        className="canvas-panel video-canvas-panel glass-panel"
+        onDragOver={(event) => { if (!videoUrl && !disabled) event.preventDefault(); }}
+        onDrop={(event) => {
+          if (videoUrl || disabled) return;
+          event.preventDefault();
+          handleFileSelect(event.dataTransfer.files[0]);
+        }}
+      >
         {!videoUrl ? (
           <button
             type="button"

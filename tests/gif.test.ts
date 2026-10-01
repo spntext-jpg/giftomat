@@ -30,6 +30,9 @@ test("frame duration recovers from a value not on the step list", () => {
 test("GIF presets expose common output ratios", () => {
   const byId = new Map(GIF_PRESETS.map((preset) => [preset.id, preset]));
   assert.deepEqual([byId.get("x-16-9")?.width, byId.get("x-16-9")?.height], [1280, 720]);
+  assert.deepEqual([byId.get("linkedin-wide")?.width, byId.get("linkedin-wide")?.height], [1200, 628]);
+  assert.deepEqual([byId.get("linkedin-square")?.width, byId.get("linkedin-square")?.height], [1200, 1200]);
+  assert.deepEqual([byId.get("linkedin-portrait")?.width, byId.get("linkedin-portrait")?.height], [720, 900]);
   assert.deepEqual([byId.get("square")?.width, byId.get("square")?.height], [1080, 1080]);
   assert.deepEqual([byId.get("portrait-4-5")?.width, byId.get("portrait-4-5")?.height], [1080, 1350]);
   assert.deepEqual([byId.get("vertical-9-16")?.width, byId.get("vertical-9-16")?.height], [720, 1280]);

@@ -22,57 +22,36 @@ How to work this file:
 
 ## P1 — Architecture (SOLID / DRY / SoC)
 
-**R1.1 · needs: none · Decompose `app/page.tsx`** (1081 lines → under 400). One behavior-preserving step per commit, in this order:
-- `useImageLibrary` (images, selection, add/remove/replace/clear, paste, Blob URL lifecycle, limits);
-- `useGifEditor` (preset, per-frame durations and positions, reorder);
-- `ToolNav` (sidebar, mobile drawer);
-- shared `ResultCard` (also used by Crop and HTML panels);
+**R1.1 · needs: none · Finish decomposing `app/page.tsx`** (target under 400 lines). `useImageLibrary`, `useGifEditor`, `ToolNav` and shared `ResultCard` are already extracted. Remaining:
 - `GifWorkspace`, `PdfWorkspace`, `CompressWorkspace` with the same props contract as `CropWorkspace`;
 - `app/lib/export/*` for generate/compress orchestration (pure, unit-tested).
-- Accept: smoke markers that grep `page.tsx` follow the moved code (do not delete them); no behavior or pixel change.
+- Accept: smoke markers follow moved code; behavior remains unchanged.
 
-**R1.2 · needs: none · One intake component.** `DropZone` + `useFileIntake` (drag state, drop, paste, picker, limits, HEIC resolution) used by every tool including Crop. Removes the duplicated drag handlers in `page.tsx` and `CropWorkspace.tsx`.
-
-**R1.3 · needs: none · Crop DRY.** `exportCrop` and `exportCropBatch` duplicate option building and file naming. Extract `renderCropFile(source, settings)` into `app/lib/crop.ts` with a test.
-
-**R1.4 · needs: none · `useEffectEvent` for paste.** The `paste` listener in `page.tsx` re-subscribes on every render because `addFiles` is an effect dependency. Use React 19.2 `useEffectEvent`.
+**R1.2 · needs: none · One intake component.** `DropZone` + `useFileIntake` (drag state, drop, paste, picker, limits, HEIC resolution) used by every tool including Crop. Removes the remaining duplicated drag/picker handlers.
 
 **R1.5 · needs: browser · Move heavy canvas work off the main thread.** Frame rasterization in `imagesToImageData` and video frame extraction: `OffscreenCanvas` worker or cooperative yielding, feature-detected with fallback.
 - Accept: no long task above 100 ms while building a 60-frame 1080×1350 GIF.
-
-**R1.6 · needs: none · Shared message types** for the HTML capture `postMessage` protocol (`htmlPdf.ts` ↔ `HtmlToPdfPanel.tsx`).
 
 ## P2 — GUI / UX (contract: `design.md`)
 
 **R2.1 · needs: approval (devDependency) · Layout regression harness.** Playwright + Chromium at 320×640, 360×800, 780×900, 1100×900, 1440×1000 for every tool. Assert: no horizontal scroll, no overlapping interactive boxes, touch targets ≥ 44px, every tool reachable. Start as a non-blocking CI job.
 
-**R2.2 · needs: none · Consolidate `app/globals.css`** (1876 lines; about 26 selectors are defined 2–7 times, e.g. `.result-card` ×7).
-- Merge each duplicate into its canonical rule; delete superseded responsive rules (the earlier ≤980px sidebar scroller versus the later drawer rules — verify which wins first).
-- Rename legacy `zephyr-range` → `range-input` and `pdf-preset-*` → `preset-select-*` (Crop uses them too).
-- Add a smoke assertion: no selector defined twice within the same media scope.
-- Accept: zero visual change at all five viewports.
+**R2.2 · needs: browser · Visual regression after CSS consolidation.** Duplicate selectors are consolidated, generic controls renamed, and the smoke gate enforces uniqueness.
+- Verify 320×640, 360×800, 780×900, 1100×900 and 1440×1000 for every tool: no horizontal scroll/overlap and intended August v3 hierarchy.
 
 **R2.3 · needs: human · Navigation IA.** Floating bottom-nav vs the current drawer. Implement per `design.md` after the decision.
-
-**R2.4 · needs: none · Symmetry and consistency pass.** Spacing scale, equal paddings, centered groups, one empty state across all five tools. Record rules as `design.md` edits.
-
-**R2.5 · needs: none · Accessibility.** Keyboard reorder for GIF frames (move left/right buttons; drag is pointer-only), focus management on tool switch, `aria-live` for progress and results.
-
-**R2.6 · needs: none · Crop follow-ups.** HEIC in the file picker `accept`, multi-file drop → batch, per-image offsets in batch mode.
 
 ## P3 — Product features (highest user value first)
 
 - **R3.1 Compress target-size mode** ("≤ 200 KB") via quality search plus max-width resize; show the saving.
 - **R3.2 Remember last settings** per tool (preset, format, quality) in `localStorage`, local only.
 - **R3.3 GIF:** frame duplicate/trim, global speed, size estimate before encoding.
-- **R3.4 Crop:** batch export to ZIP (reuse `app/lib/zip.ts`), more presets (Open Graph 1200×630, Telegram, VK, Pinterest 1000×1500).
 - **R3.5 PDF carousel:** shared reorder component with GIF, optional page numbers.
 - **R3.6 PWA:** "update available" prompt when a new service worker is waiting; offline smoke test.
 - **R3.7 · needs: human · Localization scaffold** (ru default, pt-BR optional, no English corporate jargon in pt-BR copy).
 
 ## P4 — Tooling
 
-- **R4.1 CI:** keep `.github/workflows/verify.yml` green; add a non-blocking `npm audit --omit=dev` step.
 - **R4.2 · needs: approval · ESLint** (Next + react-hooks) and a `lint` step inside `verify`.
 - **R4.3 Smoke-check slimming:** replace regex-on-CSS design contracts in `scripts/smoke-check.mjs` with a small token/selector linter plus unit tests; keep the script under 200 lines.
 - **R4.4 · needs: human · Triage the external Fable 5.1 review.** Its text is not in the repository: turn findings into roadmap items or drop them.

@@ -1,3 +1,20 @@
+export type HtmlCaptureRequest = { type: "GIFTOMAT_CAPTURE_REQUEST"; pixelRatio: number };
+export type HtmlCaptureMessage =
+  | { type: "GIFTOMAT_READY" }
+  | { type: "GIFTOMAT_CAPTURE_RESULT"; dataUrl: string; width: number; height: number }
+  | { type: "GIFTOMAT_CAPTURE_ERROR"; message: string };
+
+export function isHtmlCaptureMessage(value: unknown): value is HtmlCaptureMessage {
+  if (!value || typeof value !== "object" || !("type" in value)) return false;
+  const message = value as Record<string, unknown>;
+  if (message.type === "GIFTOMAT_READY") return true;
+  if (message.type === "GIFTOMAT_CAPTURE_ERROR") return typeof message.message === "string";
+  return message.type === "GIFTOMAT_CAPTURE_RESULT"
+    && typeof message.dataUrl === "string"
+    && typeof message.width === "number"
+    && typeof message.height === "number";
+}
+
 export interface HtmlPdfPagePreset {
   id: string;
   label: string;

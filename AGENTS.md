@@ -63,7 +63,7 @@ New behavior needs a unit test in `tests/` (pure logic lives in `app/lib/`). New
 
 - GIF encoder `app/lib/encoder.ts` and vendored `public/gif.js`, `public/gif.worker.js`, `public/html-to-image.js`. Never edit vendored files. Repeating the first frame is a proven white-frame fix. `dispose: 2` was recorded as required but is absent from the code: unverified; add it only with a visual GIF check (ROADMAP R0.2).
 - Crop rendering uses cover math (`drawCrop`): no letterbox bars, zoom never below 100%.
-- Downloads go through `triggerDownload` only (temporary-anchor click, iframe-aware for the Bitrix24 preview). Never `<a download target="_blank">` on blob URLs; never a new `document.createElement("a")` outside `app/lib/download.ts`.
+- Downloads go through `triggerDownload` only and stay in the current app context. Never use `window.open()` / `target="_blank"` for blob downloads; never create a temporary download anchor outside `app/lib/download.ts`. The hosting iframe must permit downloads.
 - `replaceImages` / `removeImage`: pure updaters, Blob URLs revoked outside them.
 - HTML → PDF capture: `sandbox="allow-scripts"`, `referrerPolicy="no-referrer"`, accept `postMessage` only from the preview iframe.
 - PWA: any shell or icon asset change bumps `CACHE_VERSION` in `public/sw.js`. `app/icon.png` and `public/giftomat-icon.png` stay byte-identical.

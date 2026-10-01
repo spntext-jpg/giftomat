@@ -1,3 +1,28 @@
+import { safeBaseName } from "./presets.ts";
+
+
+export type CropOutputFormat = "jpeg" | "png";
+
+export interface CropFileSettings {
+  width: number;
+  height: number;
+  zoom: number;
+  offsetX: number;
+  offsetY: number;
+  format: CropOutputFormat;
+  quality?: number;
+}
+
+export function buildCropFileName(
+  sourceName: string,
+  width: number,
+  height: number,
+  format: CropOutputFormat
+): string {
+  const extension = format === "jpeg" ? "jpg" : "png";
+  return `${safeBaseName(sourceName)}-${Math.round(width)}x${Math.round(height)}.${extension}`;
+}
+
 export interface CropTransform {
   scale: number;
   drawWidth: number;
@@ -119,15 +144,7 @@ export function drawCrop(
 
 export async function cropImageToBlob(
   image: HTMLImageElement,
-  options: {
-    width: number;
-    height: number;
-    zoom: number;
-    offsetX: number;
-    offsetY: number;
-    format: "jpeg" | "png";
-    quality?: number;
-  }
+  options: CropFileSettings
 ): Promise<Blob> {
   const width = Math.round(clampCropValue(options.width, 64, 8000));
   const height = Math.round(clampCropValue(options.height, 64, 8000));
@@ -155,4 +172,13 @@ export async function cropImageToBlob(
       options.format === "jpeg" ? options.quality ?? 0.92 : undefined
     );
   });
+}
+export async function renderCropFile(
+  image: HTMLImageElement,
+  sourceName: string,
+  settings: CropFileSettings
+): Promise<File> {
+  const blob = await cropImageToBlob(image, settings);
+  const name = buildCropFileName(sourceName, settings.width, settings.height, settings.format);
+  return new File([blob], name, { type: blob.type });
 }

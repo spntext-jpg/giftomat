@@ -1,20 +1,27 @@
 import { existsSync, readFileSync } from "node:fs";
+import { findDuplicateSelectors } from "./css-contract.mjs";
 
 const read = (path) => readFileSync(path, "utf8");
 const requiredFiles = [
   "app/page.tsx",
   "app/components/CropWorkspace.tsx",
   "app/components/HtmlToPdfPanel.tsx",
+  "app/components/ResultCard.tsx",
+  "app/components/ToolNav.tsx",
+  "app/hooks/useGifEditor.ts",
+  "app/hooks/useImageLibrary.ts",
   "app/components/VideoImportPanel.tsx",
   "app/lib/binary.ts",
   "app/lib/download.ts",
   "app/lib/encoder.ts",
   "app/lib/images.ts",
+  "app/lib/htmlPdf.ts",
   "app/lib/pdf.ts",
   "app/lib/presets.ts",
   "app/lib/video.ts",
   "app/lib/zip.ts",
   "app/globals.css",
+  "scripts/css-contract.mjs",
   "design.md",
   "public/gif.js",
   "public/gif.worker.js",
@@ -33,6 +40,9 @@ for (const file of requiredFiles) {
 const page = read("app/page.tsx");
 const cropWorkspace = read("app/components/CropWorkspace.tsx");
 const htmlPanel = read("app/components/HtmlToPdfPanel.tsx");
+const toolNav = read("app/components/ToolNav.tsx");
+const imageLibrary = read("app/hooks/useImageLibrary.ts");
+const htmlPdf = read("app/lib/htmlPdf.ts");
 const videoPanel = read("app/components/VideoImportPanel.tsx");
 const images = read("app/lib/images.ts");
 const binary = read("app/lib/binary.ts");
@@ -53,14 +63,11 @@ const design = read("design.md");
 for (const marker of ["generateGif", "generatePdf", "compressImages", "buildGifAttempts"]) {
   if (!page.includes(marker) && !presets.includes(marker)) throw new Error(`Missing critical flow: ${marker}`);
 }
-for (const marker of [
-  'switchTool("gif")',
-  'switchTool("pdf")',
-  'switchTool("compress")',
-  'switchTool("crop")',
-  'switchTool("html2pdf")',
-]) {
-  if (!page.includes(marker)) throw new Error(`Missing navigation flow: ${marker}`);
+for (const marker of ['id: "gif"', 'id: "pdf"', 'id: "compress"', 'id: "crop"', 'id: "html2pdf"']) {
+  if (!toolNav.includes(marker)) throw new Error(`Missing navigation flow: ${marker}`);
+}
+if (!page.includes("<ToolNav") || !page.includes("onSelect={switchTool}")) {
+  throw new Error("ToolNav is not wired to the workspace switch flow");
 }
 for (const forbidden of ["x-landscape", "X · полный экран"]) {
   if (page.includes(forbidden) || presets.includes(forbidden)) throw new Error(`Obsolete forced-X format remains: ${forbidden}`);
@@ -73,7 +80,7 @@ if (!images.includes('fit === "cover"') || !images.includes("Math.max(")) {
 }
 
 // Crop, video and HTML capture contracts.
-for (const marker of ["cropImageToBlob", "crop-preview-canvas", "Подготовить файл"]) {
+for (const marker of ["renderCropFile", "crop-preview-canvas", "Подготовить файл"]) {
   if (!cropWorkspace.includes(marker) && !read("app/lib/crop.ts").includes(marker)) {
     throw new Error(`Missing crop flow: ${marker}`);
   }
@@ -85,6 +92,9 @@ if (!cropWorkspace.includes("crop-clear-button") ||
 }
 if (!cropWorkspace.includes("crop-nudge-bar") || !cropWorkspace.includes("nudgeCropOffset") || !cropWorkspace.includes("stepCropZoom")) {
   throw new Error("Crop workspace must expose fine-positioning (nudge/zoom) controls");
+}
+if (!cropWorkspace.includes("multiple") || !cropWorkspace.includes("image/heic") || !cropWorkspace.includes("buildStoredZip") || !cropWorkspace.includes("cropPositionsRef")) {
+  throw new Error("Crop multi-file/HEIC/batch-position/ZIP contract is incomplete");
 }
 if (cropWorkspace.includes("onWheel=")) {
   throw new Error("Crop wheel zoom must use a native non-passive listener (React onWheel is passive)");
@@ -105,6 +115,9 @@ if (!htmlPanel.includes('sandbox="allow-scripts"') || !htmlPanel.includes('refer
 // One canonical download and binary implementation.
 if (!download.includes("triggerDownload") || !download.includes("URL.createObjectURL")) {
   throw new Error("Download helpers are incomplete");
+}
+if (download.includes("window.open(")) {
+  throw new Error("Downloads must stay in the current app context and must not open a new window");
 }
 for (const source of [page, cropWorkspace, htmlPanel]) {
   if (!source.includes("triggerDownload(")) throw new Error("A result panel bypasses the shared download helper");
@@ -184,13 +197,31 @@ if (!globalCss.includes("overflow-wrap: anywhere") || !globalCss.includes("@medi
 for (const debt of ["!important", '@import "tailwindcss"', "@tailwind base"]) {
   if (globalCss.includes(debt)) throw new Error(`Legacy CSS debt remains: ${debt}`);
 }
+const duplicateSelectors = findDuplicateSelectors(globalCss);
+if (duplicateSelectors.length) {
+  throw new Error(`Duplicate CSS selectors remain in the same scope: ${duplicateSelectors.slice(0, 6).join(", ")}`);
+}
+for (const legacyClass of ["zephyr-range", "pdf-preset-"]) {
+  if (globalCss.includes(legacyClass) || page.includes(legacyClass) || cropWorkspace.includes(legacyClass) || htmlPanel.includes(legacyClass)) {
+    throw new Error(`Legacy generic control class remains: ${legacyClass}`);
+  }
+}
 if (globalCss.includes('[data-theme="')) throw new Error("Legacy data-theme overrides remain in canonical CSS");
 if (page.includes('matchMedia("(prefers-color-scheme: light)")') || layout.includes('data-theme="')) {
   throw new Error("A fake OS-driven theme contract was reintroduced");
 }
 if (page.includes("aria-pressed={activeTool")) throw new Error("Navigation destinations expose redundant aria-pressed state");
-if (!page.includes("setImages((current) => current.map((image) => replacements.get(image.id) ?? image));")) {
+if (!imageLibrary.includes("setImages((current) => current.map((image) => replacements.get(image.id) ?? image));")) {
   throw new Error("replaceImages must keep its state updater pure");
+}
+if (!imageLibrary.includes("useEffectEvent") || !page.includes("workspaceRef.current?.focus")) {
+  throw new Error("Paste listener or tool-switch focus accessibility contract is incomplete");
+}
+if (!page.includes("moveImage(selectedImage.id, -1)") || !page.includes("moveImage(selectedImage.id, 1)")) {
+  throw new Error("GIF frames must expose keyboard-accessible left/right reorder controls");
+}
+if (!htmlPdf.includes("HtmlCaptureMessage") || !htmlPanel.includes("isHtmlCaptureMessage")) {
+  throw new Error("HTML capture protocol types must be shared and validated");
 }
 if (!design.includes("August v3 — Dark Workbench") || !design.includes("Status: production canonical") || !design.includes("Tangerine is status/download-only")) {
   throw new Error("design.md is missing the canonical production August v3 contract");
@@ -253,6 +284,9 @@ if (existsSync("server.js")) {
 for (const marker of [
   "export const GIF_PRESETS",
   'id: "x-16-9"',
+  'id: "linkedin-wide"',
+  'id: "linkedin-square"',
+  'id: "linkedin-portrait"',
   'id: "portrait-4-5"',
   'id: "vertical-9-16"',
 ]) {
@@ -265,6 +299,7 @@ for (const marker of [
   '"portrait-3-4"', '"social-wide"', '"document-a4"', 'id: "ig-photo"',
   'id: "media-wide"', 'id: "media-portrait"', 'id: "linkedin-post"',
   'id: "x-header"', 'id: "youtube-banner"', 'id: "blog-cover"', 'id: "blog-preview"',
+  'id: "facebook-portrait"', 'id: "open-graph"', 'id: "threads-portrait"', 'id: "pinterest-pin"', 'id: "telegram-wide"', 'id: "vk-wide"',
 ]) {
   if (!presets.includes(marker)) throw new Error(`Missing production preset: ${marker}`);
 }
@@ -281,7 +316,7 @@ if (lockRoot.dependencies?.["gif.js"] || lockRoot.devDependencies?.tailwindcss |
 for (const packagePath of ["node_modules/gif.js", "node_modules/tailwindcss", "node_modules/@tailwindcss/postcss"]) {
   if (packageLock.packages?.[packagePath]) throw new Error(`Removed dependency remains in package-lock.json: ${packagePath}`);
 }
-const firstParty = [page, cropWorkspace, htmlPanel, videoPanel, globalCss, nextConfig, serviceWorker, presets].join("\n");
+const firstParty = [page, cropWorkspace, htmlPanel, videoPanel, toolNav, imageLibrary, globalCss, nextConfig, serviceWorker, presets].join("\n");
 for (const historicalPrefix of [
   "GIFTOMAT_AUGUST_", "GIFTOMAT_SPRINT", "GIFTOMAT_PRODUCTION_", "GIFTOMAT_CONTRAST_",
   "GIFTOMAT_UI_", "GIFTOMAT_PREMIUM_", "GIFTOMAT_NEXT_", "GIFTOMAT_CJM_", "GIFTOMAT_PDF_",

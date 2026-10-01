@@ -1,6 +1,6 @@
 // Static Next.js chunks are immutable. Public runtime assets use stale-while-revalidate
 // so the installed PWA opens quickly while receiving new production revisions.
-const CACHE_VERSION = "giftomat-v8-crop-media-presets-icon-v8";
+const CACHE_VERSION = "giftomat-v9-ux-quality-presets";
 
 const APP_SHELL = [
   "/",

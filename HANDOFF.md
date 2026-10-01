@@ -1,6 +1,6 @@
 # Giftomat — Handoff
 
-**Status:** active · **Synchronized:** 2026-09-30 · **Gate:** `npm run verify`
+**Status:** active · **Synchronized:** 2026-10-01 · **Gate:** `npm run verify`
 
 Agent rules: `AGENTS.md`. Work queue: `ROADMAP.md`. UI contract: `design.md`.
 
@@ -16,6 +16,15 @@ Agent rules: `AGENTS.md`. Work queue: `ROADMAP.md`. UI contract: `design.md`.
 - Crop: presets `1024 × 512` (blog cover) and `950 × 417` (blog preview); fine positioning (arrows move 1 px, zoom ±5%, hold to repeat, keyboard), drag-and-drop onto the drop zone, native non-passive wheel zoom.
 - Cleanup: dead `computeDimensions`, dead `.result-tip` CSS, dead eslint directive; Russian code comments translated; typed GIF runtime declaration; DRY `triggerDownload`.
 - CI workflow running `npm run verify`; smoke-check contracts updated.
+
+## Landed in the UX / quality sprint (2026-10-01)
+
+- Downloads now stay in the current app context: `triggerDownload` uses one temporary anchor and never `window.open`.
+- Architecture: `useImageLibrary`, `useGifEditor`, `ToolNav` and shared `ResultCard`; Crop render/file naming moved to `app/lib/crop.ts`; HTML capture protocol types are shared and validated.
+- UX: 44px icon controls, keyboard-accessible GIF frame move left/right, focus on tool switch, shared live result pattern, video drag/drop, consolidated CSS with a duplicate-selector gate.
+- Crop: multi-file + HEIC/HEIF intake, per-image crop positions, thumbnail switching, batch replacement and ZIP export. Social presets expanded for Open Graph, LinkedIn, Threads, Pinterest, Telegram and VK.
+- CI adds a non-blocking production dependency audit. PWA shell cache bumped for the UI revision.
+- Visual regression still needs a browser pass at the five canonical viewports (ROADMAP R2.2).
 
 ## Decisions
 

@@ -4,11 +4,11 @@
 
 ## Инструменты
 
-- **GIF** из изображений: длительность каждого кадра, порядок drag-and-drop, пресеты (исходное, X 16:9, 1:1, 4:5, 9:16), ручное позиционирование кадра.
+- **GIF** из изображений: длительность каждого кадра, drag-and-drop + кнопки влево/вправо, ручное позиционирование и пресеты для X, LinkedIn, 1:1, 4:5 и 9:16.
 - **Video → GIF**: извлечение кадров из MP4/WebM/MOV до 200 МБ.
 - **PDF-карусель**: social/document-пресеты, режимы contain/cover.
 - **HTML → PDF**: sandbox-превью и постраничный рендер.
-- **Crop**: готовые и произвольные размеры (СМИ 1320 × 768 и 1080 × 1350, блог 1024 × 512 и 950 × 417, соцсети), точная подстройка кадра (стрелки по 1 px, масштаб, колесо мыши, клавиатура), применение рамки ко всей пачке.
+- **Crop**: готовые и произвольные размеры (СМИ, блог, Open Graph, Facebook, LinkedIn, X, Threads, Pinterest, Telegram, VK, YouTube), HEIC/HEIF, точная подстройка кадра, отдельная позиция для каждого изображения и пакетный ZIP.
 - **Compress**: JPG/WebP, ZIP для пакетной выгрузки.
 - **HEIC/HEIF** → JPEG перед дальнейшей обработкой.
 
@@ -33,12 +33,13 @@ npm run verify    # typecheck → tests → smoke-check → production build (ou
 
 ## Структура
 
-- `app/page.tsx` — основной workspace и переключение инструментов;
-- `app/components/` — Crop, HTML → PDF, импорт видео, регистрация Service Worker;
+- `app/page.tsx` — основной workspace и экспортные orchestration flows;
+- `app/hooks/` — библиотека изображений и состояние GIF-редактора;
+- `app/components/` — навигация, общий result card, Crop, HTML → PDF, импорт видео, регистрация Service Worker;
 - `app/lib/` — чистая логика: пресеты, crop-математика, изображения, PDF, ZIP, HEIC, скачивание;
 - `public/gif.js`, `public/gif.worker.js`, `public/html-to-image.js` — vendored runtime (не редактировать);
 - `public/sw.js` — service worker, версия кэша в `CACHE_VERSION`;
-- `scripts/smoke-check.mjs` — контракты продукта, дизайна, PWA и гигиены репозитория;
+- `scripts/smoke-check.mjs` — контракты продукта, дизайна, PWA и гигиены репозитория; `scripts/css-contract.mjs` — проверка уникальности CSS-селекторов;
 - `tests/` — unit-тесты.
 
 ## Документация

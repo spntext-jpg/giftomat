@@ -1,12 +1,16 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import ResultCard from "./ResultCard";
 import { createDownloadUrl, revokeDownloadUrl, triggerDownload } from "../lib/download";
 import {
   buildCapturePreviewDocument,
   computePageSlices,
   HTML_PDF_PAGE_PRESETS,
+  isHtmlCaptureMessage,
   pointsToCssPixels,
+  type HtmlCaptureMessage,
+  type HtmlCaptureRequest,
 } from "../lib/htmlPdf";
 import { loadImage } from "../lib/images";
 import { buildImagePdf, type JpegPdfPage } from "../lib/pdf";
@@ -14,14 +18,6 @@ import { formatBytes, safeBaseName } from "../lib/presets";
 
 interface HtmlToPdfPanelProps {
   disabled?: boolean;
-}
-
-interface CaptureMessage {
-  type: "GIFTOMAT_READY" | "GIFTOMAT_CAPTURE_RESULT" | "GIFTOMAT_CAPTURE_ERROR";
-  dataUrl?: string;
-  width?: number;
-  height?: number;
-  message?: string;
 }
 
 const DEFAULT_PIXEL_RATIO = 2;
@@ -39,7 +35,7 @@ export default function HtmlToPdfPanel({ disabled = false }: HtmlToPdfPanelProps
 
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const captureResolverRef = useRef<((message: CaptureMessage) => void) | null>(null);
+  const captureResolverRef = useRef<((message: HtmlCaptureMessage) => void) | null>(null);
 
   const preset = HTML_PDF_PAGE_PRESETS.find((item) => item.id === pagePresetId) ?? HTML_PDF_PAGE_PRESETS[0];
   const iframeWidthPx = pointsToCssPixels(preset.widthPt);
@@ -56,8 +52,8 @@ export default function HtmlToPdfPanel({ disabled = false }: HtmlToPdfPanelProps
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
       if (event.source !== iframeRef.current?.contentWindow) return;
-      const data = event.data as CaptureMessage | undefined;
-      if (!data || typeof data !== "object") return;
+      const data = event.data;
+      if (!isHtmlCaptureMessage(data)) return;
       if (data.type === "GIFTOMAT_READY") {
         setIframeReady(true);
         return;
@@ -89,14 +85,19 @@ export default function HtmlToPdfPanel({ disabled = false }: HtmlToPdfPanelProps
 
       captureResolverRef.current = (message) => {
         window.clearTimeout(timeoutId);
-        if (message.type === "GIFTOMAT_CAPTURE_ERROR" || !message.dataUrl || !message.width || !message.height) {
+        if (message.type === "GIFTOMAT_CAPTURE_ERROR") {
           reject(new Error(message.message || "Не удалось отрендерить документ"));
+          return;
+        }
+        if (message.type !== "GIFTOMAT_CAPTURE_RESULT" || !message.dataUrl || !message.width || !message.height) {
+          reject(new Error("Не удалось отрендерить документ"));
           return;
         }
         resolve({ dataUrl: message.dataUrl, width: message.width, height: message.height });
       };
 
-      iframe.contentWindow.postMessage({ type: "GIFTOMAT_CAPTURE_REQUEST", pixelRatio: ratio }, "*");
+      const request: HtmlCaptureRequest = { type: "GIFTOMAT_CAPTURE_REQUEST", pixelRatio: ratio };
+      iframe.contentWindow.postMessage(request, "*");
     });
   };
 
@@ -256,14 +257,14 @@ export default function HtmlToPdfPanel({ disabled = false }: HtmlToPdfPanelProps
 
           <div className="setting-group crop-setting-group">
             <label htmlFor="html-page-preset">Формат страницы</label>
-            <div className="pdf-preset-select">
-              <svg className="pdf-preset-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <div className="preset-select">
+              <svg className="preset-select-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M6 2h8l4 4v16H6Z" />
                 <path d="M14 2v5h5" />
               </svg>
               <select
                 id="html-page-preset"
-                className="pdf-preset-control"
+                className="preset-select-control"
                 value={pagePresetId}
                 disabled={working || disabled}
                 onChange={(event) => setPagePresetId(event.target.value)}
@@ -274,7 +275,7 @@ export default function HtmlToPdfPanel({ disabled = false }: HtmlToPdfPanelProps
                   </option>
                 ))}
               </select>
-              <svg className="pdf-preset-chevron" aria-hidden="true" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <svg className="preset-select-chevron" aria-hidden="true" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                 <path d="m6 8 4 4 4-4" />
               </svg>
             </div>
@@ -287,7 +288,7 @@ export default function HtmlToPdfPanel({ disabled = false }: HtmlToPdfPanelProps
             </div>
             <input
               id="html-pixel-ratio"
-              className="zephyr-range"
+              className="range-input"
               type="range"
               min="1"
               max="3"
@@ -313,23 +314,15 @@ export default function HtmlToPdfPanel({ disabled = false }: HtmlToPdfPanelProps
 
         {error && <div className="error-card" role="alert">{error}</div>}
           {result && (
-            <div className="result-card">
-              <div className="result-check">✓</div>
-              <div>
-                <strong>PDF готов</strong>
-                <div className="result-meta">
-                  <span>{result.pageCount} {result.pageCount === 1 ? "страница" : "страниц"}</span>
-                  <span>{formatBytes(result.size)}</span>
-                </div>
-              </div>
-              <button
-                type="button"
-                className="download-button"
-                onClick={() => triggerDownload(result.downloadUrl, result.name)}
-              >
-                Скачать файл
-              </button>
-            </div>
+            <ResultCard
+              title="PDF готов"
+              meta={<>
+                <span>{result.pageCount} {result.pageCount === 1 ? "страница" : "страниц"}</span>
+                <span>{formatBytes(result.size)}</span>
+              </>}
+              actionLabel="Скачать файл"
+              onAction={() => triggerDownload(result.downloadUrl, result.name)}
+            />
           )}
         </div>
 

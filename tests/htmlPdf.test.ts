@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { buildCapturePreviewDocument, computePageSlices, pointsToCssPixels } from "../app/lib/htmlPdf.ts";
+import { buildCapturePreviewDocument, computePageSlices, isHtmlCaptureMessage, pointsToCssPixels } from "../app/lib/htmlPdf.ts";
 
 test("computePageSlices splits content into full-height pages", () => {
   const slices = computePageSlices(2000, 800);
@@ -53,4 +53,11 @@ test("buildCapturePreviewDocument appends the script for a bare HTML fragment", 
   const output = buildCapturePreviewDocument(input);
   assert.ok(output.startsWith(input));
   assert.ok(output.includes("html-to-image.js"));
+});
+
+test("HTML capture message guard validates protocol payloads", () => {
+  assert.equal(isHtmlCaptureMessage({ type: "GIFTOMAT_READY" }), true);
+  assert.equal(isHtmlCaptureMessage({ type: "GIFTOMAT_CAPTURE_ERROR", message: "x" }), true);
+  assert.equal(isHtmlCaptureMessage({ type: "GIFTOMAT_CAPTURE_RESULT", dataUrl: "data:image/png;base64,x", width: 10, height: 20 }), true);
+  assert.equal(isHtmlCaptureMessage({ type: "GIFTOMAT_CAPTURE_RESULT", dataUrl: "x", width: "10", height: 20 }), false);
 });

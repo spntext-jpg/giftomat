@@ -1,13 +1,15 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type ChangeEvent, type CSSProperties, type DragEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ChangeEvent, type CSSProperties, type DragEvent, type PointerEvent as ReactPointerEvent } from "react";
 import CropWorkspace from "./components/CropWorkspace";
+import ResultCard from "./components/ResultCard";
+import ToolIcon from "./components/ToolIcon";
+import ToolNav from "./components/ToolNav";
 import VideoImportPanel from "./components/VideoImportPanel";
 import HtmlToPdfPanel from "./components/HtmlToPdfPanel";
 import { copyToArrayBuffer } from "./lib/binary";
 import { createDownloadUrl, revokeDownloadUrl, triggerDownload } from "./lib/download";
 import { encodeGif } from "./lib/encoder";
-import { looksLikeHeic, resolveImageFile } from "./lib/heic";
 import {
   imageToJpegBlob,
   imageToOptimizedBlob,
@@ -30,15 +32,10 @@ import {
   GIF_PRESETS,
   type GifPresetId,
   GIF_WEB_MAX_BYTES,
-  getNextFrameDuration,
 } from "./lib/presets";
 import { buildStoredZip, type ZipEntry } from "./lib/zip";
-
-interface ImageItem {
-  id: string;
-  url: string;
-  file: File;
-}
+import { MAX_FILES, useImageLibrary } from "./hooks/useImageLibrary";
+import { useGifEditor } from "./hooks/useGifEditor";
 
 type Stage = "idle" | "working" | "done" | "error";
 type PreviewMode = "source" | "result";
@@ -53,10 +50,6 @@ interface ExportResult {
   previewUrl?: string;
   warning?: string;
 }
-
-const MAX_FILES = 60;
-const MAX_FILE_BYTES = 40 * 1024 * 1024;
-
 
 
 const TOOL_COPY: Record<ToolMode, { title: string; description: string }> = {
@@ -82,33 +75,7 @@ const TOOL_COPY: Record<ToolMode, { title: string; description: string }> = {
   },
 };
 
-function createId(): string {
-  return typeof crypto !== "undefined" && "randomUUID" in crypto
-    ? crypto.randomUUID()
-    : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-}
-
-function ToolIcon({ name }: { name: ToolMode | "upload" | "download" | "trash" | "privacy" }) {
-  const paths: Record<string, ReactNode> = {
-    gif: <><rect x="3" y="5" width="18" height="14" rx="3"/><path d="m9 9 6 3-6 3Z"/></>,
-    pdf: <><path d="M6 2h8l4 4v16H6Z"/><path d="M14 2v5h5"/><path d="M9 13h6M9 17h5"/></>,
-    compress: <><path d="m8 3-5 5m0-5v5h5M16 21l5-5m0 5v-5h-5"/><rect x="7" y="7" width="10" height="10" rx="2"/></>,
-    crop: <><path d="M7 3v13a5 5 0 0 0 5 5h9"/><path d="M3 7h13a5 5 0 0 1 5 5v9"/><path d="M7 7h10v10H7Z"/></>,
-    html2pdf: <><path d="M6 2h8l4 4v16H6Z"/><path d="M14 2v5h5"/><path d="m9.5 12-2 2 2 2M14.5 12l2 2-2 2"/></>,
-    upload: <><path d="M12 16V3m0 0L7 8m5-5 5 5"/><path d="M4 15v5h16v-5"/></>,
-    download: <><path d="M12 3v13m0 0 5-5m-5 5-5-5"/><path d="M4 19v2h16v-2"/></>,
-    trash: <><path d="M4 7h16M9 7V4h6v3M7 7l1 14h8l1-14"/></>,
-    privacy: <><path d="M12 3 5 6v5c0 5 3 8 7 10 4-2 7-5 7-10V6Z"/><path d="m9 12 2 2 4-4"/></>,
-  };
-  return (
-    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      {paths[name]}
-    </svg>
-  );
-}
 export default function GiftomatPage() {
-  const [images, setImages] = useState<ImageItem[]>([]);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [activeTool, setActiveTool] = useState<ToolMode>("gif");
   const [stage, setStage] = useState<Stage>("idle");
   const [progress, setProgress] = useState(0);
@@ -116,11 +83,6 @@ export default function GiftomatPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [result, setResult] = useState<ExportResult | null>(null);
   const [previewMode, setPreviewMode] = useState<PreviewMode>("source");
-  const [frameDuration, setFrameDuration] = useState(2);
-  const [frameDurationOverrides, setFrameDurationOverrides] = useState<Record<string, number>>({});
-  const [gifPresetId, setGifPresetId] = useState<GifPresetId>("source");
-  const [gifFramePositions, setGifFramePositions] = useState<Record<string, FramePosition>>({});
-  const [draggedFrameId, setDraggedFrameId] = useState<string | null>(null);
   const [pdfPreset, setPdfPreset] = useState<PdfPresetId>("linkedin-portrait");
   const [pdfFit, setPdfFit] = useState<"contain" | "cover">("contain");
   const [jpegQuality, setJpegQuality] = useState(82);
@@ -129,6 +91,75 @@ export default function GiftomatPage() {
   const [showCompressPreview, setShowCompressPreview] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [videoImportOpen, setVideoImportOpen] = useState(false);
+
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const workspaceRef = useRef<HTMLElement | null>(null);
+  const gifPositionDragRef = useRef<{
+    pointerId: number;
+    frameId: string;
+    startX: number;
+    startY: number;
+    startPosition: FramePosition;
+  } | null>(null);
+
+  const invalidateResult = () => {
+    setResult(null);
+    setPreviewMode("source");
+    setStage("idle");
+    setProgress(0);
+    setStatusText("");
+    setErrorMessage(null);
+  };
+
+  const {
+    images,
+    selectedImage,
+    selectedId,
+    setSelectedId,
+    addFiles,
+    removeImage: removeLibraryImage,
+    replaceImages,
+    clearImages: clearLibraryImages,
+    reorderImages,
+    moveImage,
+  } = useImageLibrary({
+    locked: stage === "working",
+    onMutation: invalidateResult,
+    onNotice: setErrorMessage,
+  });
+
+  const {
+    frameDuration,
+    setFrameDuration,
+    frameDurationOverrides,
+    gifPresetId,
+    setGifPresetId,
+    gifFramePositions,
+    selectedGifPreset,
+    selectedGifPosition,
+    draggedFrameId,
+    setDraggedFrameId,
+    cycleFrameDuration,
+    reorderFrames,
+    setFramePosition,
+    clearFrameState,
+    clearAllFrameState,
+  } = useGifEditor({
+    selectedImageId: selectedImage?.id ?? null,
+    onMutation: invalidateResult,
+    reorderImages,
+  });
+
+  const removeImage = (id: string) => {
+    clearFrameState(id);
+    removeLibraryImage(id);
+  };
+
+  const clearImages = () => {
+    clearAllFrameState();
+    clearLibraryImages();
+  };
 
   useEffect(() => {
     if (!mobileNavOpen) return;
@@ -143,49 +174,17 @@ export default function GiftomatPage() {
       document.body.style.overflow = previousOverflow;
     };
   }, [mobileNavOpen]);
-  const [videoImportOpen, setVideoImportOpen] = useState(false);
-
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const addFilesInFlightRef = useRef(false);
-  const imagesRef = useRef<ImageItem[]>([]);
-  const gifPositionDragRef = useRef<{
-    pointerId: number;
-    frameId: string;
-    startX: number;
-    startY: number;
-    startPosition: FramePosition;
-  } | null>(null);
-
-  useEffect(() => {
-    imagesRef.current = images;
-  }, [images]);
-
-  useEffect(() => {
-    return () => {
-      for (const image of imagesRef.current) URL.revokeObjectURL(image.url);
-    };
-  }, []);
 
   useEffect(() => {
     return () => {
       revokeDownloadUrl(result?.downloadUrl);
-      if (result?.previewUrl && result.previewUrl !== result.downloadUrl) {
-        revokeDownloadUrl(result.previewUrl);
-      }
+      if (result?.previewUrl && result.previewUrl !== result.downloadUrl) revokeDownloadUrl(result.previewUrl);
     };
   }, [result?.downloadUrl, result?.previewUrl]);
 
   useEffect(() => {
     return () => revokeDownloadUrl(comparePreview?.url);
   }, [comparePreview?.url]);
-
-  const selectedImage = useMemo(
-    () => images.find((image) => image.id === selectedId) ?? images[0] ?? null,
-    [images, selectedId]
-  );
-  const selectedGifPreset = GIF_PRESETS.find((preset) => preset.id === gifPresetId) ?? GIF_PRESETS[0];
-  const selectedGifPosition = selectedImage ? (gifFramePositions[selectedImage.id] ?? { x: 0, y: 0 }) : { x: 0, y: 0 };
-
 
   useEffect(() => {
     if (activeTool !== "compress" || !selectedImage) {
@@ -221,149 +220,12 @@ export default function GiftomatPage() {
   const minimumFiles = activeTool === "gif" ? 2 : 1;
   const canGenerate = images.length >= minimumFiles && stage !== "working";
 
-  const invalidateResult = () => {
-    setResult(null);
-    setPreviewMode("source");
-    setStage("idle");
-    setProgress(0);
-    setStatusText("");
-    setErrorMessage(null);
-  };
-
-  const addFiles = async (incoming: FileList | File[]) => {
-    if (stage === "working" || addFilesInFlightRef.current) return;
-    addFilesInFlightRef.current = true;
-    invalidateResult();
-    try {
-      const availableSlots = Math.max(0, MAX_FILES - images.length);
-      const candidates = Array.from(incoming)
-        .filter((file) => (file.type.startsWith("image/") || looksLikeHeic(file)) && file.size <= MAX_FILE_BYTES)
-        .slice(0, availableSlots);
-
-      const rejectedCount = Array.from(incoming).length - candidates.length;
-      const resolved = await Promise.all(candidates.map((file) => resolveImageFile(file)));
-      const usableFiles = resolved.filter((file): file is File => file !== null);
-      const failedHeicCount = resolved.length - usableFiles.length;
-
-      const nextImages = usableFiles.map((file) => ({
-        id: createId(),
-        url: URL.createObjectURL(file),
-        file,
-      }));
-
-      if (nextImages.length) {
-        setImages((current) => [...current, ...nextImages]);
-        setSelectedId((current) => current ?? nextImages[0].id);
-      }
-
-      const notices: string[] = [];
-      if (rejectedCount > 0) {
-        notices.push(
-          `Пропущено файлов: ${rejectedCount}. Поддерживаются изображения до 40 МБ, максимум ${MAX_FILES} кадров.`
-        );
-      }
-      if (failedHeicCount > 0) {
-        notices.push(`Не удалось прочитать HEIC/HEIF: ${failedHeicCount}.`);
-      }
-      if (notices.length) setErrorMessage(notices.join(" "));
-    } finally {
-      addFilesInFlightRef.current = false;
-      if (fileInputRef.current) fileInputRef.current.value = "";
-    }
-  };
-  useEffect(() => {
-    const handlePaste = (event: ClipboardEvent) => {
-      const items = event.clipboardData?.items;
-      if (!items) return;
-      const files = Array.from(items)
-        .filter((item) => item.kind === "file" && item.type.startsWith("image/"))
-        .map((item) => item.getAsFile())
-        .filter((file): file is File => file !== null);
-      if (files.length > 0) {
-        event.preventDefault();
-        addFiles(files);
-      }
-    };
-    window.addEventListener("paste", handlePaste);
-    return () => window.removeEventListener("paste", handlePaste);
-  }, [addFiles]);
-
-  const removeImage = (id: string) => {
-    if (stage === "working") return;
-    const removed = images.find((image) => image.id === id);
-    if (removed) URL.revokeObjectURL(removed.url);
-    const next = images.filter((image) => image.id !== id);
-    setImages(next);
-    if (selectedId === id) setSelectedId(next[0]?.id ?? null);
-    setFrameDurationOverrides((current) => {
-      if (!(id in current)) return current;
-      const nextOverrides = { ...current };
-      delete nextOverrides[id];
-      return nextOverrides;
-    });
-    invalidateResult();
-  };
-  const replaceImages = (updates: { id: string; file: File }[]) => {
-    if (!updates.length) return;
-
-    const updatesById = new Map(updates.map((update) => [update.id, update.file]));
-    const replacements = new Map<string, ImageItem>();
-    const oldUrls: string[] = [];
-
-    for (const image of images) {
-      const file = updatesById.get(image.id);
-      if (!file) continue;
-      replacements.set(image.id, { id: image.id, url: URL.createObjectURL(file), file });
-      oldUrls.push(image.url);
-    }
-
-    if (!replacements.size) return;
-    setImages((current) => current.map((image) => replacements.get(image.id) ?? image));
-    queueMicrotask(() => oldUrls.forEach((url) => URL.revokeObjectURL(url)));
-    invalidateResult();
-  };
-
-  const clearImages = () => {
-    if (stage === "working") return;
-    for (const image of images) URL.revokeObjectURL(image.url);
-    setImages([]);
-    setSelectedId(null);
-    setFrameDurationOverrides({});
-    invalidateResult();
-  };
-  const cycleFrameDuration = (id: string) => {
-    setFrameDurationOverrides((current) => {
-      const next = { ...current };
-      const nextValue = getNextFrameDuration(current[id]);
-      if (nextValue === undefined) {
-        delete next[id];
-      } else {
-        next[id] = nextValue;
-      }
-      return next;
-    });
-    invalidateResult();
-  };
-
   const switchTool = (tool: ToolMode) => {
     setMobileNavOpen(false);
     if (stage === "working" || tool === activeTool) return;
     setActiveTool(tool);
     invalidateResult();
-  };
-
-  const reorderFrames = (sourceId: string, targetId: string) => {
-    if (sourceId === targetId) return;
-    setImages((current) => {
-      const from = current.findIndex((item) => item.id === sourceId);
-      const to = current.findIndex((item) => item.id === targetId);
-      if (from < 0 || to < 0) return current;
-      const next = [...current];
-      const [moved] = next.splice(from, 1);
-      next.splice(to, 0, moved);
-      return next;
-    });
-    invalidateResult();
+    window.requestAnimationFrame(() => workspaceRef.current?.focus({ preventScroll: true }));
   };
 
   const handleFrameDragStart = (event: DragEvent<HTMLDivElement>, id: string) => {
@@ -400,8 +262,7 @@ export default function GiftomatPage() {
       x: Math.max(-1, Math.min(1, drag.startPosition.x + ((event.clientX - drag.startX) / Math.max(1, rect.width)) * 2)),
       y: Math.max(-1, Math.min(1, drag.startPosition.y + ((event.clientY - drag.startY) / Math.max(1, rect.height)) * 2)),
     };
-    setGifFramePositions((current) => ({ ...current, [drag.frameId]: next }));
-    invalidateResult();
+    setFramePosition(drag.frameId, next);
   };
 
   const handleGifPositionPointerEnd = (event: ReactPointerEvent<HTMLDivElement>) => {
@@ -445,9 +306,11 @@ export default function GiftomatPage() {
 
     if (!finalBlob) throw new Error("Не удалось создать GIF");
     if (finalBlob.size > GIF_WEB_MAX_BYTES) {
-      warning = "Файл превышает 15 МБ. Сократите количество кадров или длительность анимации перед публикацией в X.";
-    } else if (finalBlob.size > GIF_MOBILE_MAX_BYTES) {
-      warning = "GIF готов для загрузки через x.com. Для мобильного приложения X нужен файл до 5 МБ.";
+      warning = gifPresetId === "x-16-9"
+        ? "Файл превышает 15 МБ. Сократите количество кадров или длительность перед публикацией в X."
+        : "GIF больше 15 МБ. Для публикации в соцсетях лучше уменьшить размер или количество кадров.";
+    } else if (gifPresetId === "x-16-9" && finalBlob.size > GIF_MOBILE_MAX_BYTES) {
+      warning = "GIF подходит для загрузки через x.com; для мобильного приложения X нужен файл до 5 МБ.";
     }
 
     const downloadUrl = createDownloadUrl(finalBlob);
@@ -653,98 +516,14 @@ export default function GiftomatPage() {
       />
 
       <div className="app-body">
-                        <aside
-          id="giftomat-tool-nav"
-          className={`tool-sidebar glass-panel giftomat-nav ${mobileNavOpen ? "open" : ""}`}
-          aria-label="Инструменты"
-        >
-          <button
-            type="button"
-            className={`tool-button giftomat-nav-button ${activeTool === "gif" ? "active" : ""}`}
-            onClick={() => switchTool("gif")}
-            aria-current={activeTool === "gif" ? "page" : undefined}
-            aria-label="GIF — Анимация"
-            disabled={stage === "working"}
-          >
-            <span className="tool-icon giftomat-nav-icon" aria-hidden="true">
-              <ToolIcon name="gif" />
-            </span>
-            <div className="giftomat-nav-copy">
-              <div className="giftomat-nav-title">GIF</div>
-              <div className="giftomat-nav-note">Анимация</div>
-            </div>
-          </button>
+        <ToolNav
+          activeTool={activeTool}
+          disabled={stage === "working"}
+          open={mobileNavOpen}
+          onSelect={switchTool}
+        />
 
-          <button
-            type="button"
-            className={`tool-button giftomat-nav-button ${activeTool === "pdf" ? "active" : ""}`}
-            onClick={() => switchTool("pdf")}
-            aria-current={activeTool === "pdf" ? "page" : undefined}
-            aria-label="PDF — Карусель"
-            disabled={stage === "working"}
-          >
-            <span className="tool-icon giftomat-nav-icon" aria-hidden="true">
-              <ToolIcon name="pdf" />
-            </span>
-            <div className="giftomat-nav-copy">
-              <div className="giftomat-nav-title">PDF</div>
-              <div className="giftomat-nav-note">Карусель</div>
-            </div>
-          </button>
-
-          <button
-            type="button"
-            className={`tool-button giftomat-nav-button ${activeTool === "compress" ? "active" : ""}`}
-            onClick={() => switchTool("compress")}
-            aria-current={activeTool === "compress" ? "page" : undefined}
-            aria-label="Сжатие — JPG и WebP"
-            disabled={stage === "working"}
-          >
-            <span className="tool-icon giftomat-nav-icon" aria-hidden="true">
-              <ToolIcon name="compress" />
-            </span>
-            <div className="giftomat-nav-copy">
-              <div className="giftomat-nav-title">Сжатие</div>
-              <div className="giftomat-nav-note">JPG · WebP</div>
-            </div>
-          </button>
-
-          <button
-            type="button"
-            className={`tool-button giftomat-nav-button ${activeTool === "crop" ? "active" : ""}`}
-            onClick={() => switchTool("crop")}
-            aria-current={activeTool === "crop" ? "page" : undefined}
-            aria-label="Обрезка — Точный размер"
-            disabled={stage === "working"}
-          >
-            <span className="tool-icon giftomat-nav-icon" aria-hidden="true">
-              <ToolIcon name="crop" />
-            </span>
-            <div className="giftomat-nav-copy">
-              <div className="giftomat-nav-title">Обрезка</div>
-              <div className="giftomat-nav-note">Точный размер</div>
-            </div>
-          </button>
-
-          <button
-            type="button"
-            className={`tool-button giftomat-nav-button ${activeTool === "html2pdf" ? "active" : ""}`}
-            onClick={() => switchTool("html2pdf")}
-            aria-current={activeTool === "html2pdf" ? "page" : undefined}
-            aria-label="HTML в PDF — Сохранение вёрстки"
-            disabled={stage === "working"}
-          >
-            <span className="tool-icon giftomat-nav-icon" aria-hidden="true">
-              <ToolIcon name="html2pdf" />
-            </span>
-            <div className="giftomat-nav-copy">
-              <div className="giftomat-nav-title">HTML → PDF</div>
-              <div className="giftomat-nav-note">Сохранение вёрстки</div>
-            </div>
-          </button>
-        </aside>
-
-        <main className="studio-layout">
+        <main ref={workspaceRef} className="studio-layout" tabIndex={-1} aria-label="Рабочая область">
           {activeTool === "crop" ? (
             <CropWorkspace
               image={selectedImage}
@@ -753,6 +532,7 @@ export default function GiftomatPage() {
               onRemoveImage={removeImage}
               batchImages={images}
               onReplaceImages={replaceImages}
+              onSelectImage={setSelectedId}
             />
           ) : activeTool === "gif" && videoImportOpen ? (
             <VideoImportPanel
@@ -782,6 +562,30 @@ export default function GiftomatPage() {
           >
             <div className="canvas-toolbar">
               <div className="toolbar-actions">
+                {activeTool === "gif" && selectedImage && images.length > 1 && (
+                  <div className="frame-reorder-actions" role="group" aria-label="Порядок выбранного кадра">
+                    <button
+                      type="button"
+                      className="icon-button"
+                      onClick={() => moveImage(selectedImage.id, -1)}
+                      disabled={stage === "working" || images[0]?.id === selectedImage.id}
+                      aria-label="Переместить выбранный кадр влево"
+                      title="Переместить кадр влево"
+                    >
+                      <ToolIcon name="left" />
+                    </button>
+                    <button
+                      type="button"
+                      className="icon-button"
+                      onClick={() => moveImage(selectedImage.id, 1)}
+                      disabled={stage === "working" || images[images.length - 1]?.id === selectedImage.id}
+                      aria-label="Переместить выбранный кадр вправо"
+                      title="Переместить кадр вправо"
+                    >
+                      <ToolIcon name="right" />
+                    </button>
+                  </div>
+                )}
                 {result?.kind === "gif" && (
                   <button className="secondary-button compact" onClick={() => setPreviewMode((mode) => mode === "result" ? "source" : "result") }>
                     {previewMode === "result" ? "Показать кадр" : "Показать GIF"}
@@ -900,7 +704,10 @@ export default function GiftomatPage() {
               accept="image/png,image/jpeg,image/webp,image/gif,image/avif,image/heic,image/heif,.heic,.heif"
               multiple
               hidden
-              onChange={(event: ChangeEvent<HTMLInputElement>) => event.target.files && addFiles(event.target.files)}
+              onChange={(event: ChangeEvent<HTMLInputElement>) => {
+                if (event.target.files) void addFiles(event.target.files);
+                event.currentTarget.value = "";
+              }}
             />
           </section>
 
@@ -924,10 +731,10 @@ export default function GiftomatPage() {
                   </button>
                   <div className="setting-group">
                     <label htmlFor="gif-preset">Формат GIF</label>
-                    <div className="pdf-preset-select">
+                    <div className="preset-select">
                       <select
                         id="gif-preset"
-                        className="pdf-preset-control"
+                        className="preset-select-control"
                         value={gifPresetId}
                         disabled={stage === "working"}
                         onChange={(event: ChangeEvent<HTMLSelectElement>) => {
@@ -941,7 +748,7 @@ export default function GiftomatPage() {
                           </option>
                         ))}
                       </select>
-                      <svg className="pdf-preset-chevron" aria-hidden="true" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                      <svg className="preset-select-chevron" aria-hidden="true" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                         <path d="m6 8 4 4 4-4" />
                       </svg>
                     </div>
@@ -954,7 +761,7 @@ export default function GiftomatPage() {
                     </div>
                     <input
                       id="frame-duration"
-                      className="zephyr-range"
+                      className="range-input"
                       type="range"
                       min="0.3"
                       max="5"
@@ -973,14 +780,14 @@ export default function GiftomatPage() {
                 <>
                   <div className="setting-group pdf-page-size-group">
                     <label htmlFor="pdf-page-size">Размер страницы</label>
-                    <div className="pdf-preset-select">
-                      <svg className="pdf-preset-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <div className="preset-select">
+                      <svg className="preset-select-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M6 2h8l4 4v16H6Z" />
                         <path d="M14 2v5h5" />
                       </svg>
                       <select
                         id="pdf-page-size"
-                        className="pdf-preset-control"
+                        className="preset-select-control"
                         value={pdfPreset}
                         disabled={stage === "working"}
                         onChange={(event: ChangeEvent<HTMLSelectElement>) => {
@@ -994,7 +801,7 @@ export default function GiftomatPage() {
                           </option>
                         ))}
                       </select>
-                      <svg className="pdf-preset-chevron" aria-hidden="true" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                      <svg className="preset-select-chevron" aria-hidden="true" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                         <path d="m6 8 4 4 4-4" />
                       </svg>
                     </div>
@@ -1025,7 +832,7 @@ export default function GiftomatPage() {
                     </div>
                     <input
                       id="jpeg-quality"
-                      className="zephyr-range"
+                      className="range-input"
                       type="range"
                       min="55"
                       max="95"
@@ -1050,22 +857,14 @@ export default function GiftomatPage() {
               {errorMessage && <div className="error-card" role="alert">{errorMessage}</div>}
 
               {result && (
-                <div className="result-card">
-                  <div className="result-check">✓</div>
-                  <div>
-                    <strong>{result.title}</strong>
-                    <div className="result-meta">{result.details.map((detail) => <span key={detail}>{detail}</span>)}</div>
-                    {result.warning && <p className="result-warning">{result.warning}</p>}
-                  </div>
-                  <button
-                    type="button"
-                    className="download-button"
-                    onClick={() => triggerDownload(result.downloadUrl, result.fileName)}
-                  >
-                    <ToolIcon name="download" />
-                    Скачать
-                  </button>
-                </div>
+                <ResultCard
+                  title={result.title}
+                  meta={result.details.map((detail) => <span key={detail}>{detail}</span>)}
+                  warning={result.warning}
+                  actionLabel="Скачать"
+                  actionIcon={<ToolIcon name="download" />}
+                  onAction={() => triggerDownload(result.downloadUrl, result.fileName)}
+                />
               )}
             </div>
 
