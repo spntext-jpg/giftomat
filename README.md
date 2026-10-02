@@ -24,7 +24,7 @@ npm run dev       # локальная разработка
 npm run verify    # typecheck → tests → smoke-check → production build (out/)
 ```
 
-Нужен Node ≥ 22.6. Команда `npm start` в текущем виде не работает со статическим экспортом (см. `HANDOFF.md`, вопрос 1): для просмотра сборки используйте содержимое `out/`.
+Node ≥ 22.6 is required. `npm start` runs `node server.js`, which serves the committed static export `out/` on `PORT` (default 3000); run `npm run build` first after any source change.
 
 ## Развёртывание
 

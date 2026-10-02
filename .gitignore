@@ -3,7 +3,7 @@ node_modules/
 
 # Next.js
 .next/
-out/
+# out/ is NOT ignored: VibeCode ships the static export (build_galaxy.md section 4)
 
 # build caches
 *.tsbuildinfo

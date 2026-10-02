@@ -29,7 +29,6 @@ const requiredFiles = [
   "public/sw.js",
   "AGENTS.md",
   "HANDOFF.md",
-  "ROADMAP.md",
   ".github/workflows/verify.yml",
 ];
 
@@ -305,6 +304,17 @@ for (const marker of [
 }
 if (presets.includes("X_GIF_") || page.includes("X_GIF_")) throw new Error("Duplicate X_GIF limit aliases remain");
 if (packageJson.type !== "module") throw new Error('package.json must declare "type": "module"');
+// VibeCode start contract (build_galaxy.md): production runs `npm install && npm start`.
+// Next, React and heic-to are build-time only; the static export ships in out/ and server.js has no dependencies.
+if (packageJson.scripts?.start !== "node server.js") {
+  throw new Error('package.json "start" must be "node server.js" (`next start` refuses output: "export")');
+}
+if (Object.keys(packageJson.dependencies ?? {}).length > 0 || Object.keys(packageLock.packages?.[""]?.dependencies ?? {}).length > 0) {
+  throw new Error("package.json and package-lock.json must keep an empty dependencies set (build-time packages are devDependencies)");
+}
+if (read(".gitignore").split(/\r?\n/).some((line) => ["out", "out/", "/out", "/out/"].includes(line.trim()))) {
+  throw new Error("out/ must not be in .gitignore: the static export ships to VibeCode (build_galaxy.md section 4)");
+}
 if (packageJson.dependencies?.["gif.js"]) throw new Error("Unused npm gif.js dependency remains");
 if (packageJson.devDependencies?.tailwindcss || packageJson.devDependencies?.["@tailwindcss/postcss"]) {
   throw new Error("Unused Tailwind toolchain remains");

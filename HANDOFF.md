@@ -1,6 +1,6 @@
 # Giftomat — Handoff
 
-**Status:** active · **Synchronized:** 2026-10-01 · **Gate:** `npm run verify`
+**Status:** active · **Synchronized:** 2026-10-02 · **Gate:** `npm run verify`
 
 Agent rules: `AGENTS.md`. Work queue: `ROADMAP.md`. UI contract: `design.md`.
 
@@ -26,6 +26,13 @@ Agent rules: `AGENTS.md`. Work queue: `ROADMAP.md`. UI contract: `design.md`.
 - CI adds a non-blocking production dependency audit. PWA shell cache bumped for the UI revision.
 - Visual regression still needs a browser pass at the five canonical viewports (ROADMAP R2.2).
 
+## Landed in the cold-start availability fix (2026-10-02)
+
+- Root cause of `refused to connect` on cold start: `package.json` `start` was `npm run build && next start`. Under `output: "export"` `next start` exits, and the heavy build ran before any port was open, so the platform saw a closed port. `start` is now `node server.js` (listens first, serves the committed `out/`).
+- `out/` is tracked (removed from `.gitignore`). After any source change run `npm run build` and commit the refreshed `out/`.
+- `dependencies` is empty: Next, React, React DOM and heic-to are devDependencies (build-time only; heic-to is bundled into `out/`). `package-lock.json` regenerated. Trade-off: the `server.js` self-heal build needs devDependencies, so it only works if the platform installs them; the shipped `out/` makes it unnecessary.
+- Smoke-check now guards the start script, the empty `dependencies` set and `out/` not being ignored; it no longer requires `ROADMAP.md` (deleted on purpose, 2026-10-01).
+
 ## Decisions
 
 **Locked** (details in `design.md`): August v3 token roles; action hierarchy (Lime executes, Tangerine is download/status only); GIF interaction model; Crop clear-image action, presets and fine positioning; icon canon.
@@ -34,11 +41,12 @@ Agent rules: `AGENTS.md`. Work queue: `ROADMAP.md`. UI contract: `design.md`.
 
 **Open — need Paulo:**
 
-1. ~~**VibeCode boundary.** `server.js` is not in this repository, and `npm start` fails under static export.~~ **Resolved by repo evidence (2026-10-02):** `server.js` now ships in the repo and is the `start` script (`node server.js`); it serves the static export under `process.env.PORT || 3000`. `out/` is NOT in `.gitignore` (it must ship — `build_galaxy.md` §4) and the build file documents this; do not add `out/` to `.gitignore`. Left open: `npm start` (Next's own `next start`) still refuses `output: "export"` — the VibeCode/deploy `start` script is `node server.js`, so this is not a production issue.
+1. ~~**VibeCode boundary.**~~ **Resolved (2026-10-02):** `start` is `node server.js`, `out/` ships (not in `.gitignore`; do not add it) and `dependencies` is empty. Details in the section above; `next start` is not used in any deploy path.
 2. **Navigation IA.** Floating bottom-nav vs the current drawer. Earlier notes cite "August §17.3" for bottom-nav; that section does not exist in `design.md`, so treat it as an unverified preference.
 3. **`dispose: 2`.** Recorded as a required `gif.addFrame()` fix but absent from `encoder.ts`; needs a visual GIF check. → R0.2.
 4. **External Fable 5.1 review.** Findings are not in the repository; provide the text to triage. → R4.4.
 5. **Analytics.** None exists (consistent with no backend). Confirm none is wanted.
+6. **VibeCode server settings** (not verifiable from the repo): `runMode: ALWAYS` and, if `provisionReason: "oom"`, a dedicated server — `build_galaxy.md` §9. Confirm both in the VibeCode console.
 
 ## Known gaps (recorded nowhere; ask before inventing)
 
