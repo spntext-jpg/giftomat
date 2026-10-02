@@ -34,7 +34,7 @@ Agent rules: `AGENTS.md`. Work queue: `ROADMAP.md`. UI contract: `design.md`.
 
 **Open — need Paulo:**
 
-1. **VibeCode boundary.** `server.js` is not in this repository, and `npm start` (`npm run build && next start`) fails under static export. Provide the real `server.js` and the VibeCode `package.json` scripts, and decide whether `out/` is committed (`build_galaxy.md` §4) or the self-healing build is relied on. → ROADMAP R0.1.
+1. ~~**VibeCode boundary.** `server.js` is not in this repository, and `npm start` fails under static export.~~ **Resolved by repo evidence (2026-10-02):** `server.js` now ships in the repo and is the `start` script (`node server.js`); it serves the static export under `process.env.PORT || 3000`. `out/` is NOT in `.gitignore` (it must ship — `build_galaxy.md` §4) and the build file documents this; do not add `out/` to `.gitignore`. Left open: `npm start` (Next's own `next start`) still refuses `output: "export"` — the VibeCode/deploy `start` script is `node server.js`, so this is not a production issue.
 2. **Navigation IA.** Floating bottom-nav vs the current drawer. Earlier notes cite "August §17.3" for bottom-nav; that section does not exist in `design.md`, so treat it as an unverified preference.
 3. **`dispose: 2`.** Recorded as a required `gif.addFrame()` fix but absent from `encoder.ts`; needs a visual GIF check. → R0.2.
 4. **External Fable 5.1 review.** Findings are not in the repository; provide the text to triage. → R4.4.

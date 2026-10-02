@@ -58,4 +58,6 @@ npm run verify    # typecheck → tests → smoke-check → production build (ou
 
 ## Гигиена репозитория
 
-В Git не попадают: `.next/`, `out/`, `node_modules/`, `*.tsbuildinfo`, снапшоты Repomix, patch/diff-файлы, одноразовые скрипты `giftomat_*.py` / `apply_*.py` / `fix_*.py`, Python-кэши, `.env*`.
+В Git не попадают: `.next/`, `node_modules/`, `*.tsbuildinfo`, снапшоты Repomix, patch/diff-файлы, одноразовые скрипты `giftomat_*.py` / `apply_*.py` / `fix_*.py`, Python-кэши, `.env*`.
+
+**`out/` — исключение: он НЕ в `.gitignore` и поставляется в деплой.** Для VibeCode (статический экспорт, `server.js`) собранный бандл обязан лежать в архиве: если `out/` исключить, упаковщик его отбросит, и при каждом холодном старте запустится тяжёлый `next build`, который жрёт память и долго держит приложение недоступным (симптомы — `refused to connect` / медленный старт). Правило задокументировано в `build_galaxy.md` §4 — не «чините» его, добавляя `out/` в `.gitignore`.
