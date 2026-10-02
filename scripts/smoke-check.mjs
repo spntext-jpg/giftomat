@@ -275,6 +275,11 @@ if (existsSync("server.js")) {
   for (const header of ["X-Content-Type-Options", "Referrer-Policy", "Permissions-Policy"]) {
     if (!server.includes(header)) throw new Error(`Missing production security contract in server.js: ${header}`);
   }
+  // Framing stays open to any HTTPS ancestor: an origin allowlist makes Chrome show
+  // "refused to connect" to every portal zone or custom domain outside it.
+  if (!server.includes("frame-ancestors https:;")) {
+    throw new Error("server.js must send `frame-ancestors https:;` (no origin allowlist)");
+  }
 } else {
   console.warn("WARN: server.js is not in the repository; production headers and start contract are unverified (HANDOFF.md, ROADMAP R0.1).");
 }

@@ -74,30 +74,19 @@ async function indexExists() {
 
 // Same values that next.config.ts previously applied via `headers()`.
 //
-// Frame embedding: Giftomat is opened from the Bitrix24 portal as an in-app
-// preview, which loads the app inside an iframe on the portal's own domain
-// (`*.bitrix24.*` / `bitrix24.site`). The former `X-Frame-Options: SAMEORIGIN`
-// plus `frame-ancestors 'self'` refused every cross-origin embedding, so Chrome
-// rendered a blank/white frame for users launching the app through the portal
-// ("Refused to display ... because it set 'X-Frame-Options'"). Accept the
-// official Bitrix24 origins (and the app's own origin) as trusted frame
-// ancestors; `X-Frame-Options` is dropped because it cannot express an allow
-// list in modern Chrome (ALLOW-FROM is ignored) and `frame-ancestors` fully
-// supersedes it. The app is a static, credential-less client bundle, so this
-// is not an auth downgrade.
-const BITRIX_FRAME_ANCESTORS = [
-  "'self'",
-  "https://*.bitrix24.ru",
-  "https://*.bitrix24.com",
-  "https://*.bitrix24.eu",
-  "https://*.bitrix24.cn",
-  "https://*.bitrix24.de",
-  "https://*.bitrix24.site",
-].join(" ");
+// Frame embedding: Giftomat runs inside an iframe, on a Bitrix24 portal or in the
+// VibeCode app shell (`*.bitrix24.tech`). Chrome renders a response that forbids
+// framing as a grey "<host> refused to connect" box, which looks exactly like a
+// dead server. An origin allowlist can never be complete: Bitrix24 portals live
+// on 20+ regional zones (`.com.br`, `.es`, `.in`, ...) and on custom domains, so
+// every user outside the list gets that box while the author does not. The app
+// is a static, credential-less client bundle (the platform gateway authenticates
+// before this code runs), so any HTTPS page may frame it. `X-Frame-Options` is
+// not sent: it cannot express an allow list and `frame-ancestors` supersedes it.
 
 const SECURITY_HEADERS = {
   "X-Content-Type-Options": "nosniff",
-  "Content-Security-Policy": `frame-ancestors ${BITRIX_FRAME_ANCESTORS};`,
+  "Content-Security-Policy": "frame-ancestors https:;",
   "Referrer-Policy": "no-referrer",
   "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
 };

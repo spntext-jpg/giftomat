@@ -21,6 +21,7 @@ Chat history, memory, old snapshots and summaries are hints, never truth. Repo d
 ## 3. Dual deployment: survive static export + bare `node:http`
 
 - Staging: GitHub → Vercel. Production: VibeCode, static `out/` served by a hand-written `server.js` (`node:http` only). See `build_galaxy.md`.
+- Framing: `server.js` sends `frame-ancestors https:` on purpose. The app runs in an iframe on Bitrix24 portals (20+ zones, custom domains) and in the VibeCode shell; never narrow it to an origin allowlist, or Chrome shows "refused to connect" to every user outside the list.
 - Before every change ask: does this work as static files served by bare `node:http`? Forbidden: API/route handlers, server actions, middleware, SSR-only or dynamic rendering, `headers()` / `redirects()` / `rewrites()`, the `next/image` optimizer, `cookies()` / `headers()`, runtime `process.env` in client code, runtime network dependencies (CDN fonts/scripts).
 - `npm start` is `node server.js` (the VibeCode start contract): it serves the committed static export `out/` on `process.env.PORT || 3000`. Never switch it back to `next start` (refuses `output: "export"`). `dependencies` stays empty: Next, React and heic-to are build-time devDependencies. After any source change run `npm run build` and commit the refreshed `out/`; smoke-check guards the start script, `.gitignore` and `dependencies`.
 

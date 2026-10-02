@@ -138,6 +138,8 @@ Giftomat не использует портальные данные, поэто
 
 ## 9. Доступность и «refused to connect» (сон и память Galaxy)
 
+**Correction (2026-10-02).** Inside an iframe Chrome draws the same box ("<host> refused to connect"; German: "hat die Verbindung abgelehnt") for a TCP refusal and for a response blocked by `X-Frame-Options` / CSP `frame-ancestors`. Tell them apart in the DevTools Console of the embedding page: `Refused to frame '...' because an ancestor violates ... frame-ancestors` means framing, not availability. `server.js` used to allow only `*.bitrix24.{ru,com,eu,cn,de,site}`, which excludes the VibeCode shell (`bitrix24.tech`), the other portal zones and custom domains; it now sends `frame-ancestors https:`. The TCP-level diagnosis below is therefore only one of the possible causes.
+
 **Симптом.** Сотрудники время от времени получают `refused to connect` при запуске:
 браузер не может даже открыть соединение (терминальная ошибка, не страница «нет
 доступа»). При этом владельцу открывается, политика доступа `PORTAL` стоит, а сеть

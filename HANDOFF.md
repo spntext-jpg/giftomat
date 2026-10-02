@@ -28,10 +28,15 @@ Agent rules: `AGENTS.md`. Work queue: `ROADMAP.md`. UI contract: `design.md`.
 
 ## Landed in the cold-start availability fix (2026-10-02)
 
-- Root cause of `refused to connect` on cold start: `package.json` `start` was `npm run build && next start`. Under `output: "export"` `next start` exits, and the heavy build ran before any port was open, so the platform saw a closed port. `start` is now `node server.js` (listens first, serves the committed `out/`).
+- Cold-start hardening: `package.json` `start` was `npm run build && next start` (`next start` refuses `output: "export"`, and the build ran before any port opened); it is now `node server.js`, which listens first and serves the committed `out/`. Not proven to be the cause of users' `refused to connect` (see the framing fix below).
 - `out/` is tracked (removed from `.gitignore`). After any source change run `npm run build` and commit the refreshed `out/`.
 - `dependencies` is empty: Next, React, React DOM and heic-to are devDependencies (build-time only; heic-to is bundled into `out/`). `package-lock.json` regenerated. Trade-off: the `server.js` self-heal build needs devDependencies, so it only works if the platform installs them; the shipped `out/` makes it unnecessary.
 - Smoke-check now guards the start script, the empty `dependencies` set and `out/` not being ignored; it no longer requires `ROADMAP.md` (deleted on purpose, 2026-10-01).
+
+## Landed in the framing fix (2026-10-02)
+
+- `refused to connect` inside the app shell: Chrome draws the same box for a TCP refusal and for a response blocked by `frame-ancestors` / `X-Frame-Options`. `server.js` allowed framing only by `*.bitrix24.{ru,com,eu,cn,de,site}`, which excludes the VibeCode shell (`bitrix24.tech`), the other portal zones (`.com.br`, `.es`, `.in`, ...) and custom domains. It now sends `frame-ancestors https:`; smoke-check guards it.
+- Not proven to be the only cause; not verifiable from the repo: gateway/access policy for users without a platform session (the gateway's own sign-in page cannot be framed), container sleep/OOM (`build_galaxy.md` section 9). To tell them apart: DevTools Console of the embedding page (`Refused to frame ... frame-ancestors` = framing), the direct app URL in a new tab, and the server log line `static bundle present at ...`.
 
 ## Decisions
 
